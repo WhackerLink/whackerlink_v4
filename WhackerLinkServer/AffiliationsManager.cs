@@ -1,4 +1,5 @@
-﻿using WhackerLinkServer.Models;
+﻿using System.Text;
+using WhackerLinkServer.Models;
 
 #nullable disable
 
@@ -8,22 +9,45 @@ namespace WhackerLinkServer
     {
         public List<Affiliation> Affiliations { get; set;}
 
-        public AffiliationsManager() { /* stub */ }
+        public AffiliationsManager()
+        {
+            Affiliations = new List<Affiliation>();
+        }
 
         public void AddAffiliation(string srcId, string dstId)
         {
-            // TODO: Check if srcid is already aff'ed       
-            Affiliations.Add(new Affiliation(srcId, dstId));
+            if (!isAffiliated(srcId, dstId))
+            {
+                Affiliations.Add(new Affiliation(srcId, dstId));
+            }
         }
 
-        public void RemoveAffiliaton(string  srcId, string dstId)
+        public void RemoveAffiliation(string srcId, string dstId)
         {
-            Affiliations.Remove(new Affiliation(srcId, dstId));
+            Affiliations.RemoveAll(a => a.SrcId == srcId && a.DstId == dstId);
         }
 
         public bool isAffiliated(string srcId, string dstId)
         {
-            return Affiliations.Contains(new Affiliation(srcId, dstId));
+            return Affiliations.Any(a => a.SrcId == srcId && a.DstId == dstId);
+        }
+
+        public bool IsSrcIdAffiliated(string srcId)
+        {
+            return Affiliations.Any(a => a.SrcId == srcId);
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Affiliations table:");
+
+            foreach (var affiliation in Affiliations)
+            {
+                sb.AppendLine($"SrcId: {affiliation.SrcId}, DstId: {affiliation.DstId}");
+            }
+
+            return sb.ToString();
         }
     }
 }

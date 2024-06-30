@@ -16,6 +16,8 @@ namespace WhackerLinkServer
         internal static Dictionary<string, VoiceChannel> activeVoiceChannels = new Dictionary<string, VoiceChannel>();
         private Config.MasterConfig masterConfig;
 
+        private AffiliationsManager affiliationsManager = new AffiliationsManager();
+
         public ClientHandler(Config.MasterConfig config)
         {
             this.masterConfig = config;
@@ -74,13 +76,15 @@ namespace WhackerLinkServer
             if (isDestinationPerimitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
+                affiliationsManager.AddAffiliation(request.SrcId, request.DstId);
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
+                affiliationsManager.RemoveAffiliation(request.SrcId, request.DstId);
             }
 
-            Send(JsonConvert.SerializeObject(new { type = "U_REG_RSP", data = response }));
+            Send(JsonConvert.SerializeObject(new { type = "GRP_AFF_RSP", data = response }));
             Program.logger.Information(response.ToString());
         }
 
