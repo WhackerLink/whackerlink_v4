@@ -1,16 +1,26 @@
-﻿namespace WhackerLinkServer.Models
+﻿#nullable disable
+
+namespace WhackerLinkServer.Models
 {
     public class Config
     {
-        public SystemConfig? System { get; set; }
+        public SystemConfig System { get; set; }
+        public List<MasterConfig> Masters { get; set; }
 
         public class SystemConfig
         {
-            public string? NetworkName { get; set; }
-            public string? NetworkBindAddress { get; set; }
-            public int NetworkBindPort { get; set; }
-            public List<string>? ControlChannels { get; set; }
-            public List<string>? VoiceChannels { get; set; }
+            public bool Debug;
+        }
+
+        public class MasterConfig
+        {
+            public string Name { get; set;}
+            public string Address { get; set; }
+            public int Port { get; set; }
+            public string TgAclPath { get; set; }
+            public string RidAclPath { get; set; }
+            public List<string> ControlChannels { get; set; }
+            public List<string> VoiceChannels { get; set; }
         }
     }
 }
