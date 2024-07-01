@@ -28,23 +28,26 @@ namespace WhackerLinkServer
             try
             {
                 var data = JObject.Parse(e.Data);
-                var type = data["type"].ToString();
+                var type = Convert.ToInt32(data["type"]);
 
                 switch (type)
                 {
-                    case "U_REG_REQ":
+                    case (int)PacketType.U_REG_REQ:
                         HandleUnitRegistrationRequest(data["data"].ToObject<U_REG_REQ>());
                         break;
-                    case "GRP_AFF_REQ":
+                    case (int)PacketType.U_DE_REG_REQ:
+                        HandleUnitDeRegistrationRequest(data["data"].ToObject<U_DE_REG_REQ>());
+                        break;
+                    case (int)PacketType.GRP_AFF_REQ:
                         HandleGroupAffiliationRequest(data["data"].ToObject<GRP_AFF_REQ>());
                         break;
-                    case "GRP_VCH_REQ":
+                    case (int)PacketType.GRP_VCH_REQ:
                         HandleVoiceChannelRequest(data["data"].ToObject<GRP_VCH_REQ>());
                         break;
-                    case "GRP_VCH_RLS":
+                    case (int)PacketType.GRP_VCH_RLS:
                         HandleVoiceChannelRelease(data["data"].ToObject<GRP_VCH_RLS>());
                         break;
-                    case "audio_data":
+                    case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>());
                         break;
                     default:
@@ -66,6 +69,8 @@ namespace WhackerLinkServer
         {
             Program.logger.Information(request.ToString());
 
+            Affiliation affiliation = new Affiliation(request.SrcId, request.DstId);
+
             var response = new GRP_AFF_RSP
             {
                 SrcId = request.SrcId,
@@ -76,15 +81,15 @@ namespace WhackerLinkServer
             if (isDestinationPerimitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
-                affiliationsManager.AddAffiliation(request.SrcId, request.DstId);
+                affiliationsManager.AddAffiliation(affiliation);
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
-                affiliationsManager.RemoveAffiliation(request.SrcId, request.DstId);
+                affiliationsManager.RemoveAffiliation(affiliation);
             }
 
-            Send(JsonConvert.SerializeObject(new { type = "GRP_AFF_RSP", data = response }));
+            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
             Program.logger.Information(response.ToString());
         }
 
@@ -108,8 +113,35 @@ namespace WhackerLinkServer
                 response.Status = (int)ResponseType.REFUSE;
             }
 
-            Send(JsonConvert.SerializeObject(new { type = "U_REG_RSP", data = response }));
+            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_REG_RSP, data = response }));
             Program.logger.Information(response.ToString());
+        }
+
+        private void HandleUnitDeRegistrationRequest(U_DE_REG_REQ request)
+        {
+            Program.logger.Information(request.ToString());
+
+            var response = new U_DE_REG_RSP
+            {
+                SrcId = request.SrcId,
+                SysId = request.SysId,
+                Wacn = request.Wacn
+            };
+
+            if (isRidAuthed(request.SrcId))
+            {
+                response.Status = (int)ResponseType.GRANT;
+                affiliationsManager.RemoveAffiliation(request.SrcId);
+            }
+            else
+            {
+                response.Status = (int)ResponseType.FAIL;
+            }
+
+            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_DE_REG_RSP, data = response }));
+            Program.logger.Information(response.ToString());
+
+            Context.WebSocket.Close();
         }
 
         private void HandleVoiceChannelRequest(GRP_VCH_REQ request)
@@ -135,14 +167,14 @@ namespace WhackerLinkServer
                 response.Channel = availableChannel;
                 response.Status = (int)ResponseType.GRANT;
 
-                Send(JsonConvert.SerializeObject(new { type = "GRP_VCH_RSP", data = response }));
+                Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 Program.logger.Information(response.ToString());
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
 
-                Send(JsonConvert.SerializeObject(new { type = "GRP_VCH_RSP", data = response }));
+                Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 Program.logger.Information(response.ToString());
             }
         }
@@ -190,7 +222,7 @@ namespace WhackerLinkServer
             {
                 if (ID != session.ID)
                 {
-                    Sessions.SendTo(JsonConvert.SerializeObject(new { type = "audio_data", data = audioData }), session.ID);
+                    Sessions.SendTo(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData }), session.ID);
                 }
             }
         }

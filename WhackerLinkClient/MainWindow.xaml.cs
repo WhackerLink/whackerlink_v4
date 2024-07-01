@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using WebSocketSharp;
 using NAudio.Wave;
 using Newtonsoft.Json.Linq;
@@ -7,6 +6,7 @@ using Newtonsoft.Json;
 
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
+using System.ComponentModel;
 
 #nullable disable
 
@@ -26,6 +26,8 @@ namespace WhackerLinkClient
         private string currentChannel = string.Empty;
         private bool isRegistered = false;
         private bool powerOn = false;
+
+        private TaskCompletionSource<bool> deregistrationCompletionSource;
 
         public MainWindow()
         {
@@ -90,23 +92,26 @@ namespace WhackerLinkClient
         private void Socket_OnMessage(object sender, MessageEventArgs e)
         {
             var data = JObject.Parse(e.Data);
-            var type = data["type"].ToString();
+            var type = Convert.ToInt32(data["type"]);
 
             switch (type)
             {
-                case "U_REG_RSP":
-                    HandleUnitRegistrationRespoonse(data["data"].ToObject<U_REG_RSP>());
+                case (int)PacketType.U_REG_RSP:
+                    HandleUnitRegistrationResponse(data["data"].ToObject<U_REG_RSP>());
                     break;
-                case "GRP_AFF_RSP":
+                case (int)PacketType.U_DE_REG_RSP:
+                    HandleUnitDeRegistrationResponse(data["data"].ToObject<U_DE_REG_RSP>());
+                    break;
+                case (int)PacketType.GRP_AFF_RSP:
                     HandleGroupAffiliationResponse(data["data"].ToObject<GRP_AFF_RSP>());
                     break;
-                case "GRP_VCH_RSP":
+                case (int)PacketType.GRP_VCH_RSP:
                     HandleVoiceChannelResponse(data["data"].ToObject<GRP_VCH_RSP>());
                     break;
-                case "GRP_VCH_RLS":
+                case (int)PacketType.GRP_VCH_RLS:
                     HandleVoiceChannelRelease(data["data"].ToObject<GRP_VCH_RLS>());
                     break;
-                case "audio_data":
+                case (int)PacketType.AUDIO_DATA:
                     PlayAudio(data["data"].ToObject<byte[]>());
                     break;
                 default:
@@ -125,7 +130,7 @@ namespace WhackerLinkClient
                 _isKeyedUp = true;
                 var request = new
                 {
-                    type = "GRP_VCH_REQ",
+                    type = (int)PacketType.GRP_VCH_REQ,
                     data = new GRP_VCH_REQ
                     {
                         SrcId = myRid,
@@ -151,7 +156,7 @@ namespace WhackerLinkClient
         {
             var request = new
             {
-                type = "U_REG_REQ",
+                type = (int)PacketType.U_REG_REQ,
                 data = new U_REG_REQ
                 {
                     SrcId = myRid,
@@ -163,11 +168,27 @@ namespace WhackerLinkClient
             _socket.Send(JsonConvert.SerializeObject(request));
         }
 
+        private void sendUnitDeRegistration()
+        {
+            var request = new
+            {
+                type = (int)PacketType.U_DE_REG_REQ,
+                data = new GRP_AFF_REQ
+                {
+                    SrcId = myRid,
+                    DstId = currentTgid,
+                    SysId = ""
+                }
+            };
+
+            _socket.Send(JsonConvert.SerializeObject(request));
+        }
+
         private void sendGroupAffiliationRequest()
         {
             var request = new
             {
-                type = "GRP_AFF_REQ",
+                type = (int)PacketType.GRP_AFF_REQ,
                 data = new GRP_AFF_REQ
                 {
                     SrcId = myRid,
@@ -189,7 +210,7 @@ namespace WhackerLinkClient
                 _isKeyedUp = false;
                 var request = new
                 {
-                    type = "GRP_VCH_RLS",
+                    type = (int)PacketType.GRP_VCH_RLS,
                     data = new GRP_VCH_RLS
                     {
                         SrcId = myRid,
@@ -208,7 +229,7 @@ namespace WhackerLinkClient
             {
                 var audioData = new
                 {
-                    type = "audio_data",
+                    type = (int)PacketType.AUDIO_DATA,
                     data = e.Buffer
                 };
                 _socket.Send(JsonConvert.SerializeObject(audioData));
@@ -223,7 +244,7 @@ namespace WhackerLinkClient
             // Do nothing for now I guess
         }
 
-        private void HandleUnitRegistrationRespoonse(U_REG_RSP response)
+        private void HandleUnitRegistrationResponse(U_REG_RSP response)
         {
             isRegistered = false;
 
@@ -242,6 +263,14 @@ namespace WhackerLinkClient
             else
             {
                 isRegistered = false;
+            }
+        }
+
+        private void HandleUnitDeRegistrationResponse(U_DE_REG_RSP response)
+        {
+            if (response.SrcId == myRid)
+            {
+                deregistrationCompletionSource?.SetResult(true);
             }
         }
 
@@ -286,6 +315,21 @@ namespace WhackerLinkClient
             {
                 Console.WriteLine($"Error parsing JSON response: {ex.Message}");
                 Console.WriteLine($"Response content: {response}");
+            }
+        }
+
+        private async void Window_Closing(object sender, CancelEventArgs e)
+        {
+            try
+            {
+                deregistrationCompletionSource = new TaskCompletionSource<bool>();
+                sendUnitDeRegistration();
+
+                await deregistrationCompletionSource.Task;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during closing: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

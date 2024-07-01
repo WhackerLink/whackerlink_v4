@@ -14,22 +14,27 @@ namespace WhackerLinkServer
             Affiliations = new List<Affiliation>();
         }
 
-        public void AddAffiliation(string srcId, string dstId)
+        public void AddAffiliation(Affiliation affiliation)
         {
-            if (!isAffiliated(srcId, dstId))
+            if (!isAffiliated(affiliation))
             {
-                Affiliations.Add(new Affiliation(srcId, dstId));
+                Affiliations.Add(affiliation);
             }
         }
 
-        public void RemoveAffiliation(string srcId, string dstId)
+        public void RemoveAffiliation(Affiliation affiliation)
         {
-            Affiliations.RemoveAll(a => a.SrcId == srcId && a.DstId == dstId);
+            Affiliations.RemoveAll(a => a.SrcId == affiliation.SrcId && a.DstId == affiliation.DstId);
         }
 
-        public bool isAffiliated(string srcId, string dstId)
+        public void RemoveAffiliation(string srcId)
         {
-            return Affiliations.Any(a => a.SrcId == srcId && a.DstId == dstId);
+            Affiliations.RemoveAll(a => a.SrcId == srcId);
+        }
+
+        public bool isAffiliated(Affiliation affiliation)
+        {
+            return Affiliations.Any(a => a.SrcId == affiliation.SrcId && a.DstId == affiliation.DstId);
         }
 
         public bool IsSrcIdAffiliated(string srcId)
