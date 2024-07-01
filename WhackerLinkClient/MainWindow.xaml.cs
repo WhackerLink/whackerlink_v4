@@ -6,7 +6,13 @@ using Newtonsoft.Json;
 
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
+using WhackerLinkCommonLib.Models.Radio;
 using System.ComponentModel;
+using System.Windows.Input;
+
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+using System.IO;
 
 #nullable disable
 
@@ -18,31 +24,31 @@ namespace WhackerLinkClient
         private readonly WaveInEvent _waveIn;
         private readonly WaveOutEvent _waveOut;
         private readonly BufferedWaveProvider _waveProvider;
+        private Codeplug codeplug;
         private bool _isKeyedUp;
 
-        private string myRid = "123456";
-        private string currentTgid = "15001";
+        private string myRid;
+        private string currentTgid;
+        private int currentZoneIndex = 0;
+        private int currentChannelIndex = 0;
+        private Codeplug.System currentSystem;
 
         private string currentChannel = string.Empty;
         private bool isRegistered = false;
         private bool powerOn = false;
+        private ErrorStates errorState = ErrorStates.NONE;
 
         private TaskCompletionSource<bool> deregistrationCompletionSource;
 
         public MainWindow()
         {
             InitializeComponent();
-            Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
+            this.MouseLeftButtonDown += (sender, e) => DragMove();
 
+            Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
             try
             {
-                _socket = new WebSocket("ws://localhost:3009/client");
-                _socket.OnOpen += Socket_OnOpen;
-                _socket.OnClose += Socket_OnClose;
-                _socket.OnMessage += Socket_OnMessage;
-                _socket.OnError += Socket_OnError;
-
                 _waveIn = new WaveInEvent
                 {
                     WaveFormat = new WaveFormat(8000, 16, 1)
@@ -54,12 +60,7 @@ namespace WhackerLinkClient
                 {
                     DiscardOnBufferOverflow = true
                 };
-                _waveOut.Init(_waveProvider);
-
-                _socket.Connect();
-
-                PowerOn();
-                
+                _waveOut.Init(_waveProvider);                
             }
             catch (Exception ex)
             {
@@ -84,7 +85,7 @@ namespace WhackerLinkClient
             Console.WriteLine("Disconnected from the server.");
         }
 
-        private void Socket_OnError(object sender, ErrorEventArgs e)
+        private void Socket_OnError(object sender, WebSocketSharp.ErrorEventArgs e)
         {
             Console.WriteLine($"WebSocket error: {e.Message}");
         }
@@ -93,6 +94,9 @@ namespace WhackerLinkClient
         {
             var data = JObject.Parse(e.Data);
             var type = Convert.ToInt32(data["type"]);
+
+            if (!powerOn && errorState == ErrorStates.NONE && _socket != null)
+                return;
 
             switch (type)
             {
@@ -120,6 +124,23 @@ namespace WhackerLinkClient
             }
         }
 
+        private Codeplug LoadCodeplug(string path)
+        {
+            try
+            {
+                var deserializer = new DeserializerBuilder()
+                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .Build();
+
+                var yaml = File.ReadAllText(path);
+                return deserializer.Deserialize<Codeplug>(yaml);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
         private void PTTButton_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (!powerOn || !isRegistered)
@@ -141,15 +162,63 @@ namespace WhackerLinkClient
             }
         }
 
+        private void MasterConnection(Codeplug.System system)
+        {
+            if (_socket != null)
+            {
+                if (_socket.IsAlive)
+                {
+                    _socket.Close();
+                    _socket = null;
+                }
+            }
+
+            try
+            {
+                _socket = new WebSocket($"ws://{system.Address}:{system.Port}/client");
+                _socket.OnOpen += Socket_OnOpen;
+                _socket.OnClose += Socket_OnClose;
+                _socket.OnMessage += Socket_OnMessage;
+                _socket.OnError += Socket_OnError;
+
+                _socket.Connect();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to connect to WebSocket: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void KillMasterConnection()
+        {
+            if (_socket != null)
+            {
+                _socket.Close();
+            }
+        }
+
         private void PowerOn()
         {
-            if (powerOn)
+            codeplug = LoadCodeplug("codeplug.yml");
+
+            if (codeplug == null)
+            {
+                errorState = ErrorStates.CPG_CHECKSUM;
+                txt_Line2.Text = "Fail 01/82";
                 return;
+            }
 
-            sendUnitRegistrationRequest();
-            sendGroupAffiliationRequest();
+            currentZoneIndex = 0;
+            currentChannelIndex = 0;
 
-            powerOn = true;
+            UpdateDisplay();
+        }
+
+        private void PowerOff()
+        {
+            sendUnitDeRegistrationRequest();
+            ClearFields();
+            isRegistered = false;
         }
 
         private void sendUnitRegistrationRequest()
@@ -168,8 +237,11 @@ namespace WhackerLinkClient
             _socket.Send(JsonConvert.SerializeObject(request));
         }
 
-        private void sendUnitDeRegistration()
+        private void sendUnitDeRegistrationRequest()
         {
+            if (!_socket.IsAlive)
+                return;
+
             var request = new
             {
                 type = (int)PacketType.U_DE_REG_REQ,
@@ -202,7 +274,7 @@ namespace WhackerLinkClient
 
         private void PTTButton_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (!powerOn || !isRegistered)
+            if (!powerOn || !isRegistered && errorState == ErrorStates.NONE)
                 return;
 
             if (_isKeyedUp)
@@ -318,14 +390,35 @@ namespace WhackerLinkClient
             }
         }
 
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                PTTButton_MouseDown(sender, null);
+                e.Handled = true;
+            }
+        }
+
+        private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                PTTButton_MouseUp(sender, null);
+                e.Handled = true;
+            }
+        }
+
         private async void Window_Closing(object sender, CancelEventArgs e)
         {
             try
             {
-                deregistrationCompletionSource = new TaskCompletionSource<bool>();
-                sendUnitDeRegistration();
+                if (_socket != null && _socket.IsAlive)
+                {
+                    deregistrationCompletionSource = new TaskCompletionSource<bool>();
+                    sendUnitDeRegistrationRequest();
 
-                await deregistrationCompletionSource.Task;
+                    await deregistrationCompletionSource.Task;
+                }
             }
             catch (Exception ex)
             {
@@ -333,10 +426,103 @@ namespace WhackerLinkClient
             }
         }
 
+        private void ClearFields()
+        {
+            txt_Line1.Text = "";
+            txt_Line2.Text = "";
+            txt_Line3.Text = "";
+        }
+
         private void PlayAudio(byte[] audioData)
         {
             _waveProvider.AddSamples(audioData, 0, audioData.Length);
             _waveOut.Play();
+        }
+
+        private void btn_Power_Click(object sender, RoutedEventArgs e)
+        {
+            if (!powerOn)
+                PowerOn();
+            else
+                PowerOff();
+
+            powerOn = !powerOn;
+        }
+
+        private void btn_ZoneUp_Click(object sender, RoutedEventArgs e)
+        {
+            ChangeZone(1);
+        }
+
+        private void btn_ZoneDown_Click(object sender, RoutedEventArgs e)
+        {
+            ChangeZone(-1);
+        }
+
+        private void btn_ChangeChannel_Click(object sender, RoutedEventArgs e)
+        {
+            ChangeChannel();
+        }
+
+        private void ChangeZone(int direction)
+        {
+            if (!powerOn || codeplug == null)
+                return;
+
+            currentZoneIndex += direction;
+
+            if (currentZoneIndex < 0)
+                currentZoneIndex = codeplug.Zones.Count - 1;
+            else if (currentZoneIndex >= codeplug.Zones.Count)
+                currentZoneIndex = 0;
+
+            currentChannelIndex = 0;
+            UpdateDisplay();
+        }
+
+        private void ChangeChannel()
+        {
+            if (!powerOn || codeplug == null)
+                return;
+
+            var zone = codeplug.Zones[currentZoneIndex];
+            currentChannelIndex++;
+
+            if (currentChannelIndex >= zone.Channels.Count)
+                currentChannelIndex = 0;
+
+            UpdateDisplay(false);
+        }
+
+        private void UpdateDisplay(bool systemChange = true)
+        {
+            if (codeplug != null && codeplug.Zones.Count > 0)
+            {
+                var zone = codeplug.Zones[currentZoneIndex];
+                txt_Line1.Text = zone.Name;
+
+                if (zone.Channels.Count > 0)
+                {
+                    var channel = zone.Channels[currentChannelIndex];
+                    txt_Line2.Text = channel.Name;
+                    currentTgid = channel.Tgid;
+                    var newSystem = codeplug.GetSystemForChannel(channel);
+
+                    if (!powerOn || (currentSystem == null || currentSystem.Name != newSystem.Name))
+                    {
+                        currentSystem = newSystem;
+                        myRid = currentSystem.Rid;
+
+                        KillMasterConnection();
+                        MasterConnection(currentSystem);
+
+                        if (systemChange)
+                            sendUnitRegistrationRequest();
+                    }
+
+                    sendGroupAffiliationRequest();
+                }
+            }
         }
     }
 }

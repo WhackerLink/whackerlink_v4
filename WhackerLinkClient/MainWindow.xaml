@@ -5,10 +5,42 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WhackerLinkClient"
         Closing="Window_Closing"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        PreviewKeyUp="MainWindow_PreviewKeyUp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Button x:Name="PTTButton" Content="Push To Talk" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="50" PreviewMouseLeftButtonDown="PTTButton_MouseDown" PreviewMouseLeftButtonUp="PTTButton_MouseUp"/>
-        <TextBox Name="txt_Line1" HorizontalAlignment="Center" Margin="0,122,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
+        Title=""
+        Height="361"
+        Width="1178"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    <Window.Background>
+        <ImageBrush ImageSource="Resources/o2_green.png" />
+    </Window.Background>
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+        </Style>
+    </Window.Resources>
+    <Grid Background="Transparent" RenderTransformOrigin="0.487,0.476">
+        <Button x:Name="PTTButton" Content="" VerticalAlignment="Top" Height="50" PreviewMouseLeftButtonDown="PTTButton_MouseDown" PreviewMouseLeftButtonUp="PTTButton_MouseUp" Background="Transparent" Margin="998,113,80,0"  BorderThickness="0"/>
+        <TextBox Name="txt_Line1" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="20" FontFamily="serif" HorizontalAlignment="Left" Margin="273,97,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="25"/>
+        <TextBox Name="txt_Line2" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="25" FontFamily="serif" HorizontalAlignment="Left" Margin="273,123,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="30"/>
+        <TextBox Name="txt_Line3" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="15" FontFamily="serif" HorizontalAlignment="Left" Margin="273,158,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="20"/>
+        <Button Content="" Name="btn_Power" Background="Transparent" HorizontalAlignment="Left" Margin="124,61,0,0" VerticalAlignment="Top" Height="49" Width="51" BorderThickness="0" Click="btn_Power_Click"/>
+        <Button Content="" Name="btn_ZoneUp" Background="Transparent" HorizontalAlignment="Left" Margin="667,61,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneUp_Click" RenderTransformOrigin="0.476,0.59"/>
+        <Button Content="" Name="btn_ZoneDown" Background="Transparent" HorizontalAlignment="Left" Margin="667,129,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneDown_Click"/>
+        <Button Content="" Name="btn_ChangeChannel" HorizontalAlignment="Left" Margin="998,196,0,0" VerticalAlignment="Top" Height="73" Width="88" BorderThickness="0" Click="btn_ChangeChannel_Click"/>
     </Grid>
 </Window>
