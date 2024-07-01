@@ -15,12 +15,14 @@ namespace WhackerLinkServer
     {
         internal static Dictionary<string, VoiceChannel> activeVoiceChannels = new Dictionary<string, VoiceChannel>();
         private Config.MasterConfig masterConfig;
+        private RidAclManager aclManager;
 
         private AffiliationsManager affiliationsManager = new AffiliationsManager();
 
-        public ClientHandler(Config.MasterConfig config)
+        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager)
         {
             this.masterConfig = config;
+            this.aclManager = aclManager;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -110,6 +112,7 @@ namespace WhackerLinkServer
             }
             else
             {
+                Program.logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
                 response.Status = (int)ResponseType.REFUSE;
             }
 
@@ -135,6 +138,7 @@ namespace WhackerLinkServer
             }
             else
             {
+                Program.logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
                 response.Status = (int)ResponseType.FAIL;
             }
 
@@ -209,7 +213,7 @@ namespace WhackerLinkServer
 
         private bool isRidAuthed(string srcId)
         {
-            return true;
+            return aclManager.IsRidAllowed(srcId);
         }
 
         private string GetAvailableVoiceChannel()

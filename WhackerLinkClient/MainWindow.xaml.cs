@@ -281,8 +281,13 @@ namespace WhackerLinkClient
             _socket.Send(JsonConvert.SerializeObject(request));
         }
 
-        private void sendGroupAffiliationRequest()
+        private async void sendGroupAffiliationRequest()
         {
+            await Task.Delay(1000);
+
+            if (!isRegistered)
+                return;
+
             var request = new
             {
                 type = (int)PacketType.GRP_AFF_REQ,
@@ -367,7 +372,7 @@ namespace WhackerLinkClient
             }
             else if (response.Status == (int)ResponseType.REFUSE)
             {
-                Dispatcher.Invoke(() => txt_Line1.Text = "Sys reg refusd");
+                Dispatcher.Invoke(() => txt_Line3.Text = "Sys reg refusd");
                 isRegistered = false;
             }
             else

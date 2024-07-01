@@ -15,6 +15,7 @@ namespace WhackerLinkServer
     {
         private Config.MasterConfig config;
         private WebSocketServer server;
+        private RidAclManager aclManager = new RidAclManager();
 
         public Master(Config.MasterConfig config)
         {
@@ -27,8 +28,10 @@ namespace WhackerLinkServer
             {
                 Log.Information("Starting Master {Name}", config.Name);
 
+                aclManager.Load(config.RidAclPath);
+                
                 server = new WebSocketServer($"ws://localhost:{config.Port}");
-                server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config));
+                server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager));
                 server.Start();
 
                 Log.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
