@@ -1,18 +1,21 @@
 ﻿using System.Windows;
 using WebSocketSharp;
 using NAudio.Wave;
-using Newtonsoft.Json.Linq;
+using System.IO;
+using System.Windows.Input;
+using System.ComponentModel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Models.Radio;
-using System.ComponentModel;
-using System.Windows.Input;
+using System.Windows.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
-using System.IO;
 
 #nullable disable
 
@@ -116,7 +119,7 @@ namespace WhackerLinkClient
                     HandleVoiceChannelRelease(data["data"].ToObject<GRP_VCH_RLS>());
                     break;
                 case (int)PacketType.AUDIO_DATA:
-                    PlayAudio(data["data"].ToObject<byte[]>());
+                    PlayAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                     break;
                 default:
                     Console.WriteLine("Unknown message type: " + type);
@@ -141,7 +144,23 @@ namespace WhackerLinkClient
             }
         }
 
-        private void PTTButton_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void SetRssiSource(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                icon_Rssi.Source = null;
+                return;
+            }
+
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri($"pack://application:,,,/Resources/{name}");
+            bitmap.EndInit();
+
+            icon_Rssi.Source = bitmap;
+        }
+
+        private async void PTTButton_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (!powerOn || !isRegistered)
                 return;
@@ -149,6 +168,12 @@ namespace WhackerLinkClient
             if (!_isKeyedUp)
             {
                 _isKeyedUp = true;
+
+                Dispatcher.Invoke(() => SetRssiSource("TX_RSSI.png"));
+                await Task.Delay(350);
+                Dispatcher.Invoke(() => SetRssiSource(""));
+                await Task.Delay(200);
+
                 var request = new
                 {
                     type = (int)PacketType.GRP_VCH_REQ,
@@ -302,7 +327,13 @@ namespace WhackerLinkClient
                 var audioData = new
                 {
                     type = (int)PacketType.AUDIO_DATA,
-                    data = e.Buffer
+                    data = e.Buffer,
+                    voiceChannel = new VoiceChannel
+                    {
+                        SrcId = myRid,
+                        DstId = currentTgid,
+                        Frequency = currentChannel
+                    }
                 };
                 _socket.Send(JsonConvert.SerializeObject(audioData));
             }
@@ -313,7 +344,12 @@ namespace WhackerLinkClient
             if (!isRegistered || !powerOn)
                 return;
 
-            // Do nothing for now I guess
+            ImageSource source = Dispatcher.Invoke(() => icon_Rssi.Source);
+
+            if (source == null)
+            {
+                Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
+            }
         }
 
         private void HandleUnitRegistrationResponse(U_REG_RSP response)
@@ -322,6 +358,8 @@ namespace WhackerLinkClient
 
             if (response.SrcId != myRid)
                 return;
+
+            Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
 
             if (response.Status == (int)ResponseType.GRANT)
             {
@@ -346,41 +384,66 @@ namespace WhackerLinkClient
             }
         }
 
-        private void HandleVoiceChannelRelease(GRP_VCH_RLS response)
+        private async void HandleVoiceChannelRelease(GRP_VCH_RLS response)
         {
             if (!powerOn || !isRegistered || (response.DstId != currentTgid))
                 return;
 
             bool isMe = response.SrcId == myRid;
+            bool isMyTg = response.DstId == currentTgid;
 
-            if (!isMe)
+            currentChannel = string.Empty;
+            Dispatcher.Invoke(() => txt_Line3.Text = "");
+
+            if (!isMe && isMyTg)
+            {
                 _waveOut.Pause();
+            }
+
+            Dispatcher.Invoke(() => SetRssiSource(""));
+            await Task.Delay(250);
+            Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
         }
 
-        private void HandleVoiceChannelResponse(GRP_VCH_RSP response)
+        private async void HandleVoiceChannelResponse(GRP_VCH_RSP response)
         {
-            if (!powerOn || !isRegistered || (response.DstId != currentTgid))
+            if (!powerOn || !isRegistered)
                 return;
 
             bool isMe = response.SrcId == myRid;
+            bool isMyTg = response.DstId == currentTgid;
 
             try
             {
-                if (response.Status == (int)ResponseType.GRANT && isMe)
+                if (response.Status == (int)ResponseType.GRANT && isMe && isMyTg)
                 {
                     currentChannel = response.Channel;
                     Console.WriteLine($"Channel granted: {response.Channel}");
+                    await Task.Delay(100);
+                    Dispatcher.Invoke(() => SetRssiSource("TX_RSSI.png"));
+                    BeepGenerator.TptGenerate();
                     _waveIn.StartRecording();
                 }
-                else if (!isMe)
+                else if (isMe && response.Status == (int)ResponseType.DENY && isMyTg)
                 {
                     currentChannel = string.Empty;
+                    if (_isKeyedUp)
+                    {
+                        BeepGenerator.Bonk();
+                    }
                     Console.WriteLine("Channel request denied.");
+                }
+                else if (!isMe && isMyTg)
+                {
+                    Console.WriteLine($"Switching to voice channel {response.Channel}");
+                    currentChannel = response.Channel;
+                    Dispatcher.Invoke(() => txt_Line3.Text = $"ID: {response.SrcId}");
+                    Dispatcher.Invoke(() => SetRssiSource("RX_COLOR.png"));
                 }
                 else
                 {
-                    currentChannel = response.Channel;
-                    _waveOut.Play();
+                    currentChannel = string.Empty;
+                    Console.WriteLine("Unhandled grant response condition");
                 }
             }
             catch (Exception ex)
@@ -431,12 +494,19 @@ namespace WhackerLinkClient
             txt_Line1.Text = "";
             txt_Line2.Text = "";
             txt_Line3.Text = "";
+            SetRssiSource("");
         }
 
-        private void PlayAudio(byte[] audioData)
+        private void PlayAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
-            _waveProvider.AddSamples(audioData, 0, audioData.Length);
-            _waveOut.Play();
+            if (currentChannel.IsNullOrEmpty())
+                return;
+
+            if (voiceChannel.Frequency == currentChannel && voiceChannel.DstId == currentTgid && voiceChannel.SrcId != myRid)
+            {
+                _waveProvider.AddSamples(audioData, 0, audioData.Length);
+                _waveOut.Play();
+            }
         }
 
         private void btn_Power_Click(object sender, RoutedEventArgs e)
@@ -491,10 +561,10 @@ namespace WhackerLinkClient
             if (currentChannelIndex >= zone.Channels.Count)
                 currentChannelIndex = 0;
 
-            UpdateDisplay(false);
+            UpdateDisplay();
         }
 
-        private void UpdateDisplay(bool systemChange = true)
+        private async void UpdateDisplay(bool systemChange = true)
         {
             if (codeplug != null && codeplug.Zones.Count > 0)
             {
@@ -517,7 +587,20 @@ namespace WhackerLinkClient
                         MasterConnection(currentSystem);
 
                         if (systemChange)
+                            SetRssiSource("TX_RSSI.png");
+                            await Task.Delay(150);
+                            SetRssiSource("");
+                            await Task.Delay(200);
+                            SetRssiSource("TX_RSSI.png");
+                            await Task.Delay(250);
+                            SetRssiSource("");
+                            await Task.Delay(350);
                             sendUnitRegistrationRequest();
+                    } else
+                    {
+                        SetRssiSource("TX_RSSI.png");
+                        await Task.Delay(200);
+                        SetRssiSource(null);
                     }
 
                     sendGroupAffiliationRequest();

@@ -48,7 +48,7 @@ namespace WhackerLinkServer
                         HandleVoiceChannelRelease(data["data"].ToObject<GRP_VCH_RLS>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
-                        BroadcastAudio(data["data"].ToObject<byte[]>());
+                        BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                         break;
                     default:
                         Program.logger.Warning("Unknown message type: {Type}", type);
@@ -167,14 +167,14 @@ namespace WhackerLinkServer
                 response.Channel = availableChannel;
                 response.Status = (int)ResponseType.GRANT;
 
-                Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 Program.logger.Information(response.ToString());
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
 
-                Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 Program.logger.Information(response.ToString());
             }
         }
@@ -183,9 +183,17 @@ namespace WhackerLinkServer
         {
             Program.logger.Information(request.ToString());
 
+            GRP_VCH_RLS response = new GRP_VCH_RLS
+            {
+                SrcId = request.SrcId,
+                DstId = request.DstId,
+                Channel = request.Channel
+            };
+
             if (activeVoiceChannels.TryGetValue(request.Channel, out var channel))
             {
                 activeVoiceChannels.Remove(request.Channel);
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 Program.logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
             }
             else
@@ -216,15 +224,20 @@ namespace WhackerLinkServer
             return null;
         }
 
-        private void BroadcastAudio(byte[] audioData)
+        private void BroadcastMessage(string message, bool skipMe = false)
         {
             foreach (var session in Sessions.Sessions)
             {
-                if (ID != session.ID)
-                {
-                    Sessions.SendTo(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData }), session.ID);
-                }
+                if (skipMe && ID == session.ID)
+                    return;
+                
+                Sessions.SendTo(message, session.ID);
             }
+        }
+
+        private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
+        {
+            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel }));
         }
     }
 }

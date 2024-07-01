@@ -12,6 +12,7 @@
         Height="361"
         Width="1178"
         WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
         AllowsTransparency="True">
     <Window.Background>
         <ImageBrush ImageSource="Resources/o2_green.png" />
@@ -42,5 +43,6 @@
         <Button Content="" Name="btn_ZoneUp" Background="Transparent" HorizontalAlignment="Left" Margin="667,61,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneUp_Click" RenderTransformOrigin="0.476,0.59"/>
         <Button Content="" Name="btn_ZoneDown" Background="Transparent" HorizontalAlignment="Left" Margin="667,129,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneDown_Click"/>
         <Button Content="" Name="btn_ChangeChannel" HorizontalAlignment="Left" Margin="998,196,0,0" VerticalAlignment="Top" Height="73" Width="88" BorderThickness="0" Click="btn_ChangeChannel_Click"/>
+        <Image Name="icon_Rssi" HorizontalAlignment="Left" Height="20" Margin="267,72,0,0" VerticalAlignment="Top" Width="19"/>
     </Grid>
 </Window>
