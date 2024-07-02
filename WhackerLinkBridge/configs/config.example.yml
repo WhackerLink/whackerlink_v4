@@ -1,0 +1,17 @@
+# General Configuration
+system:
+  mode: 1 # (Dont change not used rn)
+  dstId: "2001" # TGID that will be passed for bridging
+
+# DVM Bridge Configuration
+dvmBridge:
+  name: "CN BRIDGE" # Textual Alias
+  address: 127.0.0.1 # Address to send UDP to
+  txPort: 32001 # Port to send UDP to
+  rxPort: 34001 # Port to bind to
+
+# WhackerLink Master Configuration
+master:
+  name: "CN BRIDGE" # Textual Alias
+  address: 127.0.0.1 # Address to connect to
+  port: 3000 # Port to connect to

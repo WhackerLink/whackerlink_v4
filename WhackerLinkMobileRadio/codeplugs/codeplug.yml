@@ -1,0 +1,37 @@
+radioWide:
+  hostVersion: "R01.00.00"
+  codeplugVersion: "R01.00.00"
+  radioAlias: ""
+  serialNumber: "123ABC1234"
+  model: 0
+
+systems:
+  - name: "System 1"
+    address: "localhost"
+    port: 3009
+    rid: "123456"
+
+zones:
+  - name: "Zone 1"
+    channels:
+      - name: "Channel 1"
+        system: "System 1"
+        tgid: "2001"
+      - name: "Channel 2"
+        system: "System 1"
+        tgid: "15002"
+      - name: "Channel 3"
+        system: "System 1"
+        tgid: "15003"
+
+  - name: "Zone 2"
+    channels:
+      - name: "Channel A"
+        system: "System 1"
+        tgid: "16001"
+      - name: "Channel B"
+        system: "System 1"
+        tgid: "16002"
+      - name: "Channel C"
+        system: "System 1"
+        tgid: "16002"

@@ -1,0 +1,13 @@
+# Global Configuration
+system:
+  debug: false
+
+masters:
+  - name: "Dev Master" # Textual Alias
+    port: 3000 # Port for the master to bind to
+    address: 127.0.0.1 # Address for the master to bind to
+    ridAclPath: "rid_acl.yml" # Path to radio id access list
+    controlChannels: [] # Not used right now
+    voiceChannels: # List of available voice channels. If voice channels run out, users will be denied grants.
+      - "853.9625"
+      - "855.9625"
