@@ -30,7 +30,7 @@ namespace WhackerLinkServer
 
                 aclManager.Load(config.RidAclPath);
                 
-                server = new WebSocketServer($"ws://localhost:{config.Port}");
+                server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager));
                 server.Start();
 
