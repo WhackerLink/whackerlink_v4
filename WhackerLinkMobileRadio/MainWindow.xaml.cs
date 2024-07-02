@@ -1,18 +1,25 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using NAudio.Wave;
-using WhackerLinkCommonLib.Interfaces;
-using WhackerLinkCommonLib.Models.Radio;
-using WhackerLinkCommonLib.Handlers;
-using System.ComponentModel;
 using System.Windows.Threading;
-using WhackerLinkCommonLib.Models.IOSP;
+using NAudio.Wave;
+using Newtonsoft.Json;
+using WhackerLinkCommonLib.Handlers;
+using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkCommonLib.Models;
+using WhackerLinkCommonLib.Models.IOSP;
+using WhackerLinkCommonLib.Models.Radio;
 using WhackerLinkCommonLib.UI;
-using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 #nullable disable
 
@@ -33,6 +40,7 @@ namespace WhackerLinkMobileRadio
         private int _currentChannelIndex;
         private Codeplug.System _currentSystem;
         private bool _isRegistered;
+        private bool _isInRange = false;
         private bool _powerOn;
         private bool _isKeyedUp;
         private string _currentChannel;
@@ -40,6 +48,7 @@ namespace WhackerLinkMobileRadio
         private bool _isReceiving = false;
 
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
+        private DispatcherTimer _reconnectTimer;
 
         public MainWindow()
         {
@@ -57,6 +66,8 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.OnVoiceChannelRelease += HandleVoiceChannelRelease;
             _webSocketHandler.OnEmergencyAlarmResponse += HandleEmergencyAlarmResponse;
             _webSocketHandler.OnAudioData += PlayAudio;
+            _webSocketHandler.OnOpen += HandleConnectionOpen;
+            _webSocketHandler.OnClose += HandleConnectionClose;
 
             _waveIn = new WaveInEvent
             {
@@ -71,16 +82,23 @@ namespace WhackerLinkMobileRadio
                 DiscardOnBufferOverflow = true
             };
             _waveOut.Init(_waveProvider);
+
+            _reconnectTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            _reconnectTimer.Tick += ReconnectTimer_Tick;
         }
 
         public bool PowerOn => _powerOn;
+        public bool IsInRange { get => _isInRange; set => _isInRange = value; }
         public string MyRid { get => _myRid; set => _myRid = value; }
         public string CurrentTgid { get => _currentTgid; set => _currentTgid = value; }
         public Codeplug.System CurrentSystem { get => _currentSystem; set => _currentSystem = value; }
 
         private void Current_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show($"Unhandled exception: {e.Exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //MessageBox.Show($"Unhandled exception: {e.Exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }
 
@@ -137,11 +155,20 @@ namespace WhackerLinkMobileRadio
         public void KillMasterConnection()
         {
             _webSocketHandler.Disconnect();
+            _isInRange = false;
         }
 
         public void MasterConnection(Codeplug.System system)
         {
             _webSocketHandler.Connect(system.Address, system.Port);
+
+            if (!_webSocketHandler.IsConnected)
+            {
+                _isInRange = false;
+            } else
+            {
+                _isInRange = true;
+            }
         }
 
         public void SendUnitRegistrationRequest()
@@ -261,7 +288,8 @@ namespace WhackerLinkMobileRadio
         {
             string text = string.Empty;
 
-            switch (response.Status) {
+            switch (response.Status)
+            {
                 case (int)ResponseType.GRANT:
                     _isRegistered = true;
                     break;
@@ -493,6 +521,38 @@ namespace WhackerLinkMobileRadio
             if (_currentChannelIndex >= zone.Channels.Count) _currentChannelIndex = 0;
 
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
+        }
+
+        private void HandleConnectionOpen()
+        {
+            if (_powerOn)
+                Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
+
+            _isInRange = true;
+            _reconnectTimer.Stop();
+        }
+
+        private void HandleConnectionClose()
+        {
+            if (_powerOn)
+            {
+                Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_0.png"));
+                Dispatcher.Invoke(() => txt_Line3.Text = "Out of Range");
+            }
+
+            _isInRange = false;
+            _reconnectTimer.Start();
+        }
+
+        private void ReconnectTimer_Tick(object sender, EventArgs e)
+        {
+            if (!_webSocketHandler.IsConnected && _currentSystem != null)
+            {
+                KillMasterConnection();
+                MasterConnection(_currentSystem);
+                SendUnitRegistrationRequest();
+                SendGroupAffiliationRequest();
+            }
         }
     }
 }

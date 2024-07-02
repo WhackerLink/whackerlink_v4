@@ -1,5 +1,6 @@
 ﻿using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Models;
+using System;
 
 namespace WhackerLinkCommonLib.Interfaces
 {
@@ -18,5 +19,7 @@ namespace WhackerLinkCommonLib.Interfaces
         event Action<GRP_VCH_RLS> OnVoiceChannelRelease;
         event Action<EMRG_ALRM_RSP> OnEmergencyAlarmResponse;
         event Action<byte[], VoiceChannel> OnAudioData;
+        event Action OnOpen;
+        event Action OnClose;
     }
 }

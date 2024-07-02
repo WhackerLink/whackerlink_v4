@@ -39,22 +39,39 @@ namespace WhackerLinkCommonLib.UI
 
                         if (systemChange)
                         {
-                            _radioDisplay.SetRssiSource("TX_RSSI.png");
-                            await Task.Delay(150);
-                            _radioDisplay.SetRssiSource("");
-                            await Task.Delay(200);
-                            _radioDisplay.SetRssiSource("TX_RSSI.png");
-                            await Task.Delay(250);
-                            _radioDisplay.SetRssiSource("");
-                            await Task.Delay(350);
+                            if (!_radioDisplay.IsInRange)
+                            {
+                                await Task.Delay(200);
+                                _radioDisplay.SetRssiSource("RSSI_COLOR_0.png");
+                                _radioDisplay.SetLine3Text("Out of Range");
+                            } else
+                            {
+                                _radioDisplay.SetRssiSource("TX_RSSI.png");
+                                await Task.Delay(150);
+                                _radioDisplay.SetRssiSource("");
+                                await Task.Delay(200);
+                                _radioDisplay.SetRssiSource("TX_RSSI.png");
+                                await Task.Delay(250);
+                                _radioDisplay.SetRssiSource("");
+                                await Task.Delay(350);
+                            }
+
                             _radioDisplay.SendUnitRegistrationRequest();
                         }
                     }
                     else
                     {
-                        _radioDisplay.SetRssiSource("TX_RSSI.png");
-                        await Task.Delay(200);
-                        _radioDisplay.SetRssiSource(null);
+                        if (!_radioDisplay.IsInRange)
+                        {
+                            await Task.Delay(200);
+                            _radioDisplay.SetRssiSource("RSSI_COLOR_0.png");
+                            _radioDisplay.SetLine3Text("Out of Range");
+                        } else
+                        {
+                            _radioDisplay.SetRssiSource("TX_RSSI.png");
+                            await Task.Delay(200);
+                            _radioDisplay.SetRssiSource(null);
+                        }
                     }
 
                     _radioDisplay.SendGroupAffiliationRequest();
