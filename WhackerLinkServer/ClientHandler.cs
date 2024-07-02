@@ -2,7 +2,6 @@
 using WebSocketSharp.Server;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 using WhackerLinkServer.Models;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
@@ -63,15 +62,37 @@ namespace WhackerLinkServer
             }
             catch (Exception ex)
             {
-                Program.logger.Error(ex, "An error occurred while processing message.");
+                Program.logger.Error(ex, "An error occurred while processing message.");           
             }
+        }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            base.OnClose(e);
+
+            var clientId = ID;
+
+            var channelsToRemove = activeVoiceChannels.Values
+                .Where(vc => vc.ClientId == clientId)
+                .Select(vc => vc.Frequency)
+                .ToList();
+
+            foreach (var channel in channelsToRemove)
+            {
+                activeVoiceChannels.Remove(channel);
+                Program.logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
+            }
+
+            affiliationsManager.RemoveAffiliationByClientId(clientId);
+            Program.logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
         }
 
         private void HandleGroupAffiliationRequest(GRP_AFF_REQ request)
         {
             Program.logger.Information(request.ToString());
 
-            Affiliation affiliation = new Affiliation(request.SrcId, request.DstId);
+            var clientId = ID;
+            Affiliation affiliation = new Affiliation(clientId, request.SrcId, request.DstId);
 
             var response = new GRP_AFF_RSP
             {
@@ -80,7 +101,7 @@ namespace WhackerLinkServer
                 SysId = request.SysId
             };
 
-            if (isDestinationPerimitted(request.SrcId, request.DstId))
+            if (isDestinationPermitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
                 affiliationsManager.AddAffiliation(affiliation);
@@ -165,7 +186,8 @@ namespace WhackerLinkServer
                 {
                     DstId = request.DstId,
                     SrcId = request.SrcId,
-                    Frequency = availableChannel
+                    Frequency = availableChannel,
+                    ClientId = ID
                 };
 
                 response.Channel = availableChannel;
@@ -206,7 +228,7 @@ namespace WhackerLinkServer
             }
         }
 
-        private bool isDestinationPerimitted(string srcId, string dstId)
+        private bool isDestinationPermitted(string srcId, string dstId)
         {
             return true;
         }
@@ -234,7 +256,7 @@ namespace WhackerLinkServer
             {
                 if (skipMe && ID == session.ID)
                     return;
-                
+
                 Sessions.SendTo(message, session.ID);
             }
         }

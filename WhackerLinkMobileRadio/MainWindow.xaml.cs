@@ -1,12 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using NAudio.Wave;
-using Newtonsoft.Json;
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkCommonLib.Models.Radio;
 using WhackerLinkCommonLib.Handlers;

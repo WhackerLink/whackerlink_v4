@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-#nullable disable
+﻿#nullable disable
 
 namespace WhackerLinkServer.Models
 {
     public class Affiliation
     {
-        public Affiliation(string SrcId, string DstId)
+        public Affiliation(string clientId, string srcId, string dstId)
         {
-            this.SrcId = SrcId;
-            this.DstId = DstId;
+            ClientId = clientId;
+            SrcId = srcId;
+            DstId = dstId;
         }
 
+        public string ClientId { get; set; }
         public string SrcId { get; set; }
         public string DstId { get; set; }
-        public string EndPoint { get; set; }
     }
 }

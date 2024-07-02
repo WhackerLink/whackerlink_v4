@@ -32,6 +32,11 @@ namespace WhackerLinkServer
             Affiliations.RemoveAll(a => a.SrcId == srcId);
         }
 
+        public void RemoveAffiliationByClientId(string clientId)
+        {
+            Affiliations.RemoveAll(a => a.ClientId == clientId);
+        }
+
         public bool isAffiliated(Affiliation affiliation)
         {
             return Affiliations.Any(a => a.SrcId == affiliation.SrcId && a.DstId == affiliation.DstId);
