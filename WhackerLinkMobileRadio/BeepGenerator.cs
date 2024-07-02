@@ -1,7 +1,7 @@
 ﻿using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
 
-namespace WhackerLinkClient
+namespace WhackerLinkMobileRadio
 {
     public static class BeepGenerator
     {

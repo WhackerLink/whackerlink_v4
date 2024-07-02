@@ -21,7 +21,7 @@ namespace WhackerLinkCommonLib.Models.Radio
         {
             public string Name { get; set; }
             public string Address { get; set; }
-            public string Port { get; set; }
+            public int Port { get; set; }
             public string Rid { get; set; }
         }
 

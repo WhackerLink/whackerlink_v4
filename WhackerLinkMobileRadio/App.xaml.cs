@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace WhackerLinkClient
+namespace WhackerLinkMobileRadio
 {
     /// <summary>
     /// Interaction logic for App.xaml
