@@ -37,6 +37,7 @@ namespace WhackerLinkMobileRadio
         private bool _isKeyedUp;
         private string _currentChannel;
         private bool _isRecording = false;
+        private bool _isReceiving = false;
 
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
 
@@ -104,7 +105,7 @@ namespace WhackerLinkMobileRadio
         {
             if (!_powerOn) return;
 
-            if (!_isRegistered)
+            if (!_isRegistered || _isReceiving)
             {
                 BeepGenerator.Bonk();
                 return;
@@ -157,8 +158,10 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
-        public void SendGroupAffiliationRequest()
+        public async void SendGroupAffiliationRequest()
         {
+            await Task.Delay(1000);
+
             if (!_isRegistered) return;
 
             var request = new
@@ -193,7 +196,7 @@ namespace WhackerLinkMobileRadio
 
         private void PTTButton_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (!_powerOn || !_isRegistered) return;
+            if (!_powerOn || !_isRegistered || _isReceiving) return;
 
             if (_isKeyedUp)
             {
@@ -273,7 +276,7 @@ namespace WhackerLinkMobileRadio
             _currentChannel = string.Empty;
             Dispatcher.Invoke(() => txt_Line3.Text = "");
             Dispatcher.Invoke(() => SetRssiSource(""));
-
+            _isReceiving = false;
             await Task.Delay(250);
             Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
         }
@@ -382,6 +385,7 @@ namespace WhackerLinkMobileRadio
 
             if (voiceChannel.Frequency == _currentChannel && voiceChannel.DstId == _currentTgid && voiceChannel.SrcId != _myRid)
             {
+                _isReceiving = true;
                 _waveProvider.AddSamples(audioData, 0, audioData.Length);
                 _waveOut.Play();
             }
