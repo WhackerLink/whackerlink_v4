@@ -43,6 +43,9 @@ namespace WhackerLinkCommonLib.Handlers
                     case (int)PacketType.GRP_VCH_RLS:
                         OnVoiceChannelRelease?.Invoke(data["data"].ToObject<GRP_VCH_RLS>());
                         break;
+                    case (int)PacketType.EMRG_ALRM_RSP:
+                        OnEmergencyAlarmResponse?.Invoke(data["data"].ToObject<EMRG_ALRM_RSP>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         OnAudioData?.Invoke(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                         break;
@@ -66,6 +69,7 @@ namespace WhackerLinkCommonLib.Handlers
         public event Action<GRP_AFF_RSP> OnGroupAffiliationResponse;
         public event Action<GRP_VCH_RSP> OnVoiceChannelResponse;
         public event Action<GRP_VCH_RLS> OnVoiceChannelRelease;
+        public event Action<EMRG_ALRM_RSP> OnEmergencyAlarmResponse;
         public event Action<byte[], VoiceChannel> OnAudioData;
         public event Action OnOpen;
         public event Action OnClose;

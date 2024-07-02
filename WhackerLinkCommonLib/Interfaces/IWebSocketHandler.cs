@@ -16,6 +16,7 @@ namespace WhackerLinkCommonLib.Interfaces
         event Action<GRP_AFF_RSP> OnGroupAffiliationResponse;
         event Action<GRP_VCH_RSP> OnVoiceChannelResponse;
         event Action<GRP_VCH_RLS> OnVoiceChannelRelease;
+        event Action<EMRG_ALRM_RSP> OnEmergencyAlarmResponse;
         event Action<byte[], VoiceChannel> OnAudioData;
     }
 }

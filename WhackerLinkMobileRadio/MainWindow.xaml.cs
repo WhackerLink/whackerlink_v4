@@ -55,6 +55,7 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.OnGroupAffiliationResponse += HandleGroupAffiliationResponse;
             _webSocketHandler.OnVoiceChannelResponse += HandleVoiceChannelResponse;
             _webSocketHandler.OnVoiceChannelRelease += HandleVoiceChannelRelease;
+            _webSocketHandler.OnEmergencyAlarmResponse += HandleEmergencyAlarmResponse;
             _webSocketHandler.OnAudioData += PlayAudio;
 
             _waveIn = new WaveInEvent
@@ -194,6 +195,22 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        private void SendEmergencyAlarmRequest()
+        {
+            if (!_webSocketHandler.IsConnected || !_powerOn || !_isRegistered) return;
+
+            var request = new
+            {
+                type = (int)PacketType.EMRG_ALRM_REQ,
+                data = new EMRG_ALRM_REQ
+                {
+                    SrcId = _myRid,
+                    DstId = _currentTgid
+                }
+            };
+            _webSocketHandler.SendMessage(request);
+        }
+
         private void PTTButton_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (!_powerOn || !_isRegistered || _isReceiving) return;
@@ -312,6 +329,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        private void HandleEmergencyAlarmResponse(EMRG_ALRM_RSP response)
+        {
+            Dispatcher.Invoke(() => SetLine3Text($"EM: {response.SrcId}"));
+        }
+
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Space)
@@ -401,6 +423,11 @@ namespace WhackerLinkMobileRadio
             _powerOn = !_powerOn;
         }
 
+        private void btn_Emerg_Click(object sender, RoutedEventArgs e)
+        {
+            SendEmergencyAlarmRequest();
+        }
+
         private void TogglePowerOn()
         {
             _codeplug = LoadCodeplug("codeplug.yml");
@@ -415,6 +442,12 @@ namespace WhackerLinkMobileRadio
             _currentChannelIndex = 0;
 
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
+        }
+
+        private void btn_Emerg_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            SetLine3Text(null);
+            e.Handled = true;
         }
 
         private void PowerOff()

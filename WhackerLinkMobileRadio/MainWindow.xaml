@@ -9,8 +9,8 @@
         PreviewKeyUp="MainWindow_PreviewKeyUp"
         mc:Ignorable="d"
         Title=""
-        Height="361"
-        Width="1178"
+        Height="300"
+        Width="1000"
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         AllowsTransparency="True">
@@ -36,13 +36,14 @@
     </Window.Resources>
     <Grid Background="Transparent" RenderTransformOrigin="0.487,0.476">
         <Button x:Name="PTTButton" Content="" VerticalAlignment="Top" Height="50" PreviewMouseLeftButtonDown="PTTButton_MouseDown" PreviewMouseLeftButtonUp="PTTButton_MouseUp" Background="Transparent" Margin="998,113,80,0"  BorderThickness="0"/>
-        <TextBox Name="txt_Line1" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="20" FontFamily="serif" HorizontalAlignment="Left" Margin="273,97,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="25"/>
-        <TextBox Name="txt_Line2" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="25" FontFamily="serif" HorizontalAlignment="Left" Margin="273,123,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="30"/>
-        <TextBox Name="txt_Line3" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="15" FontFamily="serif" HorizontalAlignment="Left" Margin="273,158,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="336" Background="Transparent" BorderThickness="0" Height="20"/>
-        <Button Content="" Name="btn_Power" Background="Transparent" HorizontalAlignment="Left" Margin="124,61,0,0" VerticalAlignment="Top" Height="49" Width="51" BorderThickness="0" Click="btn_Power_Click"/>
-        <Button Content="" Name="btn_ZoneUp" Background="Transparent" HorizontalAlignment="Left" Margin="667,61,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneUp_Click" RenderTransformOrigin="0.476,0.59"/>
-        <Button Content="" Name="btn_ZoneDown" Background="Transparent" HorizontalAlignment="Left" Margin="667,129,0,0" VerticalAlignment="Top" Height="39" Width="42" BorderThickness="0" Click="btn_ZoneDown_Click"/>
-        <Button Content="" Name="btn_ChangeChannel" HorizontalAlignment="Left" Margin="998,196,0,0" VerticalAlignment="Top" Height="73" Width="88" BorderThickness="0" Click="btn_ChangeChannel_Click"/>
-        <Image Name="icon_Rssi" HorizontalAlignment="Left" Height="20" Margin="267,72,0,0" VerticalAlignment="Top" Width="19"/>
+        <TextBox Name="txt_Line1" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="15" FontFamily="serif" HorizontalAlignment="Left" Margin="227,86,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="293" Background="Transparent" BorderThickness="0" Height="24"/>
+        <TextBox Name="txt_Line2" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="20" FontFamily="serif" HorizontalAlignment="Left" Margin="227,106,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="293" Background="Transparent" BorderThickness="0" Height="20"/>
+        <TextBox Name="txt_Line3" IsReadOnly="True" TextAlignment="Center" FontWeight="Bold" FontSize="14" FontFamily="serif" HorizontalAlignment="Left" Margin="227,136,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="293" Background="Transparent" BorderThickness="0" Height="20"/>
+        <Button Content="" Name="btn_Power" Background="Transparent" HorizontalAlignment="Left" Margin="106,48,0,0" VerticalAlignment="Top" Height="32" Width="39" BorderThickness="0" Click="btn_Power_Click"/>
+        <Button Content="" Name="btn_ZoneUp" Background="Transparent" HorizontalAlignment="Left" Margin="568,48,0,0" VerticalAlignment="Top" Height="36" Width="31" BorderThickness="0" Click="btn_ZoneUp_Click" RenderTransformOrigin="0.476,0.59"/>
+        <Button Content="" Name="btn_ZoneDown" Background="Transparent" HorizontalAlignment="Left" Margin="565,101,0,0" VerticalAlignment="Top" Height="30" Width="37" BorderThickness="0" Click="btn_ZoneDown_Click"/>
+        <Button Content="" Name="btn_ChangeChannel" Margin="852,163,76,0" VerticalAlignment="Top" Height="58" BorderThickness="0" Click="btn_ChangeChannel_Click"/>
+        <Image Name="icon_Rssi" HorizontalAlignment="Left" Height="20" Margin="227,61,0,0" VerticalAlignment="Top" Width="19"/>
+        <Button Content="" Name="btn_Emerg" Margin="870,48,95,0" VerticalAlignment="Top" Height="32" Click="btn_Emerg_Click"/>
     </Grid>
 </Window>

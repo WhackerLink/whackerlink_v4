@@ -48,6 +48,9 @@ namespace WhackerLinkServer
                     case (int)PacketType.GRP_VCH_RLS:
                         HandleVoiceChannelRelease(data["data"].ToObject<GRP_VCH_RLS>());
                         break;
+                    case (int)PacketType.EMRG_ALRM_REQ:
+                        HandleEmergencyAlarmRequest(data["data"].ToObject<EMRG_ALRM_REQ>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                         break;
@@ -85,6 +88,21 @@ namespace WhackerLinkServer
 
             affiliationsManager.RemoveAffiliationByClientId(clientId);
             Program.logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
+        }
+
+        private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
+        {
+            Program.logger.Information(request.ToString());
+
+
+            var response = new EMRG_ALRM_RSP
+            {
+                SrcId = request.SrcId,
+                DstId = request.DstId
+            };
+
+            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
+            Program.logger.Information(response.ToString());
         }
 
         private void HandleGroupAffiliationRequest(GRP_AFF_REQ request)
