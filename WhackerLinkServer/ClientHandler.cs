@@ -122,7 +122,7 @@ namespace WhackerLinkServer
                 DstId = request.DstId
             };
 
-            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
+            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
             logger.Information(response.ToString());
         }
 
@@ -136,7 +136,7 @@ namespace WhackerLinkServer
                 DstId = request.DstId
             };
 
-            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
+            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
             logger.Information(response.ToString());
         }
 

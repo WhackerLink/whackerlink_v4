@@ -392,7 +392,6 @@ namespace WhackerLinkMobileRadio
 
         private void HandleCallAlert(CALL_ALRT response)
         {
-            MessageBox.Show(response.DstId);
             if (response.DstId != _myRid) return;
 
             Dispatcher.Invoke(() => SetLine3Text($"Page rcv: {response.SrcId}"));
