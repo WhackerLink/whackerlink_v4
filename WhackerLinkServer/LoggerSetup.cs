@@ -18,7 +18,7 @@ public static class LoggerSetup
 
 public class MasterNameEnricher : ILogEventEnricher
 {
-    private readonly string _masterName;
+    private string _masterName;
 
     public MasterNameEnricher(string masterName)
     {
@@ -27,9 +27,9 @@ public class MasterNameEnricher : ILogEventEnricher
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        if (!string.IsNullOrEmpty(_masterName))
-        {
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("MasterName", _masterName));
-        }
+        if (string.IsNullOrEmpty(_masterName))
+            _masterName = "SYSTEM";
+
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("MasterName", _masterName));
     }
 }

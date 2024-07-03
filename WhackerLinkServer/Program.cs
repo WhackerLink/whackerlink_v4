@@ -17,11 +17,7 @@ namespace WhackerLinkServer
 
         static async Task Main(string[] args)
         {
-            logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.File("logs/whackerlink-.log", rollingInterval: RollingInterval.Day, outputTemplate: "{Level:u1}: {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{NewLine}{Exception}")
-                .CreateLogger();
+            logger = LoggerSetup.CreateLogger(string.Empty);
 
             try
             {
