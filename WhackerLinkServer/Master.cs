@@ -5,42 +5,38 @@ using WhackerLinkServer.Models;
 using WhackerLinkServer.Managers;
 using WhackerLinkCommonLib.Models;
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using WhackerLinkServer;
 
 #nullable disable
 
 public class Master : IMasterService
 {
-    private static readonly Lazy<Master> lazyInstance = new Lazy<Master>(() => new Master());
-
-    public static Master Instance => lazyInstance.Value;
-
     private Config.MasterConfig config;
     private WebSocketServer server;
     private RidAclManager aclManager;
     private RestApiServer restServer;
-    private Thread aclReloadThread;
+    private Timer aclReloadTimer;
+    private AffiliationsManager affiliationsManager;
+    private VoiceChannelManager voiceChannelManager;
 
-    private Master() { }
-
-    public void Initialize(Config.MasterConfig config)
+    public Master(Config.MasterConfig config)
     {
-        if (this.config != null)
-        {
-            throw new InvalidOperationException("Master is already initialized.");
-        }
         this.config = config;
         this.aclManager = new RidAclManager(config.RidAcl.Enabled);
+        this.affiliationsManager = new AffiliationsManager();
+        this.voiceChannelManager = new VoiceChannelManager();
     }
 
     public List<Affiliation> GetAffiliations()
     {
-        return AffiliationsManager.Instance.GetAffiliations();
+        return affiliationsManager.GetAffiliations();
     }
 
     public List<VoiceChannel> GetVoiceChannels()
     {
-        return VoiceChannelManager.Instance.GetVoiceChannels();
+        return voiceChannelManager.GetVoiceChannels();
     }
 
     public List<string> GetAvailableVoiceChannels()
@@ -66,6 +62,15 @@ public class Master : IMasterService
 
             aclManager.Load(config.RidAcl.Path);
 
+            if (config.RidAcl.ReloadInterval > 0)
+            {
+                aclReloadTimer = new Timer(ReloadAclFile, null, 0, config.RidAcl.ReloadInterval * 1000);
+            }
+            else
+            {
+                Log.Information("ACL Auto reload disabled");
+            }
+
             if (config.Rest.Enabled)
             {
                 restServer = new RestApiServer(this, config.Rest.Address, config.Rest.Port);
@@ -73,7 +78,7 @@ public class Master : IMasterService
             }
 
             server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
-            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager));
+            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager));
             server.Start();
 
             Log.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
@@ -89,6 +94,19 @@ public class Master : IMasterService
         finally
         {
             Log.CloseAndFlush();
+        }
+    }
+
+    private void ReloadAclFile(object state)
+    {
+        try
+        {
+            aclManager.Load(config.RidAcl.Path);
+            Log.Information("Reloaded RID ACL entries from {Path}", config.RidAcl.Path);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Error reloading RID ACL: {Message}", ex.Message);
         }
     }
 }

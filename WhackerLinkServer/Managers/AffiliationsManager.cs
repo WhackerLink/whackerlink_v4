@@ -1,17 +1,15 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using WhackerLinkServer.Models;
 
 namespace WhackerLinkServer.Managers
 {
     public class AffiliationsManager
     {
-        private static readonly Lazy<AffiliationsManager> instance = new Lazy<AffiliationsManager>(() => new AffiliationsManager());
-
-        public static AffiliationsManager Instance => instance.Value;
-
         public List<Affiliation> Affiliations { get; private set; }
 
-        private AffiliationsManager()
+        public AffiliationsManager()
         {
             Affiliations = new List<Affiliation>();
         }

@@ -40,10 +40,12 @@ namespace WhackerLinkServer
 
                 Log.Information("Initializing Master instances");
 
+                List<Master> masters = new List<Master>();
+
                 foreach (Config.MasterConfig masterConfig in config.Masters)
                 {
-                    Master master = Master.Instance;
-                    master.Initialize(masterConfig);
+                    Master master = new Master(masterConfig);
+                    masters.Add(master);
                     master.Start();
                 }
 

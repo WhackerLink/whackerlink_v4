@@ -19,12 +19,12 @@ namespace WhackerLinkServer
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
 
-        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager)
+        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager, VoiceChannelManager voiceChannelManager)
         {
             this.masterConfig = config;
             this.aclManager = aclManager;
-            this.affiliationsManager = AffiliationsManager.Instance;
-            this.voiceChannelManager = VoiceChannelManager.Instance;
+            this.affiliationsManager = affiliationsManager;
+            this.voiceChannelManager = voiceChannelManager;
         }
 
         protected override void OnMessage(MessageEventArgs e)

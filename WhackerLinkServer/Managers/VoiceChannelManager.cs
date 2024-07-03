@@ -4,36 +4,13 @@ using System.Text;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkServer.Models;
 
-#nullable disable
-
-namespace WhackerLinkServer
+namespace WhackerLinkServer.Managers
 {
     public class VoiceChannelManager
     {
-        private static VoiceChannelManager _instance;
-        private static readonly object _lock = new object();
+        public List<VoiceChannel> VoiceChannels { get; private set; }
 
-        public static VoiceChannelManager Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new VoiceChannelManager();
-                        }
-                    }
-                }
-                return _instance;
-            }
-        }
-
-        public List<VoiceChannel> VoiceChannels { get; set; }
-
-        private VoiceChannelManager()
+        public VoiceChannelManager()
         {
             VoiceChannels = new List<VoiceChannel>();
         }
