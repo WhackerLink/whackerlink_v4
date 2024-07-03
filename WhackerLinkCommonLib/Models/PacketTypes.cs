@@ -20,6 +20,8 @@ namespace WhackerLinkCommonLib.Models
             U_DE_REG_REQ,
             U_DE_REG_RSP,
             EMRG_ALRM_REQ,
-            EMRG_ALRM_RSP
-        }
+            EMRG_ALRM_RSP,
+            CALL_ALRT,
+            CALL_ALRT_REQ
+    }
 }
