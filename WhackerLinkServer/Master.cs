@@ -48,6 +48,16 @@ public class Master : IMasterService
         return config.VoiceChannels;
     }
 
+    public List<RidAclEntry> GetRidAcl()
+    {
+        return aclManager.ridAclEntries;
+    }
+
+    public bool GetRidAclEnabled()
+    {
+        return aclManager.GetAclEnabled();
+    }
+
     public void Start()
     {
         try
