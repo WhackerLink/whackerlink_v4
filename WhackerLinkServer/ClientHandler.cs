@@ -140,6 +140,7 @@ namespace WhackerLinkServer
             if (isDestinationPermitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
+                affiliationsManager.RemoveAffiliation(request.SrcId);
                 affiliationsManager.AddAffiliation(affiliation);
             }
             else
