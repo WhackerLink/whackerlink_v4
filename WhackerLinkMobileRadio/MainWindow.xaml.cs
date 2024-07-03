@@ -250,6 +250,22 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        private void SendCallAlertRequest()
+        {
+            if (!_webSocketHandler.IsConnected || !_powerOn || !_isRegistered) return;
+
+            var request = new
+            {
+                type = (int)PacketType.CALL_ALRT_REQ,
+                data = new CALL_ALRT_REQ
+                {
+                    SrcId = _myRid,
+                    DstId = txt_Line2.Text
+                }
+            };
+            _webSocketHandler.SendMessage(request);
+        }
+
         private void PTTButton_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (!_powerOn || !_isRegistered || _isReceiving) return;
@@ -376,6 +392,9 @@ namespace WhackerLinkMobileRadio
 
         private void HandleCallAlert(CALL_ALRT response)
         {
+            MessageBox.Show(response.DstId);
+            if (response.DstId != _myRid) return;
+
             Dispatcher.Invoke(() => SetLine3Text($"Page rcv: {response.SrcId}"));
         }
 
@@ -623,8 +642,8 @@ namespace WhackerLinkMobileRadio
         {
             if (!_isInMenu)
                 EnterPageMenu();
-            //else
-                //SendUnitToUnitPage();
+            else
+                SendCallAlertRequest();
         }
 
         private void btn_SoftMenu4_Click(object sender, RoutedEventArgs e)
@@ -679,7 +698,7 @@ namespace WhackerLinkMobileRadio
                     OnGlobalKeyUp(vkCode);
                 }
             }
-            return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam); // TODO: Maybe a crash issue to look at
         }
 
         private void OnGlobalKeyDown(int vkCode)
