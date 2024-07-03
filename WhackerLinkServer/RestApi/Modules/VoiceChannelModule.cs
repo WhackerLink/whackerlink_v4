@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WhackerLinkCommonLib.Interfaces;
 
-namespace WhackerLinkServer.Models
+namespace WhackerLinkServer.RestApi.Modules
 {
     public class VoiceChannelModule : NancyModule
     {

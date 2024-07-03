@@ -1,7 +1,7 @@
 ﻿using Nancy;
 using WhackerLinkCommonLib.Interfaces;
 
-namespace WhackerLinkServer.Models
+namespace WhackerLinkServer.RestApi.Modules
 {
     public class AffiliationsModule : NancyModule
     {

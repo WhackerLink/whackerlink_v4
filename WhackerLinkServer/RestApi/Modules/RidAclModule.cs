@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkCommonLib.Models;
 
-namespace WhackerLinkServer.Models
+namespace WhackerLinkServer.RestApi.Modules
 {
     public class RidAclModule : NancyModule
     {
-        public RidAclModule(IMasterService masterService) : base ("/api/rid")
+        public RidAclModule(IMasterService masterService) : base("/api/rid")
         {
             Get("/query", _ =>
             {
