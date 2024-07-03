@@ -5,6 +5,12 @@ radioWide:
   serialNumber: "123ABC1234"
   model: 0
 
+#NOT FULLY READY
+ergonomicsWide:
+  keepOnTop: true
+  globalPttKeybind: true
+  pttKeyBind: "1"
+
 systems:
   - name: "System 1"
     address: "localhost"

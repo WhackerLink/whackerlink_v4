@@ -5,6 +5,7 @@ namespace WhackerLinkCommonLib.Models.Radio
     public class Codeplug
     {
         public RadioWideConfiguration RadioWide { get; set; }
+        public RadioEgroConfiguration ErgonomicsWide { get; set; }
         public List<System> Systems { get; set; }
         public List<Zone> Zones { get; set; }
 
@@ -15,6 +16,13 @@ namespace WhackerLinkCommonLib.Models.Radio
             public string RadioAlias { get; set; }
             public string SerialNumber { get; set; }
             public int Model { get; set; }
+        }
+
+        public class RadioEgroConfiguration
+        {
+            public bool KeepOnTop { get; set; }
+            public bool GlobalPttKeybind { get; set; }
+            public string PttKeyBind { get; set; }
         }
 
         public class System

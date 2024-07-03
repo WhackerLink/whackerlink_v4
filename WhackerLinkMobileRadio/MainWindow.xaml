@@ -49,5 +49,8 @@
         <Button Content="" Name="btn_SoftMenu4" HorizontalAlignment="Left" Margin="464,226,0,0" VerticalAlignment="Top" Height="36" Width="56" Click="btn_SoftMenu4_Click"/>
         <TextBox Name="txt_SoftMenu1" HorizontalAlignment="Left"  FontSize="17" FontFamily="serif" Background="Transparent" Foreground="White" BorderThickness="0" TextAlignment="Center" Margin="227,161,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="67" Height="19"/>
         <TextBox Name="txt_SoftMenu4" HorizontalAlignment="Left"  FontSize="17" FontFamily="serif" Background="Transparent" Foreground="White" BorderThickness="0" TextAlignment="Center" Margin="449,161,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="67" Height="19"/>
+        <Button Content="" Name="btn_Minimize" HorizontalAlignment="Left" Margin="927,35,0,0" VerticalAlignment="Top" Height="26" RenderTransformOrigin="0.5,0.5" Width="32" Click="btn_Minimize_Click">
+        </Button>
+        <Button Content="" Name="btn_FocusRadioToggle" HorizontalAlignment="Left" Margin="39,41,0,0" VerticalAlignment="Top" Width="32" Height="25" Click="btn_FocusRadioToggle_Click"/>
     </Grid>
 </Window>

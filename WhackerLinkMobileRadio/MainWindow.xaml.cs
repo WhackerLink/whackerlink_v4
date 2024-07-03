@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using NAudio.Wave;
@@ -52,9 +55,13 @@ namespace WhackerLinkMobileRadio
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
         private DispatcherTimer _reconnectTimer;
 
+        private static IntPtr _hookID = IntPtr.Zero;
+        private NativeMethods.LowLevelKeyboardProc _proc;
+
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
 
             this.MouseLeftButtonDown += (sender, e) => DragMove();
 
@@ -515,6 +522,9 @@ namespace WhackerLinkMobileRadio
 
             SetupSoftButtons();
 
+            _proc = HookCallback;
+            _hookID = SetHook(_proc);
+
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
         }
 
@@ -617,6 +627,98 @@ namespace WhackerLinkMobileRadio
                 ExitPageMenu();
             else
                 BeepGenerator.Bonk();
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_MOUSEACTIVATE = 0x0021;
+            if (msg == WM_MOUSEACTIVATE)
+            {
+                handled = true;
+                return new IntPtr(MA_NOACTIVATEANDEAT);
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            HwndSource.FromHwnd(hwnd)?.AddHook(new HwndSourceHook(WndProc));
+        }
+
+
+        private IntPtr SetHook(NativeMethods.LowLevelKeyboardProc proc)
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule)
+            {
+                return NativeMethods.SetWindowsHookEx(NativeMethods.WH_KEYBOARD_LL, proc, NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
+            }
+        }
+
+        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if (nCode >= 0)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
+                Console.WriteLine(vkCode);
+                if (wParam == (IntPtr)NativeMethods.WM_KEYDOWN)                                                                                                                                      
+                {
+                    OnGlobalKeyDown(vkCode);
+                }
+                else if (wParam == (IntPtr)NativeMethods.WM_KEYUP)
+                {
+                    OnGlobalKeyUp(vkCode);
+                }
+            }
+            return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam);
+        }
+
+        private void OnGlobalKeyDown(int vkCode)
+        {
+            if (vkCode == 84)
+            {
+                PTTButton_MouseDown(null, null);
+            }
+        }
+
+        private void OnGlobalKeyUp(int vkCode)
+        {
+            if (vkCode == 84)
+            {
+                PTTButton_MouseUp(null, null);
+            }
+        }
+
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOSIZE = 0x0001;
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const int MA_NOACTIVATEANDEAT = 4;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private void btn_Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void btn_FocusRadioToggle_Click(object sender, RoutedEventArgs e)
+        {
+/*            if (_isFocused)
+            {
+                IntPtr hwnd = new WindowInteropHelper(this).Handle;
+                SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                _isFocused = false;
+            }
+            else
+            {
+                this.Activate();
+                _isFocused = true;
+            }*/
         }
     }
 }
