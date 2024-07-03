@@ -17,9 +17,10 @@ public class Master : IMasterService
     private WebSocketServer server;
     private RidAclManager aclManager;
     private RestApiServer restServer;
-    private Timer aclReloadTimer;
     private AffiliationsManager affiliationsManager;
     private VoiceChannelManager voiceChannelManager;
+    private Timer aclReloadTimer;
+    private ILogger logger;
 
     public Master(Config.MasterConfig config)
     {
@@ -27,7 +28,10 @@ public class Master : IMasterService
         this.aclManager = new RidAclManager(config.RidAcl.Enabled);
         this.affiliationsManager = new AffiliationsManager();
         this.voiceChannelManager = new VoiceChannelManager();
+        this.logger = LoggerSetup.CreateLogger(config.Name);
     }
+
+    public ILogger Logger { get { return logger; } }
 
     public List<Affiliation> GetAffiliations()
     {
@@ -54,11 +58,11 @@ public class Master : IMasterService
         return aclManager.GetAclEnabled();
     }
 
-    public void Start()
+    public void Start(CancellationToken cancellationToken)
     {
         try
         {
-            Log.Information("Starting Master {Name}", config.Name);
+            logger.Information("Starting Master {Name}", config.Name);
 
             aclManager.Load(config.RidAcl.Path);
 
@@ -68,7 +72,7 @@ public class Master : IMasterService
             }
             else
             {
-                Log.Information("ACL Auto reload disabled");
+                logger.Information("ACL Auto reload disabled");
             }
 
             if (config.Rest.Enabled)
@@ -78,18 +82,23 @@ public class Master : IMasterService
             }
 
             server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
-            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager));
+            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, logger));
             server.Start();
 
-            Log.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
+            logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                Thread.Sleep(1000);
+            }
         }
         catch (IOException ex)
         {
-            Log.Error(ex, "IO Error");
+            logger.Error(ex, "IO Error");
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "An unhandled exception occurred.");
+            logger.Fatal(ex, "An unhandled exception occurred.");
         }
         finally
         {
@@ -102,11 +111,11 @@ public class Master : IMasterService
         try
         {
             aclManager.Load(config.RidAcl.Path);
-            Log.Information("Reloaded RID ACL entries from {Path}", config.RidAcl.Path);
+            logger.Information("Reloaded RID ACL entries from {Path}", config.RidAcl.Path);
         }
         catch (Exception ex)
         {
-            Log.Error("Error reloading RID ACL: {Message}", ex.Message);
+            logger.Error("Error reloading RID ACL: {Message}", ex.Message);
         }
     }
 }

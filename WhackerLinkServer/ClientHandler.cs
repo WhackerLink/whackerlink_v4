@@ -7,6 +7,7 @@ using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 using WhackerLinkServer.Managers;
+using Serilog;
 
 #nullable disable
 
@@ -18,13 +19,15 @@ namespace WhackerLinkServer
         private RidAclManager aclManager;
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
+        private ILogger logger;
 
-        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager, VoiceChannelManager voiceChannelManager)
+        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager, VoiceChannelManager voiceChannelManager, ILogger logger)
         {
             this.masterConfig = config;
             this.aclManager = aclManager;
             this.affiliationsManager = affiliationsManager;
             this.voiceChannelManager = voiceChannelManager;
+            this.logger = logger;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -58,17 +61,17 @@ namespace WhackerLinkServer
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                         break;
                     default:
-                        Program.logger.Warning("Unknown message type: {Type}", type);
+                        logger.Warning("Unknown message type: {Type}", type);
                         break;
                 }
             }
             catch (IOException ex)
             {
-                Program.logger.Error(ex, "IOException occurred while processing message.");
+                logger.Error(ex, "IOException occurred while processing message.");
             }
             catch (Exception ex)
             {
-                Program.logger.Error(ex, "An error occurred while processing message.");           
+                logger.Error(ex, "An error occurred while processing message.");           
             }
         }
 
@@ -86,28 +89,28 @@ namespace WhackerLinkServer
             foreach (var channel in channelsToRemove)
             {
                 voiceChannelManager.RemoveVoiceChannel(channel);
-                Program.logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
+                logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
             }
 
             affiliationsManager.RemoveAffiliationByClientId(clientId);
-            Program.logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
+            logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
         }
 
         protected override void OnError(ErrorEventArgs e)
         {
             base.OnError(e);
-            Program.logger.Error("WebSocket error: {Message}", e.Message);
+            logger.Error("WebSocket error: {Message}", e.Message);
         }
 
         protected override void OnOpen()
         {
             base.OnOpen();
-            // Program.logger.Information("WebSocket connection opened for client {ClientId}", ID);
+            // logger.Information("WebSocket connection opened for client {ClientId}", ID);
         }
 
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
 
             var response = new EMRG_ALRM_RSP
@@ -117,12 +120,12 @@ namespace WhackerLinkServer
             };
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
-            Program.logger.Information(response.ToString());
+            logger.Information(response.ToString());
         }
 
         private void HandleGroupAffiliationRequest(GRP_AFF_REQ request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
             var clientId = ID;
             Affiliation affiliation = new Affiliation(clientId, request.SrcId, request.DstId);
@@ -146,12 +149,12 @@ namespace WhackerLinkServer
             }
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
-            Program.logger.Information(response.ToString());
+            logger.Information(response.ToString());
         }
 
         private void HandleUnitRegistrationRequest(U_REG_REQ request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
             var response = new U_REG_RSP
             {
@@ -166,17 +169,17 @@ namespace WhackerLinkServer
             }
             else
             {
-                Program.logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
+                logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
                 response.Status = (int)ResponseType.REFUSE;
             }
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_REG_RSP, data = response }));
-            Program.logger.Information(response.ToString());
+            logger.Information(response.ToString());
         }
 
         private void HandleUnitDeRegistrationRequest(U_DE_REG_REQ request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
             var response = new U_DE_REG_RSP
             {
@@ -192,19 +195,19 @@ namespace WhackerLinkServer
             }
             else
             {
-                Program.logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
+                logger.Warning("RID ACL Rejection, {srcId}", request.SrcId);
                 response.Status = (int)ResponseType.FAIL;
             }
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_DE_REG_RSP, data = response }));
-            Program.logger.Information(response.ToString());
+            logger.Information(response.ToString());
 
             Context.WebSocket.Close();
         }
 
         private void HandleVoiceChannelRequest(GRP_VCH_REQ request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
             var response = new GRP_VCH_RSP
             {
@@ -227,20 +230,20 @@ namespace WhackerLinkServer
                 response.Status = (int)ResponseType.GRANT;
 
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
-                Program.logger.Information(response.ToString());
+                logger.Information(response.ToString());
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
 
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
-                Program.logger.Information(response.ToString());
+                logger.Information(response.ToString());
             }
         }
 
         private void HandleVoiceChannelRelease(GRP_VCH_RLS request)
         {
-            Program.logger.Information(request.ToString());
+            logger.Information(request.ToString());
 
             GRP_VCH_RLS response = new GRP_VCH_RLS
             {
@@ -253,11 +256,11 @@ namespace WhackerLinkServer
             {
                 voiceChannelManager.RemoveVoiceChannel(request.Channel);
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
-                Program.logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
+                logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
             }
             else
             {
-                Program.logger.Warning("Voice channel {Channel} not found to release", request.Channel);
+                logger.Warning("Voice channel {Channel} not found to release", request.Channel);
             }
         }
 

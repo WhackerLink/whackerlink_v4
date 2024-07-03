@@ -12,16 +12,16 @@ namespace WhackerLinkServer
     {
         internal static Config config;
         public static ILogger logger;
+        private static List<Task> masterTasks = new List<Task>();
+        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         static async Task Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
+            logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
                 .WriteTo.File("logs/whackerlink-.log", rollingInterval: RollingInterval.Day, outputTemplate: "{Level:u1}: {Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{NewLine}{Exception}")
                 .CreateLogger();
-
-            logger = Log.Logger;
 
             try
             {
@@ -34,30 +34,34 @@ namespace WhackerLinkServer
                 config = LoadConfig(configPath);
                 if (config == null)
                 {
-                    Log.Error("Failed to load config.");
+                    logger.Error("Failed to load config.");
                     return;
                 }
 
-                Log.Information("Initializing Master instances");
-
-                List<Master> masters = new List<Master>();
+                logger.Information("Initializing Master instances");
 
                 foreach (Config.MasterConfig masterConfig in config.Masters)
                 {
                     Master master = new Master(masterConfig);
-                    masters.Add(master);
-                    master.Start();
+                    masterTasks.Add(Task.Run(() => master.Start(cancellationTokenSource.Token)));
                 }
 
-                await Task.Delay(-1);
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    e.Cancel = true;
+                    logger.Information("Shutting down...");
+                    Shutdown();
+                };
+
+                await Task.WhenAll(masterTasks);
             }
             catch (IOException ex)
             {
-                Log.Error(ex, "IO Error");
+                logger.Error(ex, "IO Error");
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "An unhandled exception occurred.");
+                logger.Fatal(ex, "An unhandled exception occurred.");
             }
             finally
             {
@@ -80,6 +84,23 @@ namespace WhackerLinkServer
             {
                 Log.Error("Error loading config: {Message}", ex.Message);
                 return null;
+            }
+        }
+
+        private static void Shutdown()
+        {
+            cancellationTokenSource.Cancel();
+
+            try
+            {
+                Task.WhenAll(masterTasks).Wait();
+            }
+            catch (AggregateException ex)
+            {
+                foreach (var innerException in ex.InnerExceptions)
+                {
+                    logger.Error(innerException, "Error during shutdown");
+                }
             }
         }
     }

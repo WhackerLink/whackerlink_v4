@@ -8,11 +8,13 @@ namespace WhackerLinkServer
     public class RestApiServer
     {
         private readonly NancyHost _nancyHost;
+        private IMasterService _masterService;
         private string url;
 
         public RestApiServer(IMasterService masterService, string address, int port)
         {
             url = $"http://{address}:{port}";
+            _masterService = masterService;
 
             var config = new HostConfiguration { UrlReservations = new UrlReservations { CreateAutomatically = true } };
             var bootstrapper = new CustomBootstrapper(masterService);
@@ -22,13 +24,13 @@ namespace WhackerLinkServer
         public void Start()
         {
             _nancyHost.Start();
-            Console.WriteLine($"REST server started at {url}");
+            _masterService.Logger.Information($"REST server started at {url}");
         }
 
         public void Stop()
         {
             _nancyHost?.Stop();
-            Console.WriteLine($"REST server ${url} stopped.");
+            _masterService.Logger.Information($"REST server ${url} stopped.");
         }
     }
     public class CustomBootstrapper : DefaultNancyBootstrapper
