@@ -17,10 +17,18 @@ namespace WhackerLinkServer.Models
             public string Name { get; set;}
             public string Address { get; set; }
             public int Port { get; set; }
+            public RestConfig Rest { get; set; }
             public string TgAclPath { get; set; }
             public string RidAclPath { get; set; }
             public List<string> ControlChannels { get; set; }
             public List<string> VoiceChannels { get; set; }
+        }
+
+        public class RestConfig
+        {
+            public bool Enabled { get; set; }
+            public string Address { get; set; }
+            public int Port { get; set; }
         }
     }
 }

@@ -3,11 +3,28 @@ system:
   debug: false
 
 masters:
-  - name: "Dev Master" # Textual Alias
-    port: 3000 # Port for the master to bind to
-    address: 127.0.0.1 # Address for the master to bind to
-    ridAclPath: "rid_acl.yml" # Path to radio id access list
-    controlChannels: [] # Not used right now
-    voiceChannels: # List of available voice channels. If voice channels run out, users will be denied grants.
+    # Textual Alias
+  - name: "Dev Master"
+    # Port for the master to bind to
+    port: 3000
+    # Address for the master to bind to
+    address: 127.0.0.1
+
+    # RESTful interface for internal information such as the affiliation table.
+    rest:
+        # Enable the REST server
+        enabled: true
+        # Address to bind REST to
+        address: localhost
+        # Port to bind REST to
+        port: 3002
+
+    # Path to radio id access list
+    ridAclPath: "rid_acl.yml"
+
+    # Not used right now
+    controlChannels: []
+    # List of available voice channels. If voice channels run out, users will be denied grants.
+    voiceChannels:
       - "853.9625"
       - "855.9625"

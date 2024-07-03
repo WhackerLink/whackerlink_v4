@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using WhackerLinkServer.Models;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
+using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 #nullable disable
 
@@ -16,12 +17,13 @@ namespace WhackerLinkServer
         private Config.MasterConfig masterConfig;
         private RidAclManager aclManager;
 
-        private AffiliationsManager affiliationsManager = new AffiliationsManager();
+        private AffiliationsManager affiliationsManager;
 
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager)
         {
             this.masterConfig = config;
             this.aclManager = aclManager;
+            this.affiliationsManager = AffiliationsManager.Instance;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -88,6 +90,18 @@ namespace WhackerLinkServer
 
             affiliationsManager.RemoveAffiliationByClientId(clientId);
             Program.logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
+        }
+
+        protected override void OnError(ErrorEventArgs e)
+        {
+            base.OnError(e);
+            Program.logger.Error("WebSocket error: {Message}", e.Message);
+        }
+
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            // Program.logger.Information("WebSocket connection opened for client {ClientId}", ID);
         }
 
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)

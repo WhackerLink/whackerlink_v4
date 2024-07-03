@@ -1,0 +1,7 @@
+entries:
+  - rid: "123456"
+    allowed: true
+    alias: ""
+  - rid: "123"
+    allowed: true
+    alias: ""

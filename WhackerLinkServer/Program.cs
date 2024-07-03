@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -41,7 +42,7 @@ namespace WhackerLinkServer
 
                 foreach (Config.MasterConfig masterConfig in config.Masters)
                 {
-                    Master master = new Master(masterConfig);
+                    IMasterService master = new Master(masterConfig);
                     master.Start();
                 }
 
