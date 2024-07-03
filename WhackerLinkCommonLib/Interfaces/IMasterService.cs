@@ -8,6 +8,7 @@ namespace WhackerLinkCommonLib.Interfaces
     {
         List<Affiliation> GetAffiliations();
         List<VoiceChannel> GetVoiceChannels();
+        List<string> GetAvailableVoiceChannels();
         void Start();
     }
 }

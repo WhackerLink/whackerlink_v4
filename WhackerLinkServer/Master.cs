@@ -2,21 +2,32 @@
 using WebSocketSharp.Server;
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
-using WhackerLinkServer;
 using WhackerLinkServer.Managers;
 using WhackerLinkCommonLib.Models;
+using System;
+using WhackerLinkServer;
 
 #nullable disable
 
 public class Master : IMasterService
 {
+    private static readonly Lazy<Master> lazyInstance = new Lazy<Master>(() => new Master());
+
+    public static Master Instance => lazyInstance.Value;
+
     private Config.MasterConfig config;
     private WebSocketServer server;
     private RidAclManager aclManager = new RidAclManager();
     private RestApiServer restServer;
 
-    public Master(Config.MasterConfig config)
+    private Master() { }
+
+    public void Initialize(Config.MasterConfig config)
     {
+        if (this.config != null)
+        {
+            throw new InvalidOperationException("Master is already initialized.");
+        }
         this.config = config;
     }
 
@@ -28,6 +39,11 @@ public class Master : IMasterService
     public List<VoiceChannel> GetVoiceChannels()
     {
         return VoiceChannelManager.Instance.GetVoiceChannels();
+    }
+
+    public List<string> GetAvailableVoiceChannels()
+    {
+        return config.VoiceChannels;
     }
 
     public void Start()

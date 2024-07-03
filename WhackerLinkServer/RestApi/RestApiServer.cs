@@ -1,5 +1,6 @@
 ﻿using Nancy;
 using Nancy.Hosting.Self;
+using Nancy.TinyIoc;
 using WhackerLinkCommonLib.Interfaces;
 
 namespace WhackerLinkServer
@@ -14,7 +15,8 @@ namespace WhackerLinkServer
             url = $"http://{address}:{port}";
 
             var config = new HostConfiguration { UrlReservations = new UrlReservations { CreateAutomatically = true } };
-            _nancyHost = new NancyHost(new Uri(url), new DefaultNancyBootstrapper(), config);
+            var bootstrapper = new CustomBootstrapper(masterService);
+            _nancyHost = new NancyHost(new Uri(url), bootstrapper, config);
         }
 
         public void Start()
@@ -27,6 +29,21 @@ namespace WhackerLinkServer
         {
             _nancyHost?.Stop();
             Console.WriteLine($"REST server ${url} stopped.");
+        }
+    }
+    public class CustomBootstrapper : DefaultNancyBootstrapper
+    {
+        private readonly IMasterService _masterService;
+
+        public CustomBootstrapper(IMasterService masterService)
+        {
+            _masterService = masterService;
+        }
+
+        protected override void ConfigureApplicationContainer(TinyIoCContainer container)
+        {
+            base.ConfigureApplicationContainer(container);
+            container.Register(_masterService);
         }
     }
 }

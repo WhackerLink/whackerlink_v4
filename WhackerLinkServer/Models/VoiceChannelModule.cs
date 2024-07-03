@@ -14,8 +14,16 @@ namespace WhackerLinkServer.Models
         {
             Get("/api/voiceChannel/query", _ =>
             {
+                var availableVoiceChannels = masterService.GetAvailableVoiceChannels();
                 var voiceChannels = masterService.GetVoiceChannels();
-                return Response.AsJson(voiceChannels);
+
+                var response = new
+                {
+                    AvailableVoiceChannels = availableVoiceChannels,
+                    ActiveVoiceChannels = voiceChannels
+                };
+
+                return Response.AsJson(response);
             });
         }
     }

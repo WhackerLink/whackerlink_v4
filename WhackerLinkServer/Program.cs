@@ -42,7 +42,8 @@ namespace WhackerLinkServer
 
                 foreach (Config.MasterConfig masterConfig in config.Masters)
                 {
-                    IMasterService master = new Master(masterConfig);
+                    Master master = Master.Instance;
+                    master.Initialize(masterConfig);
                     master.Start();
                 }
 
