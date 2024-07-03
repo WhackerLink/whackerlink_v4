@@ -19,12 +19,18 @@ masters:
         # Port to bind REST to
         port: 3002
 
-    # Path to radio id access list
-    ridAclPath: "rid_acl.yml"
-
     # Not used right now
     controlChannels: []
     # List of available voice channels. If voice channels run out, users will be denied grants.
     voiceChannels:
       - "853.9625"
       - "855.9625"
+
+    # Radio ID Access List Configuration
+    ridAcl:
+        # Enable ACL
+        enabled: true
+        # Path to ACL File
+        path: "rid_acl.yml"
+        # Not finished yet
+        reloadInterval: 0

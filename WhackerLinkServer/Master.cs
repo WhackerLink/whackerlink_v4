@@ -17,8 +17,9 @@ public class Master : IMasterService
 
     private Config.MasterConfig config;
     private WebSocketServer server;
-    private RidAclManager aclManager = new RidAclManager();
+    private RidAclManager aclManager;
     private RestApiServer restServer;
+    private Thread aclReloadThread;
 
     private Master() { }
 
@@ -29,6 +30,7 @@ public class Master : IMasterService
             throw new InvalidOperationException("Master is already initialized.");
         }
         this.config = config;
+        this.aclManager = new RidAclManager(config.RidAcl.Enabled);
     }
 
     public List<Affiliation> GetAffiliations()
@@ -52,7 +54,7 @@ public class Master : IMasterService
         {
             Log.Information("Starting Master {Name}", config.Name);
 
-            aclManager.Load(config.RidAclPath);
+            aclManager.Load(config.RidAcl.Path);
 
             if (config.Rest.Enabled)
             {
