@@ -6,6 +6,7 @@ using WhackerLinkServer.Models;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
+using WhackerLinkServer.Managers;
 
 #nullable disable
 
@@ -13,17 +14,17 @@ namespace WhackerLinkServer
 {
     public class ClientHandler : WebSocketBehavior
     {
-        internal static Dictionary<string, VoiceChannel> activeVoiceChannels = new Dictionary<string, VoiceChannel>();
         private Config.MasterConfig masterConfig;
         private RidAclManager aclManager;
-
         private AffiliationsManager affiliationsManager;
+        private VoiceChannelManager voiceChannelManager;
 
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager)
         {
             this.masterConfig = config;
             this.aclManager = aclManager;
             this.affiliationsManager = AffiliationsManager.Instance;
+            this.voiceChannelManager = VoiceChannelManager.Instance;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -77,14 +78,14 @@ namespace WhackerLinkServer
 
             var clientId = ID;
 
-            var channelsToRemove = activeVoiceChannels.Values
+            var channelsToRemove = voiceChannelManager.VoiceChannels
                 .Where(vc => vc.ClientId == clientId)
                 .Select(vc => vc.Frequency)
                 .ToList();
 
             foreach (var channel in channelsToRemove)
             {
-                activeVoiceChannels.Remove(channel);
+                voiceChannelManager.RemoveVoiceChannel(channel);
                 Program.logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
             }
 
@@ -214,13 +215,13 @@ namespace WhackerLinkServer
             var availableChannel = GetAvailableVoiceChannel();
             if (availableChannel != null)
             {
-                activeVoiceChannels[availableChannel] = new VoiceChannel
+                voiceChannelManager.AddVoiceChannel(new VoiceChannel
                 {
                     DstId = request.DstId,
                     SrcId = request.SrcId,
                     Frequency = availableChannel,
                     ClientId = ID
-                };
+                });
 
                 response.Channel = availableChannel;
                 response.Status = (int)ResponseType.GRANT;
@@ -248,9 +249,9 @@ namespace WhackerLinkServer
                 Channel = request.Channel
             };
 
-            if (activeVoiceChannels.TryGetValue(request.Channel, out var channel))
+            if (voiceChannelManager.IsVoiceChannelActive(new VoiceChannel { Frequency = request.Channel }))
             {
-                activeVoiceChannels.Remove(request.Channel);
+                voiceChannelManager.RemoveVoiceChannel(request.Channel);
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 Program.logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
             }
@@ -274,7 +275,7 @@ namespace WhackerLinkServer
         {
             foreach (var channel in masterConfig.VoiceChannels)
             {
-                if (!activeVoiceChannels.ContainsKey(channel))
+                if (!voiceChannelManager.IsVoiceChannelActive(new VoiceChannel { Frequency = channel }))
                 {
                     return channel;
                 }

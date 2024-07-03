@@ -3,6 +3,8 @@ using WebSocketSharp.Server;
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using WhackerLinkServer;
+using WhackerLinkServer.Managers;
+using WhackerLinkCommonLib.Models;
 
 #nullable disable
 
@@ -21,6 +23,11 @@ public class Master : IMasterService
     public List<Affiliation> GetAffiliations()
     {
         return AffiliationsManager.Instance.GetAffiliations();
+    }
+
+    public List<VoiceChannel> GetVoiceChannels()
+    {
+        return VoiceChannelManager.Instance.GetVoiceChannels();
     }
 
     public void Start()
