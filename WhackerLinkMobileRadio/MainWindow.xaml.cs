@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -46,6 +47,7 @@ namespace WhackerLinkMobileRadio
         private string _currentChannel;
         private bool _isRecording = false;
         private bool _isReceiving = false;
+        private bool _isInMenu = false;
 
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
         private DispatcherTimer _reconnectTimer;
@@ -53,7 +55,9 @@ namespace WhackerLinkMobileRadio
         public MainWindow()
         {
             InitializeComponent();
+
             this.MouseLeftButtonDown += (sender, e) => DragMove();
+
             Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
             _webSocketHandler = new WebSocketHandler();
@@ -390,26 +394,66 @@ namespace WhackerLinkMobileRadio
             }
         }
 
-        private void ClearFields()
+        private void EnterPageMenu()
         {
+            _isInMenu = true;
+            ClearFields(true);
+
+            txt_SoftMenu1.Text = "Send";
+            txt_SoftMenu4.Text = "Exit";
+            
+            Dispatcher.Invoke(() => SetLine1Text("Enter ID", true));
+            Dispatcher.Invoke(() => SetLine2Text(string.Empty, true));
+            Dispatcher.Invoke(() => SetLine3Text(string.Empty, true));
+
+            txt_Line2.IsReadOnly = false;
+        }
+
+        private void ExitPageMenu()
+        {
+            ClearFields(true);
+            txt_Line2.IsReadOnly = true;
+            _isInMenu = false;
+            SetupSoftButtons();
+            _radioDisplayUpdater.UpdateDisplay(_codeplug, 0, 0, true);
+        }
+
+        private void SetupSoftButtons()
+        {
+            txt_SoftMenu1.Text = "PAGE";
+            txt_SoftMenu4.Text = string.Empty;
+        }
+
+        private void ClearFields(bool forMenu = false)
+        {
+            if (_isInMenu && !forMenu) return;
+
             SetLine1Text("");
             SetLine2Text("");
             SetLine3Text("");
-            SetRssiSource("");
+
+            if (!forMenu)
+                SetRssiSource("");
         }
 
-        public void SetLine1Text(string text)
+        public void SetLine1Text(string text, bool forMenu = false)
         {
+            if (_isInMenu && !forMenu) return;
+
             txt_Line1.Text = text;
         }
 
-        public void SetLine2Text(string text)
+        public void SetLine2Text(string text, bool forMenu = false)
         {
+            if (_isInMenu && !forMenu) return;
+
             txt_Line2.Text = text;
         }
 
-        public void SetLine3Text(string text)
+        public void SetLine3Text(string text, bool forMenu = false)
         {
+            if (_isInMenu && !forMenu) return;
+
             txt_Line3.Text = text;
         }
 
@@ -469,6 +513,8 @@ namespace WhackerLinkMobileRadio
             _currentZoneIndex = 0;
             _currentChannelIndex = 0;
 
+            SetupSoftButtons();
+
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
         }
 
@@ -482,6 +528,8 @@ namespace WhackerLinkMobileRadio
         {
             SendUnitDeRegistrationRequest();
             ClearFields();
+            txt_SoftMenu1.Text = string.Empty;
+            txt_SoftMenu4.Text = string.Empty;
             _isRegistered = false;
         }
 
@@ -553,6 +601,22 @@ namespace WhackerLinkMobileRadio
                 SendUnitRegistrationRequest();
                 SendGroupAffiliationRequest();
             }
+        }
+
+        private void btn_SoftMenu1_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isInMenu)
+                EnterPageMenu();
+            //else
+                //SendUnitToUnitPage();
+        }
+
+        private void btn_SoftMenu4_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isInMenu)
+                ExitPageMenu();
+            else
+                BeepGenerator.Bonk();
         }
     }
 }

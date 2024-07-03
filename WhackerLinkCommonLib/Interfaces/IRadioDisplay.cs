@@ -4,9 +4,9 @@ namespace WhackerLinkCommonLib.Interfaces
 {
     public interface IRadioDisplay
     {
-        void SetLine1Text(string text);
-        void SetLine2Text(string text);
-        void SetLine3Text(string text);
+        void SetLine1Text(string text, bool forMenu = false);
+        void SetLine2Text(string text, bool forMenu = false);
+        void SetLine3Text(string text, bool forMenu = false);
         void SetRssiSource(string name);
         void MasterConnection(Codeplug.System system);
         void KillMasterConnection();
