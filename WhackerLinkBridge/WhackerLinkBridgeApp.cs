@@ -16,16 +16,16 @@ namespace WhackerLinkBridge
 {
     public class WhackerLinkBridgeApp
     {
-        private readonly Config _config;
-        private readonly IWebSocketHandler _webSocketHandler;
-        private readonly UdpAudioHandler _udpAudioHandler;
+        internal readonly Config _config;
+        internal readonly IWebSocketHandler _webSocketHandler;
+        internal readonly UdpAudioHandler _udpAudioHandler;
 
-        private VoiceChannel currentVoiceChannel;
-        private bool isGranted;
-        private bool _callInProgress;
-        private bool _txInProgress;
-        private System.Timers.Timer _rxHangTimer;
-        private System.Timers.Timer _txHangTimer;
+        internal VoiceChannel currentVoiceChannel;
+        internal bool isGranted;
+        internal bool _callInProgress;
+        internal bool _txInProgress;
+        internal System.Timers.Timer _rxHangTimer;
+        internal System.Timers.Timer _txHangTimer;
 
         public WhackerLinkBridgeApp(string configPath)
         {
@@ -55,7 +55,7 @@ namespace WhackerLinkBridge
             Task.Run(() => ListenToUdpAudio());
         }
 
-        private void HandleVoiceChannelResponse(GRP_VCH_RSP response)
+        internal void HandleVoiceChannelResponse(GRP_VCH_RSP response)
         {
             if (response.Status == (int)ResponseType.GRANT)
             {
@@ -74,7 +74,7 @@ namespace WhackerLinkBridge
             }
         }
 
-        private void SendVoiceChannelRequest(string srcId, string dstId)
+        internal void SendVoiceChannelRequest(string srcId, string dstId)
         {
             var request = new
             {
@@ -90,7 +90,7 @@ namespace WhackerLinkBridge
             _webSocketHandler.SendMessage(request);
         }
 
-        private void SendVoiceChannelRelease(VoiceChannel voiceChannel)
+        internal void SendVoiceChannelRelease(VoiceChannel voiceChannel)
         {
             var request = new
             {
@@ -106,83 +106,22 @@ namespace WhackerLinkBridge
             _webSocketHandler.SendMessage(request);
         }
 
-        private async Task ListenToUdpAudio()
+        internal async Task ListenToUdpAudio()
         {
-            const int chunkSize = 320;
-            const int originalPcmLength = 1600;
-            List<byte> audioBuffer = new List<byte>();
-
-            while (true)
+            switch (_config.system.Mode)
             {
-                var audioData = await _udpAudioHandler.ReceiveAudio();
-                if (audioData.Length < 12)
-                {
-                    Console.WriteLine("Invalid audio data received.");
-                    continue;
-                }
-
-                var lengthBytes = audioData.Take(4).ToArray();
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(lengthBytes);
-                }
-                var pcmLength = BitConverter.ToInt32(lengthBytes, 0);
-
-                if (pcmLength != chunkSize || pcmLength + 12 != audioData.Length)
-                {
-                    Console.WriteLine($"Mismatch in expected lengths. PCM Length: {pcmLength}, Audio Data Length: {audioData.Length}");
-                    continue;
-                }
-
-                var pcm = new byte[pcmLength];
-                Buffer.BlockCopy(audioData, 4, pcm, 0, pcmLength);
-
-                var srcId = BitConverter.ToUInt32(audioData, pcmLength + 4);
-                var dstId = BitConverter.ToUInt32(audioData, pcmLength + 8);
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    dstId = BitConverter.ToUInt32(audioData.Skip(pcmLength + 4).Take(4).Reverse().ToArray(), 0);
-                    srcId = BitConverter.ToUInt32(audioData.Skip(pcmLength + 8).Take(4).Reverse().ToArray(), 0);
-                }
-
-                audioBuffer.AddRange(pcm);
-
-                if (audioBuffer.Count >= originalPcmLength)
-                {
-                    var fullPcmData = audioBuffer.Take(originalPcmLength).ToArray();
-                    audioBuffer.RemoveRange(0, originalPcmLength);
-
-                    Console.WriteLine($"RX UDP CALL, srcId: {srcId}, dstId: {dstId}");
-
-                    if (!_callInProgress)
-                    {
-                        SendVoiceChannelRequest(srcId.ToString(), dstId.ToString());
-                        Console.WriteLine("Call Start Detected");
-                        _callInProgress = true;
-                    }
-
-                    if (isGranted)
-                    {
-                        _webSocketHandler.SendMessage(new
-                        {
-                            type = (int)PacketType.AUDIO_DATA,
-                            data = fullPcmData,
-                            voiceChannel = currentVoiceChannel
-                        });
-                    }
-                    else
-                    {
-                        Console.WriteLine("Voice channel not granted; skipping audio");
-                    }
-
-                    _rxHangTimer.Stop();
-                    _rxHangTimer.Start();
-                }
+                case BridgeModes.DVM:
+                    await DvmUtils.HandleInboundDvm(this);
+                    break;
+                case BridgeModes.ALLSTARLINK:
+                case BridgeModes.NONE:
+                default:
+                    Console.WriteLine("Current set mode is not support and will not be handled");
+                    break;
             }
         }
 
-        private void OnRxHangTimeElapsed(object sender, ElapsedEventArgs e)
+        internal void OnRxHangTimeElapsed(object sender, ElapsedEventArgs e)
         {
             if (_callInProgress)
             {
@@ -193,67 +132,22 @@ namespace WhackerLinkBridge
             }
         }
 
-        private async void HandleWebSocketAudioData(byte[] audioData, VoiceChannel voiceChannel)
+        internal async void HandleWebSocketAudioData(byte[] audioData, VoiceChannel voiceChannel)
         {
-            try
+            switch (_config.system.Mode)
             {
-                if (_callInProgress) return;
-
-                if (voiceChannel.DstId != _config.system.dstId)
-                    return;
-
-                int originalPcmLength = 1600;
-                int expectedPcmLength = 320;
-
-                if (audioData.Length != originalPcmLength)
-                {
-                    Console.WriteLine($"Invalid PCM length: {audioData.Length}, expected: {originalPcmLength}");
-                    return;
-                }
-
-                if (!_txInProgress)
-                {
-                    Console.WriteLine("TX Call Start Detected");
-                    _txInProgress = true;
-                }
-
-                for (int offset = 0; offset < originalPcmLength; offset += expectedPcmLength)
-                {
-                    byte[] chunk = new byte[expectedPcmLength];
-                    Buffer.BlockCopy(audioData, offset, chunk, 0, expectedPcmLength);
-
-                    byte[] buffer = new byte[expectedPcmLength + 12];
-                    byte[] lengthBytes = BitConverter.GetBytes(expectedPcmLength);
-                    byte[] srcIdBytes = BitConverter.GetBytes(Convert.ToUInt32(voiceChannel.SrcId));
-                    byte[] dstIdBytes = BitConverter.GetBytes(Convert.ToUInt32(voiceChannel.DstId));
-
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(lengthBytes);
-                        Array.Reverse(srcIdBytes);
-                        Array.Reverse(dstIdBytes);
-                    }
-
-                    Buffer.BlockCopy(lengthBytes, 0, buffer, 0, 4);
-                    Buffer.BlockCopy(chunk, 0, buffer, 4, expectedPcmLength);
-                    Buffer.BlockCopy(dstIdBytes, 0, buffer, expectedPcmLength + 4, 4);
-                    Buffer.BlockCopy(srcIdBytes, 0, buffer, expectedPcmLength + 8, 4);
-
-                    Console.WriteLine($"TX UDP CALL, srcId: {voiceChannel.SrcId}, dstId: {voiceChannel.DstId}");
-
-                    await _udpAudioHandler.SendAudio(buffer);
-                }
-
-                _txHangTimer.Stop();
-                _txHangTimer.Start();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in HandleWebSocketAudioData: {ex.Message}");
+                case BridgeModes.DVM:
+                    await DvmUtils.SendToDvm(this, audioData, voiceChannel);
+                    break;
+                case BridgeModes.ALLSTARLINK:
+                case BridgeModes.NONE:
+                default:
+                    Console.WriteLine("Current set mode is not support and will not be handled");
+                    break;
             }
         }
 
-        private void OnTxHangTimeElapsed(object sender, ElapsedEventArgs e)
+        internal void OnTxHangTimeElapsed(object sender, ElapsedEventArgs e)
         {
             if (_txInProgress)
             {
