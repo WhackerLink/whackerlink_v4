@@ -57,6 +57,9 @@ namespace WhackerLinkServer
                     case (int)PacketType.EMRG_ALRM_REQ:
                         HandleEmergencyAlarmRequest(data["data"].ToObject<EMRG_ALRM_REQ>());
                         break;
+                    case (int)PacketType.CALL_ALRT_REQ:
+                        HandleCallAlertRequest(data["data"].ToObject<CALL_ALRT_REQ>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
                         break;
@@ -120,6 +123,20 @@ namespace WhackerLinkServer
             };
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
+            logger.Information(response.ToString());
+        }
+
+        private void HandleCallAlertRequest(CALL_ALRT_REQ request)
+        {
+            logger.Information(request.ToString());
+            
+            var response = new CALL_ALRT
+            {
+                SrcId = request.SrcId,
+                DstId = request.DstId
+            };
+
+            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
             logger.Information(response.ToString());
         }
 

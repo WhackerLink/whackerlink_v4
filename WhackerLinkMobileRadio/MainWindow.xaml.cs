@@ -76,6 +76,7 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.OnVoiceChannelResponse += HandleVoiceChannelResponse;
             _webSocketHandler.OnVoiceChannelRelease += HandleVoiceChannelRelease;
             _webSocketHandler.OnEmergencyAlarmResponse += HandleEmergencyAlarmResponse;
+            _webSocketHandler.OnCallAlert += HandleCallAlert;
             _webSocketHandler.OnAudioData += PlayAudio;
             _webSocketHandler.OnOpen += HandleConnectionOpen;
             _webSocketHandler.OnClose += HandleConnectionClose;
@@ -371,6 +372,11 @@ namespace WhackerLinkMobileRadio
         private void HandleEmergencyAlarmResponse(EMRG_ALRM_RSP response)
         {
             Dispatcher.Invoke(() => SetLine3Text($"EM: {response.SrcId}"));
+        }
+
+        private void HandleCallAlert(CALL_ALRT response)
+        {
+            Dispatcher.Invoke(() => SetLine3Text($"Page rcv: {response.SrcId}"));
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
