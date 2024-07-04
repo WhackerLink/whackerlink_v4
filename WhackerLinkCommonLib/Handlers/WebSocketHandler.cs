@@ -40,6 +40,9 @@ namespace WhackerLinkCommonLib.Handlers
                     case (int)PacketType.GRP_VCH_RSP:
                         OnVoiceChannelResponse?.Invoke(data["data"].ToObject<GRP_VCH_RSP>());
                         break;
+                    case (int)PacketType.AFF_UPDATE:
+                        OnAffiliationUpdate?.Invoke(data["data"].ToObject<AFF_UPDATE>());
+                        break;
                     case (int)PacketType.GRP_VCH_RLS:
                         OnVoiceChannelRelease?.Invoke(data["data"].ToObject<GRP_VCH_RLS>());
                         break;
@@ -70,6 +73,7 @@ namespace WhackerLinkCommonLib.Handlers
         public event Action<U_REG_RSP> OnUnitRegistrationResponse;
         public event Action<U_DE_REG_RSP> OnUnitDeRegistrationResponse;
         public event Action<GRP_AFF_RSP> OnGroupAffiliationResponse;
+        public event Action<AFF_UPDATE> OnAffiliationUpdate;
         public event Action<GRP_VCH_RSP> OnVoiceChannelResponse;
         public event Action<GRP_VCH_RLS> OnVoiceChannelRelease;
         public event Action<EMRG_ALRM_RSP> OnEmergencyAlarmResponse;

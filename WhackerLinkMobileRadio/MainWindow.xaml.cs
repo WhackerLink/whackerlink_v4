@@ -629,7 +629,7 @@ namespace WhackerLinkMobileRadio
 
         private void ReconnectTimer_Tick(object sender, EventArgs e)
         {
-            if (!_webSocketHandler.IsConnected && _currentSystem != null)
+            if (!_webSocketHandler.IsConnected && _currentSystem != null && _powerOn)
             {
                 KillMasterConnection();
                 MasterConnection(_currentSystem);
@@ -682,28 +682,37 @@ namespace WhackerLinkMobileRadio
                 return NativeMethods.SetWindowsHookEx(NativeMethods.WH_KEYBOARD_LL, proc, NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
             }
         }
-
+                
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0)
-            {
-                int vkCode = Marshal.ReadInt32(lParam);
-                Console.WriteLine(vkCode);
-                if (wParam == (IntPtr)NativeMethods.WM_KEYDOWN)                                                                                                                                      
+            try
+            {       
+                if (nCode >= 0)
                 {
-                    OnGlobalKeyDown(vkCode);
-                }
-                else if (wParam == (IntPtr)NativeMethods.WM_KEYUP)
-                {
-                    OnGlobalKeyUp(vkCode);
+                    int vkCode = Marshal.ReadInt32(lParam);
+                    Console.WriteLine(vkCode);             
+
+                    if (wParam == (IntPtr)NativeMethods.WM_KEYDOWN)    
+                    {
+                        OnGlobalKeyDown(vkCode);
+                    }
+                    else if (wParam == (IntPtr)NativeMethods.WM_KEYUP)
+                    {
+                        OnGlobalKeyUp(vkCode);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
             return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam); // TODO: Maybe a crash issue to look at
         }
 
         private void OnGlobalKeyDown(int vkCode)
         {
-            if (vkCode == 84)
+            if (vkCode == 33)
             {
                 PTTButton_MouseDown(null, null);
             }
@@ -711,7 +720,7 @@ namespace WhackerLinkMobileRadio
 
         private void OnGlobalKeyUp(int vkCode)
         {
-            if (vkCode == 84)
+            if (vkCode == 33)
             {
                 PTTButton_MouseUp(null, null);
             }

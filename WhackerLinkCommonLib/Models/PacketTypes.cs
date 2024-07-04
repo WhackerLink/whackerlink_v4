@@ -12,6 +12,7 @@ namespace WhackerLinkCommonLib.Models
             AUDIO_DATA,
             GRP_AFF_REQ,
             GRP_AFF_RSP,
+            AFF_UPDATE,
             GRP_VCH_REQ,
             GRP_VCH_RLS,
             GRP_VCH_RSP,

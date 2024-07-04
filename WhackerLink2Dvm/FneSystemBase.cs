@@ -26,6 +26,7 @@ using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Utils;
 using Nancy;
+using WhackerLinkServer.Models;
 
 namespace WhackerLink2Dvm
 {
@@ -121,7 +122,6 @@ namespace WhackerLink2Dvm
         private IWebSocketHandler webSocketHandler;
 
         private VoiceChannel voiceChannel;
-        Dictionary<uint, uint> affiliations = new Dictionary<uint, uint>();
 
         /*
         ** Methods
@@ -139,6 +139,8 @@ namespace WhackerLink2Dvm
 
             webSocketHandler = new WebSocketHandler();
             webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
+            webSocketHandler.OnAffiliationUpdate += WhackerLinkAffiliationUpdate;
+            webSocketHandler.OnUnitDeRegistrationResponse += WhackerLinkUniteDeRegistration;
             webSocketHandler.OnAudioData += WhackerLinkDataReceived;
             webSocketHandler.OnVoiceChannelResponse += WhackerLinkVoiceChannelResponse;
             webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
@@ -221,11 +223,22 @@ namespace WhackerLink2Dvm
             netLDU2 = new byte[9 * 25];
         }
 
+        internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
+        {
+            foreach (Affiliation affiliation in response.Affiliations)
+            {
+                fne.SendMasterGroupAffiliation(Convert.ToUInt32(affiliation.SrcId), Convert.ToUInt32(affiliation.DstId));
+            }
+        }
+
+        internal void WhackerLinkUniteDeRegistration(U_DE_REG_RSP response)
+        {
+            fne.SendMasterUnitDeRegistration(Convert.ToUInt32(response.SrcId));
+        }  
+
         internal void WhackerLinkVoiceChannelResponse(GRP_VCH_RSP response)
         {
-            if (voiceChannel.SrcId == null) return;
-
-            if (response.SrcId == voiceChannel.SrcId)
+            if (voiceChannel != null && response.SrcId == voiceChannel.SrcId)
             {
                 voiceChannel = new VoiceChannel
                 {
@@ -242,7 +255,7 @@ namespace WhackerLink2Dvm
             voiceChannel = null;
         }
 
-        internal async void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)
+        internal void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)
         {
             FnePeer peer = (FnePeer)fne;
 

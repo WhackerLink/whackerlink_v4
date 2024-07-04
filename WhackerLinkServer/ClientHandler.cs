@@ -178,6 +178,13 @@ namespace WhackerLinkServer
                 response.Status = (int)ResponseType.GRANT;
                 affiliationsManager.RemoveAffiliation(request.SrcId);
                 affiliationsManager.AddAffiliation(affiliation);
+
+                AFF_UPDATE affUpdate = new AFF_UPDATE
+                {
+                    Affiliations = affiliationsManager.GetAffiliations()
+                };
+
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AFF_UPDATE, data = affUpdate }));
             }
             else
             {
@@ -229,6 +236,13 @@ namespace WhackerLinkServer
             {
                 response.Status = (int)ResponseType.GRANT;
                 affiliationsManager.RemoveAffiliation(request.SrcId);
+
+                AFF_UPDATE affUpdate = new AFF_UPDATE
+                {
+                    Affiliations = affiliationsManager.GetAffiliations()
+                };
+
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AFF_UPDATE, data = affUpdate }));
             }
             else
             {

@@ -92,8 +92,8 @@ namespace WhackerLink2Dvm
         private static void Peer_PeerConnected(object sender, PeerConnectedEvent e)
         {
             // fake a group affiliation
-            FnePeer peer = (FnePeer)sender;
-            peer.SendMasterGroupAffiliation(1, (uint)WhackerLink2Dvm.config.DestinationId);
+            //FnePeer peer = (FnePeer)sender;
+            //peer.SendMasterGroupAffiliation(1, (uint)WhackerLink2Dvm.config.DestinationId);
         }
 
         /// <summary>
