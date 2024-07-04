@@ -120,11 +120,6 @@ namespace WhackerLink2Dvm
 
         private IWebSocketHandler webSocketHandler;
 
-        private uint srcIdOverride = 0;
-        private uint udpSrcId = 0;
-        private uint udpDstId = 0;
-
-
         private VoiceChannel voiceChannel;
         Dictionary<uint, uint> affiliations = new Dictionary<uint, uint>();
 
@@ -136,7 +131,7 @@ namespace WhackerLink2Dvm
         /// Initializes a new instance of the <see cref="FneSystemBase"/> class.
         /// </summary>
         /// <param name="fne">Instance of <see cref="FneMaster"/> or <see cref="FnePeer"/></param>
-        public FneSystemBase(FnePeer fne) : base(fne, LogLevel.INFO)
+        public FneSystemBase(FnePeer fne) : base(fne, fnecore.LogLevel.INFO)
         {
             this.fne = fne;
 
@@ -186,35 +181,26 @@ namespace WhackerLink2Dvm
             {
                 while (true)
                 {
-                    string trafficType = LOCAL_CALL;
-                    if (trafficFromUdp)
-                        trafficType = UDP_CALL;
-
                     // if we've exceeded the audio drop timeout, then really drop the audio
                     if ((dropAudio.IsRunning && (dropAudio.ElapsedMilliseconds > dropTimeMs * 2)) ||
                         (!dropAudio.IsRunning && !audioDetect && callInProgress))
                     {
                         if (audioDetect)
                         {
-                            WhackerLink2Dvm.logger.Information($"({SystemName}) {trafficType} *CALL END (S)   * PEER {fne.PeerId} [STREAM ID {txStreamId}]");
+                            WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END (S)   * PEER {fne.PeerId} [STREAM ID {txStreamId}]");
 
                             audioDetect = false;
                             dropAudio.Reset();
-#if !ENCODER_LOOPBACK_TEST
+
                             if (!callInProgress)
                             {
-                                SendP25TDU();
+                                SendP25TDU(false, voiceChannel.SrcId, voiceChannel.DstId);
                                 break;
                             }
-#endif
-                            srcIdOverride = 0;
+
                             txStreamId = 0;
                             EndCall("", "");
                             dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
-
-                            udpSrcId = 0;
-                            udpDstId = 0;
-                            trafficFromUdp = false;
                         }
                     }
 
@@ -237,7 +223,9 @@ namespace WhackerLink2Dvm
 
         internal void WhackerLinkVoiceChannelResponse(GRP_VCH_RSP response)
         {
-            if (response.SrcId == WhackerLink2Dvm.config.SourceId.ToString())
+            if (voiceChannel.SrcId == null) return;
+
+            if (response.SrcId == voiceChannel.SrcId)
             {
                 voiceChannel = new VoiceChannel
                 {
@@ -250,27 +238,27 @@ namespace WhackerLink2Dvm
 
         internal void WhackerLinkVoiceChannelRelease(GRP_VCH_RLS response)
         {
-            voiceChannel = null;
             EndCall(response.SrcId, response.DstId);
+            voiceChannel = null;
         }
 
         internal async void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)
         {
             FnePeer peer = (FnePeer)fne;
 
-            uint srcId = (uint)WhackerLink2Dvm.config.SourceId;
+            uint srcId = Convert.ToUInt32(voiceChannel.SrcId);
 
-            uint dstId = (uint)WhackerLink2Dvm.config.DestinationId;
+            uint dstId = Convert.ToUInt32(voiceChannel.DstId);
 
-            if (voiceChannel.Frequency != null)
+            if (voiceChannel != null && voiceChannel.Frequency != null)
             {
                 audioDetect = true;
                 if (txStreamId == 0)
                 {
                     txStreamId = (uint)rand.Next(int.MinValue, int.MaxValue);
                     WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL START     * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
-
-                    SendP25TDU(true);
+                    
+                    SendP25TDU(true, voiceChannel.SrcId, voiceChannel.DstId);
                 }
                 dropAudio.Reset();
             }
@@ -284,11 +272,10 @@ namespace WhackerLink2Dvm
 
             if (audioDetect && !callInProgress)
             {
-                // Convert the 1600-byte audioData to 320-byte chunks
                 var chunks = AudioConverter.SplitToChunks(audioData);
                 foreach (var chunk in chunks)
                 {
-                    P25EncodeAudioFrame(chunk);
+                    P25EncodeAudioFrame(chunk, Convert.ToUInt32(voiceChannel.SrcId), Convert.ToUInt32(voiceChannel.DstId));
                 }
             }
         }
@@ -303,17 +290,12 @@ namespace WhackerLink2Dvm
 
             if (!callInProgress)
             {
-                SendP25TDU();
+                SendP25TDU(false);
             }
 
-            srcIdOverride = 0;
             txStreamId = 0;
 
             dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
-
-            udpSrcId = 0;
-            udpDstId = 0;
-            trafficFromUdp = false;
         }
 
         /// <summary>

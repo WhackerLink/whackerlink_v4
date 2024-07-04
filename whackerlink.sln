@@ -21,6 +21,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fnecore", "DVM\fnecore\fnec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhackerLink2Dvm", "WhackerLink2Dvm\WhackerLink2Dvm.csproj", "{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{246EFF00-226C-43FA-942C-7A55450CA42D}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

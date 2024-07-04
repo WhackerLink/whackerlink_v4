@@ -85,16 +85,22 @@ namespace WhackerLink2Dvm
         /// Helper to send a P25 TDU message.
         /// </summary>
         /// <param name="grantDemand"></param>
-        private void SendP25TDU(bool grantDemand = false)
+        private void SendP25TDU(bool grantDemand = false, string srcId = "1", string dstId = "1")
         {
-            uint srcId = (uint)WhackerLink2Dvm.config.SourceId;
 
-            uint dstId = (uint)WhackerLink2Dvm.config.DestinationId;
+            uint src = Convert.ToUInt32(srcId);
+            uint dst = Convert.ToUInt32(dstId);
+
+            if (src < 0)
+                src = 1;
+
+            if (dst < 0)
+                dst = 1;
 
             RemoteCallData callData = new RemoteCallData()
             {
-                SrcId = srcId,
-                DstId = dstId,
+                SrcId = src,
+                DstId = dst,
                 LCO = P25Defines.LC_GROUP
             };
 
@@ -570,14 +576,15 @@ namespace WhackerLink2Dvm
             }
 
             uint srcId = (uint)WhackerLink2Dvm.config.SourceId;
+            uint dstId = (uint)WhackerLink2Dvm.config.DestinationId;
 
-            if (forcedSrcId > 0 && forcedSrcId != (uint)WhackerLink2Dvm.config.SourceId)
+            if (forcedSrcId > 0)
                 srcId = forcedSrcId;
-            uint dstId = (uint) WhackerLink2Dvm.config.DestinationId;
-            if (forcedDstId > 0 && forcedSrcId != (uint)WhackerLink2Dvm.config.DestinationId)
+
+            if (forcedDstId > 0)
                 dstId = forcedDstId;
 
-            FnePeer peer = (FnePeer)fne;
+            FnePeer peer = fne;
             RemoteCallData callData = new RemoteCallData()
             {
                 SrcId = srcId,
@@ -744,7 +751,7 @@ namespace WhackerLink2Dvm
             byte[] data = new byte[len];
             for (int i = 24; i < len; i++)
                 data[i - 24] = e.Data[i];
-            if (e.CallType == fnecore.CallType.GROUP)
+            if (e.CallType == CallType.GROUP)
             {
                 if (e.SrcId == 0)
                     return;
@@ -757,13 +764,19 @@ namespace WhackerLink2Dvm
                 }
 
                 // ensure destination ID matches
-                if (e.DstId != WhackerLink2Dvm.config.DestinationId)
-                    return;
+/*                if (e.DstId != WhackerLink2Dvm.config.DestinationId)
+                    return;*/
 
                 // is this a new call stream?
-                if (e.StreamId != status[P25_FIXED_SLOT].RxStreamId && ((e.DUID != P25DUID.TDU) && (e.DUID != P25DUID.TDULC)))
+                if (e.StreamId != status[P25_FIXED_SLOT].RxStreamId && (e.DUID != P25DUID.TDU) && (e.DUID != P25DUID.TDULC))
                 {
-                    webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_REQ, data = new GRP_VCH_REQ { SrcId = WhackerLink2Dvm.config.SourceId.ToString(), DstId = WhackerLink2Dvm.config.DestinationId.ToString() } });
+                    voiceChannel = new VoiceChannel
+                    {
+                        SrcId = e.SrcId.ToString(),
+                        DstId = e.DstId.ToString()
+                    };
+
+                    webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_REQ, data = new GRP_VCH_REQ { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString() } });
                     callInProgress = true;
                     callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
                     status[P25_FIXED_SLOT].RxStart = pktTime;
@@ -772,10 +785,14 @@ namespace WhackerLink2Dvm
 
                 if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR))
                 {
-                    if (voiceChannel != null)
+                    if (voiceChannel != null && voiceChannel.Frequency != null)
                     {
-                        webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = WhackerLink2Dvm.config.SourceId.ToString(), DstId = WhackerLink2Dvm.config.DestinationId.ToString(), Channel = voiceChannel.Frequency } });
-                        voiceChannel = null;
+                        webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString(), Channel = voiceChannel.Frequency } });
+                        voiceChannel = new VoiceChannel 
+                        { 
+                            SrcId = e.SrcId.ToString(),
+                            DstId = e.DstId.ToString()
+                        };
                     } else
                     {
                         Console.WriteLine("Not sending whackerlink call release because it has no channel");
