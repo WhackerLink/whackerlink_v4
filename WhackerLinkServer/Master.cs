@@ -4,10 +4,10 @@ using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using WhackerLinkServer.Managers;
 using WhackerLinkCommonLib.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using WhackerLinkServer;
+#if !NOVOCODE
+using vocoder;
+#endif
 
 #nullable disable
 
@@ -22,6 +22,11 @@ public class Master : IMasterService
     private Timer aclReloadTimer;
     private ILogger logger;
 
+#if !NOVOCODE
+    private MBEDecoderManaged p25Decoder;
+    private MBEEncoderManaged p25Encoder;
+#endif
+
     public Master(Config.MasterConfig config)
     {
         this.config = config;
@@ -29,6 +34,26 @@ public class Master : IMasterService
         this.affiliationsManager = new AffiliationsManager();
         this.voiceChannelManager = new VoiceChannelManager();
         this.logger = LoggerSetup.CreateLogger(config.Name);
+
+#if !NOVOCODE
+
+        if (config.VocoderMode == VocoderModes.DMRAMBE)
+        {
+            p25Decoder = new MBEDecoderManaged(MBEMode.DMRAMBE);
+            p25Encoder = new MBEEncoderManaged(MBEMode.DMRAMBE);
+            logger.Information("AMBE Vocoder enabled");
+        }
+        else if (config.VocoderMode == VocoderModes.IMBE)
+        {
+            p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
+            p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
+            logger.Information("IMBE Vocoder enabled");
+        }
+        else
+        {
+            logger.Information("Vocoding disbaled");
+        }
+#endif
     }
 
     public ILogger Logger { get { return logger; } }
@@ -82,7 +107,11 @@ public class Master : IMasterService
             }
 
             server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
-            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, logger));
+            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager,
+#if !NOVOCODE
+                p25Decoder, p25Encoder,
+#endif
+                logger));
             server.Start();
 
             logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);

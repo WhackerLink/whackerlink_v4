@@ -5,6 +5,9 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Configurations>Debug;Release;NoVocode</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +21,12 @@
     <PackageReference Include="YamlDotNet" Version="15.3.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+    <ProjectReference Include="..\MBEVocoderManaged\MBEVocoderManaged.vcxproj">
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\WhackerLinkCommonLib\WhackerLinkCommonLib.csproj" />
   </ItemGroup>

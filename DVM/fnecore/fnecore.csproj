@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Deterministic>False</Deterministic>
+  </PropertyGroup>
+
+</Project>

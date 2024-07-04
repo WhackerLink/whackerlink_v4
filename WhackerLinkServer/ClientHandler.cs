@@ -8,6 +8,10 @@ using WhackerLinkCommonLib.Models.IOSP;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 using WhackerLinkServer.Managers;
 using Serilog;
+using WhackerLinkCommonLib.Utils;
+#if !NOVOCODE
+using vocoder;
+#endif
 
 #nullable disable
 
@@ -21,13 +25,28 @@ namespace WhackerLinkServer
         private VoiceChannelManager voiceChannelManager;
         private ILogger logger;
 
-        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager, VoiceChannelManager voiceChannelManager, ILogger logger)
+#if !NOVOCODE
+        private MBEDecoderManaged p25Decoder;
+        private MBEEncoderManaged p25Encoder;
+#endif
+
+        public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
+            VoiceChannelManager voiceChannelManager,
+#if !NOVOCODE
+            MBEDecoderManaged p25Decoder, MBEEncoderManaged p25Encoder,
+#endif
+            ILogger logger)
         {
             this.masterConfig = config;
             this.aclManager = aclManager;
             this.affiliationsManager = affiliationsManager;
             this.voiceChannelManager = voiceChannelManager;
             this.logger = logger;
+
+#if !NOVOCODE
+            this.p25Encoder = p25Encoder;
+            this.p25Decoder = p25Decoder;
+#endif
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -317,7 +336,71 @@ namespace WhackerLinkServer
 
         private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
-            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel }));
+            if (masterConfig.VocoderMode != VocoderModes.DISABLED)
+            {
+#if !NOVOCODE
+                byte[] imbe = null;
+
+                if (p25Encoder == null || p25Decoder == null)
+                {
+                    Console.WriteLine("Vocoder is not initialized; This should not happen.");
+                    return;
+                }
+
+                var chunks = AudioConverter.SplitToChunks(audioData);
+                if (chunks.Count == 0)
+                {
+                    Console.WriteLine("Invalid audio data length for conversion.");
+                    return;
+                }
+
+                List<byte[]> processedChunks = new List<byte[]>();
+
+                foreach (var chunk in chunks)
+                {
+                    int smpIdx = 0;
+                    short[] samples = new short[chunk.Length / 2];
+                    for (int pcmIdx = 0; pcmIdx < chunk.Length; pcmIdx += 2)
+                    {
+                        samples[smpIdx] = (short)((chunk[pcmIdx + 1] << 8) + chunk[pcmIdx]);
+                        smpIdx++;
+                    }
+
+                    p25Encoder.encode(samples, out imbe);
+
+                    short[] samp2 = null;
+                    int errs = p25Decoder.decode(imbe, out samp2);
+                    if (samples != null)
+                    {
+                        int pcmIdx = 0;
+                        byte[] pcm2 = new byte[samp2.Length * 2];
+                        for (int smpIdx2 = 0; smpIdx2 < samp2.Length; smpIdx2++)
+                        {
+                            pcm2[pcmIdx] = (byte)(samp2[smpIdx2] & 0xFF);
+                            pcm2[pcmIdx + 1] = (byte)((samp2[smpIdx2] >> 8) & 0xFF);
+                            pcmIdx += 2;
+                        }
+
+                        processedChunks.Add(pcm2);
+                    }
+                }
+
+                var combinedAudioData = AudioConverter.CombineChunks(processedChunks);
+                if (combinedAudioData != null)
+                {
+                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = combinedAudioData, voiceChannel }));
+                }
+                else
+                {
+                    Console.WriteLine("Error combining audio data.");
+                }
+#endif
+            }
+            else
+            {
+
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel }));
+            }
         }
     }
 }

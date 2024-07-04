@@ -10,6 +10,9 @@ masters:
     # Address for the master to bind to
     address: 127.0.0.1
 
+    # Audio Vocoder mode. 0 = Disbaled, 1 = DMRAMBE, 2 = IMBE; NOTE: This is ignored if you compile it as NoVocode.
+    vocoderMode: 2
+
     # RESTful interface for internal information such as the affiliation table.
     rest:
         # Enable the REST server

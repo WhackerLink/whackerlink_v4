@@ -18,6 +18,7 @@ namespace WhackerLinkServer.Models
             public string Address { get; set; }
             public int Port { get; set; }
             public RestConfig Rest { get; set; }
+            public VocoderModes VocoderMode { get; set; }
             public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
             public List<string> ControlChannels { get; set; }
