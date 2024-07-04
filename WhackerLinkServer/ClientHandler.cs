@@ -185,7 +185,7 @@ namespace WhackerLinkServer
                 affiliationsManager.RemoveAffiliation(affiliation);
             }
 
-            Send(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
+            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
             logger.Information(response.ToString());
         }
 

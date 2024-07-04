@@ -1,0 +1,16 @@
+dropTimeMs: 180
+sourceId: 15005
+destinationId: 2001
+slot: 1
+
+fne:
+  name: WL Patch
+  peerId: 9000123
+  address: 127.0.0.1
+  port: 62031
+  passphrase: "RPT1234"
+
+whackerLink:
+  name: "WL Patch"
+  address: 127.0.0.1
+  port: 3000
