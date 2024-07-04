@@ -732,7 +732,6 @@ namespace WhackerLink2Dvm
         protected override void P25DataReceived(object sender, P25DataReceivedEvent e)
         {
             DateTime pktTime = DateTime.Now;
-            Console.WriteLine(e.DUID);
 
             if (e.DUID == P25DUID.HDU || e.DUID == P25DUID.TSDU || e.DUID == P25DUID.PDU)
                 return;
