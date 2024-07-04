@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -19,6 +19,10 @@
     <ProjectReference Include="..\DVM\fnecore\fnecore.csproj" />
     <ProjectReference Include="..\MBEVocoderManaged\MBEVocoderManaged.vcxproj" />
     <ProjectReference Include="..\WhackerLinkCommonLib\WhackerLinkCommonLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="configs\" />
   </ItemGroup>
 
 </Project>

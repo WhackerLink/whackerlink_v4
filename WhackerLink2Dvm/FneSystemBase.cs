@@ -25,6 +25,7 @@ using WhackerLinkCommonLib.Handlers;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Utils;
+using Nancy;
 
 namespace WhackerLink2Dvm
 {
@@ -145,6 +146,7 @@ namespace WhackerLink2Dvm
             webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
             webSocketHandler.OnAudioData += WhackerLinkDataReceived;
             webSocketHandler.OnVoiceChannelResponse += WhackerLinkVoiceChannelResponse;
+            webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
 
             // initialize slot statuses
             this.status = new SlotStatus[3];
@@ -207,7 +209,7 @@ namespace WhackerLink2Dvm
 #endif
                             srcIdOverride = 0;
                             txStreamId = 0;
-
+                            EndCall("", "");
                             dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
 
                             udpSrcId = 0;
@@ -246,6 +248,12 @@ namespace WhackerLink2Dvm
             }
         }
 
+        internal void WhackerLinkVoiceChannelRelease(GRP_VCH_RLS response)
+        {
+            voiceChannel = null;
+            EndCall(response.SrcId, response.DstId);
+        }
+
         internal async void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)
         {
             FnePeer peer = (FnePeer)fne;
@@ -268,30 +276,7 @@ namespace WhackerLink2Dvm
             }
             else
             {
-                if (dropAudio.IsRunning && (dropAudio.ElapsedMilliseconds > dropTimeMs))
-                {
-                    if (audioDetect)
-                    {
-                        WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
-
-                        audioDetect = false;
-                        dropAudio.Reset();
-
-                        if (!callInProgress)
-                        {
-                            SendP25TDU();
-                        }
-
-                        srcIdOverride = 0;
-                        txStreamId = 0;
-
-                        dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
-
-                        udpSrcId = 0;
-                        udpDstId = 0;
-                        trafficFromUdp = false;
-                    }
-                }
+                EndCall(srcId.ToString(), dstId.ToString());
             }
 
             if (!dropAudio.IsRunning)
@@ -306,6 +291,29 @@ namespace WhackerLink2Dvm
                     P25EncodeAudioFrame(chunk);
                 }
             }
+        }
+
+        private void EndCall(string srcId, string dstId)
+        {
+
+            WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
+
+            audioDetect = false;
+            dropAudio.Reset();
+
+            if (!callInProgress)
+            {
+                SendP25TDU();
+            }
+
+            srcIdOverride = 0;
+            txStreamId = 0;
+
+            dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
+
+            udpSrcId = 0;
+            udpDstId = 0;
+            trafficFromUdp = false;
         }
 
         /// <summary>
