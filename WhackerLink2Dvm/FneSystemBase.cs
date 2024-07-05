@@ -18,7 +18,9 @@ using Serilog;
 using fnecore;
 using fnecore.DMR;
 
+#if !NOVODODE
 using vocoder;
+#endif
 
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkCommonLib.Handlers;
@@ -212,12 +214,14 @@ namespace WhackerLink2Dvm
 
             this.audioDetect = false;
 
+#if !NOVODODE
             // initialize P25 vocoders
             p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
             //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
             //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
             p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
             //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
+#endif
 
             netLDU1 = new byte[9 * 25];
             netLDU2 = new byte[9 * 25];

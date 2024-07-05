@@ -22,7 +22,9 @@ using Serilog;
 
 using fnecore;
 using fnecore.P25;
+#if !NOVODODE
 using vocoder;
+#endif
 using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Utils;
 using WhackerLinkCommonLib.Models.IOSP;
@@ -36,8 +38,10 @@ namespace WhackerLink2Dvm
     {
         private const int IMBE_BUF_LEN = 11;
 
+#if !NOVODODE
         private MBEDecoderManaged p25Decoder;
         private MBEEncoderManaged p25Encoder;
+#endif
 
         private byte[] netLDU1;
         private byte[] netLDU2;
@@ -509,7 +513,9 @@ namespace WhackerLink2Dvm
             // encode PCM samples into IMBE codewords
             byte[] imbe = null;
 
+#if !NOVODODE
             p25Encoder.encode(samples, out imbe);
+#endif
 
             // WhackerLink2Dvm.logger.Debug($"IMBE {FneUtils.HexDump(imbe)}");
 
@@ -680,7 +686,9 @@ namespace WhackerLink2Dvm
                     short[] samples = null;
                     int errs = 0;
 
+#if !NOVODODE
                     errs = p25Decoder.decode(imbe, out samples);
+#endif
 
                     if (samples != null)
                     {
