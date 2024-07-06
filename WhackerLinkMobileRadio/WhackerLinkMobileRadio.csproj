@@ -18,11 +18,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\call_alert.wav" />
     <None Remove="Resources\o2_green.png" />
     <None Remove="Resources\RSSI_COLOR_0.png" />
     <None Remove="Resources\RSSI_COLOR_1.png" />
     <None Remove="Resources\RSSI_COLOR_4.png" />
     <None Remove="Resources\RX_COLOR.png" />
+    <None Remove="Resources\standardtone.wav" />
+    <None Remove="Resources\trunking_tpt.wav" />
     <None Remove="Resources\TX_RSSI.png" />
   </ItemGroup>
 
@@ -38,11 +41,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\call_alert.wav" />
     <Resource Include="Resources\o2_green.png" />
     <Resource Include="Resources\RSSI_COLOR_0.png" />
     <Resource Include="Resources\RSSI_COLOR_1.png" />
     <Resource Include="Resources\RSSI_COLOR_4.png" />
     <Resource Include="Resources\RX_COLOR.png" />
+    <Resource Include="Resources\standardtone.wav" />
+    <Resource Include="Resources\trunking_tpt.wav" />
     <Resource Include="Resources\TX_RSSI.png" />
   </ItemGroup>
 

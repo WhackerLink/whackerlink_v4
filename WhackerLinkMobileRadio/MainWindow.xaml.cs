@@ -22,6 +22,7 @@ using WhackerLinkCommonLib.Models;
 using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Models.Radio;
 using WhackerLinkCommonLib.UI;
+using WhackerLinkCommonLib.Utils;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -54,6 +55,9 @@ namespace WhackerLinkMobileRadio
 
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
         private DispatcherTimer _reconnectTimer;
+
+        private readonly DispatcherTimer _pttCooldownTimer;
+        private bool _isPttCooldown;
 
         private static IntPtr _hookID = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
@@ -100,6 +104,13 @@ namespace WhackerLinkMobileRadio
                 Interval = TimeSpan.FromSeconds(5)
             };
             _reconnectTimer.Tick += ReconnectTimer_Tick;
+
+            _pttCooldownTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(2000)
+            };
+            _pttCooldownTimer.Tick += PttCooldownTimer_Tick;
+            _isPttCooldown = false;
         }
 
         public bool PowerOn => _powerOn;
@@ -134,7 +145,7 @@ namespace WhackerLinkMobileRadio
 
         private async void PTTButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (!_powerOn) return;
+            if (_isPttCooldown || !_powerOn) return;
 
             if (!_isRegistered || _isReceiving)
             {
@@ -161,7 +172,20 @@ namespace WhackerLinkMobileRadio
                     }
                 };
                 _webSocketHandler.SendMessage(request);
+                StartPttCooldown();
             }
+        }
+
+        private void StartPttCooldown()
+        {
+            _isPttCooldown = true;
+            _pttCooldownTimer.Start();
+        }
+
+        private void PttCooldownTimer_Tick(object sender, EventArgs e)
+        {
+            _isPttCooldown = false;
+            _pttCooldownTimer.Stop();
         }
 
         public void KillMasterConnection()
@@ -363,7 +387,8 @@ namespace WhackerLinkMobileRadio
                 _currentChannel = response.Channel;
                 await Task.Delay(100);
                 Dispatcher.Invoke(() => SetRssiSource("TX_RSSI.png"));
-                BeepGenerator.TptGenerate();
+
+                AudioPlayer.PlaySound(Properties.Resources.trunking_tpt);
 
                 if (!_isRecording)
                 {
@@ -392,9 +417,9 @@ namespace WhackerLinkMobileRadio
 
         private void HandleCallAlert(CALL_ALRT response)
         {
-            MessageBox.Show(response.DstId);
             if (response.DstId != _myRid) return;
 
+            AudioPlayer.PlaySound(Properties.Resources.call_alert);
             Dispatcher.Invoke(() => SetLine3Text($"Page rcv: {response.SrcId}"));
         }
 

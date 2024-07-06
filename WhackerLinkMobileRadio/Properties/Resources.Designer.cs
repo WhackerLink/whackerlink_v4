@@ -61,6 +61,15 @@ namespace WhackerLinkMobileRadio.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.IO.UnmanagedMemoryStream similar to System.IO.MemoryStream.
+        /// </summary>
+        internal static System.IO.UnmanagedMemoryStream call_alert {
+            get {
+                return ResourceManager.GetStream("call_alert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap o2_green {
@@ -117,6 +126,24 @@ namespace WhackerLinkMobileRadio.Properties {
             get {
                 object obj = ResourceManager.GetObject("RX_COLOR", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.IO.UnmanagedMemoryStream similar to System.IO.MemoryStream.
+        /// </summary>
+        internal static System.IO.UnmanagedMemoryStream standardtone {
+            get {
+                return ResourceManager.GetStream("standardtone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.IO.UnmanagedMemoryStream similar to System.IO.MemoryStream.
+        /// </summary>
+        internal static System.IO.UnmanagedMemoryStream trunking_tpt {
+            get {
+                return ResourceManager.GetStream("trunking_tpt", resourceCulture);
             }
         }
         
