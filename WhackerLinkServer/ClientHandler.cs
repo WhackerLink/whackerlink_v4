@@ -9,6 +9,8 @@ using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 using WhackerLinkServer.Managers;
 using Serilog;
 using WhackerLinkCommonLib.Utils;
+using Nancy;
+
 #if !NOVOCODE
 using vocoder;
 #endif
@@ -173,7 +175,7 @@ namespace WhackerLinkServer
                 SysId = request.SysId
             };
 
-            if (isDestinationPermitted(request.SrcId, request.DstId))
+            if (isAffiliationPermitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
                 affiliationsManager.RemoveAffiliation(request.SrcId);
@@ -267,7 +269,8 @@ namespace WhackerLinkServer
             };
 
             var availableChannel = GetAvailableVoiceChannel();
-            if (availableChannel != null)
+
+            if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
             {
                 voiceChannelManager.AddVoiceChannel(new VoiceChannel
                 {
@@ -311,13 +314,31 @@ namespace WhackerLinkServer
             }
             else
             {
+                if (request.Channel.IsNullOrEmpty())
+                {
+                    logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
+                    voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
+                }
+
                 logger.Warning("Voice channel {Channel} not found to release", request.Channel);
             }
         }
 
+        private bool isAffiliationPermitted(string srcId, string dstId)
+        {
+            return true; // TODO: Actually use this
+        }
+
         private bool isDestinationPermitted(string srcId, string dstId)
         {
-            return true;
+            bool value = true;
+
+            if (voiceChannelManager.IsDestinationActive(dstId))
+                value = false;
+
+            // TODO: TG ACL
+
+            return value;
         }
 
         private bool isRidAuthed(string srcId)

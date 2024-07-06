@@ -42,9 +42,19 @@ namespace WhackerLinkServer.Managers
             VoiceChannels.RemoveAll(vc => vc.ClientId == clientId);
         }
 
+        public void RemoveVoiceChannelByDstId(string dstId)
+        {
+            VoiceChannels.RemoveAll(vc => vc.DstId == dstId);
+        }
+
         public bool IsVoiceChannelActive(VoiceChannel voiceChannel)
         {
             return VoiceChannels.Any(vc => vc.Frequency == voiceChannel.Frequency);
+        }
+
+        public bool IsDestinationActive(string dstId)
+        {
+            return VoiceChannels.Any(vc => vc.DstId == dstId);
         }
 
         public override string ToString()
