@@ -400,6 +400,7 @@ namespace WhackerLinkMobileRadio
             {
                 _currentChannel = string.Empty;
                 if (_isKeyedUp) BeepGenerator.Bonk();
+                Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
                 Console.WriteLine("Channel request denied.");
             }
             else if (response.DstId == _currentTgid && response.SrcId != _myRid)
@@ -726,13 +727,15 @@ namespace WhackerLinkMobileRadio
                         OnGlobalKeyUp(vkCode);
                     }
                 }
+
+                return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam); // TODO: Maybe a crash issue to look at
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
 
-            return NativeMethods.CallNextHookEx(_hookID, nCode, wParam, lParam); // TODO: Maybe a crash issue to look at
+            return nint.Zero;
         }
 
         private void OnGlobalKeyDown(int vkCode)
