@@ -59,6 +59,11 @@ namespace WhackerLinkMobileRadio
         private readonly DispatcherTimer _pttCooldownTimer;
         private bool _isPttCooldown;
 
+        private readonly DispatcherTimer _pttWatchdogTimer;
+        private readonly TimeSpan _pttMaxDuration = TimeSpan.FromSeconds(2);
+        private DateTime _pttStartTime;
+        private bool _isPttActive;
+
         private static IntPtr _hookID = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
 
@@ -307,6 +312,12 @@ namespace WhackerLinkMobileRadio
                         Channel = _currentChannel
                     }
                 };
+
+                _currentChannel = string.Empty;
+                Dispatcher.Invoke(() => txt_Line3.Text = "");
+                _isReceiving = false;
+                Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
+
                 _webSocketHandler.SendMessage(request);
                 _waveIn.StopRecording();
             }
@@ -368,7 +379,7 @@ namespace WhackerLinkMobileRadio
 
         private async void HandleVoiceChannelRelease(GRP_VCH_RLS response)
         {
-            if (!_powerOn || !_isRegistered || (response.DstId != _currentTgid)) return;
+            if (!_powerOn || !_isRegistered || (response.DstId != _currentTgid) || response.SrcId == _myRid) return;
 
             _currentChannel = string.Empty;
             Dispatcher.Invoke(() => txt_Line3.Text = "");
@@ -698,7 +709,6 @@ namespace WhackerLinkMobileRadio
             SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
             HwndSource.FromHwnd(hwnd)?.AddHook(new HwndSourceHook(WndProc));
         }
-
 
         private IntPtr SetHook(NativeMethods.LowLevelKeyboardProc proc)
         {

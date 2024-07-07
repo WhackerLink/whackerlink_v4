@@ -4,6 +4,8 @@ using System.Text;
 using WhackerLinkCommonLib.Models;
 using WhackerLinkServer.Models;
 
+#nullable disable
+
 namespace WhackerLinkServer.Managers
 {
     public class VoiceChannelManager
@@ -18,6 +20,16 @@ namespace WhackerLinkServer.Managers
         public List<VoiceChannel> GetVoiceChannels()
         {
             return VoiceChannels;
+        }
+
+        public VoiceChannel FindVoiceChannelByClientId(string clientId)
+        {
+            return VoiceChannels.FirstOrDefault(vc => vc.ClientId == clientId);
+        }
+
+        public VoiceChannel FindVoiceChannelByDstId(string dstId)
+        {
+            return VoiceChannels.FirstOrDefault(vc => vc.DstId == dstId);
         }
 
         public void AddVoiceChannel(VoiceChannel voiceChannel)
@@ -55,6 +67,11 @@ namespace WhackerLinkServer.Managers
         public bool IsDestinationActive(string dstId)
         {
             return VoiceChannels.Any(vc => vc.DstId == dstId);
+        }
+
+        public bool IsTransmissionActiveForDstId(string dstId)
+        {
+            return VoiceChannels.Any(vc => vc.DstId == dstId && vc.IsActive);
         }
 
         public override string ToString()

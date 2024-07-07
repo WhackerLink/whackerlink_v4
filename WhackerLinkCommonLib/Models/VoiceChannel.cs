@@ -8,5 +8,6 @@ namespace WhackerLinkCommonLib.Models
         public string SrcId { get; set; }
         public string Frequency { get; set; }
         public string ClientId {  get; set; }
+        public bool IsActive { get; set; }
     }
 }

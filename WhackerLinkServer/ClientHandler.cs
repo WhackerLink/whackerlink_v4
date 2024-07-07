@@ -277,7 +277,8 @@ namespace WhackerLinkServer
                     DstId = request.DstId,
                     SrcId = request.SrcId,
                     Frequency = availableChannel,
-                    ClientId = ID
+                    ClientId = ID,
+                    IsActive = true
                 });
 
                 response.Channel = availableChannel;
@@ -306,6 +307,11 @@ namespace WhackerLinkServer
                 Channel = request.Channel
             };
 
+            if (!request.Channel.IsNullOrEmpty())
+            {
+                voiceChannelManager.FindVoiceChannelByClientId(ID).IsActive = false;
+            }
+
             if (voiceChannelManager.IsVoiceChannelActive(new VoiceChannel { Frequency = request.Channel }))
             {
                 voiceChannelManager.RemoveVoiceChannel(request.Channel);
@@ -317,6 +323,7 @@ namespace WhackerLinkServer
                 if (request.Channel.IsNullOrEmpty())
                 {
                     logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
+                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
                 }
 
@@ -371,6 +378,16 @@ namespace WhackerLinkServer
 
         private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
+            VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(voiceChannel.DstId);
+
+            if (voiceChannel != null && channel.ClientId != ID)
+            {
+                logger.Warning("Ingoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
+                voiceChannelManager.RemoveVoiceChannelByClientId(ID);
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = voiceChannel.DstId, SrcId = voiceChannel.SrcId } }));
+                return;
+            }
+
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
 #if !NOVOCODE
@@ -427,13 +444,12 @@ namespace WhackerLinkServer
                 }
                 else
                 {
-                    Console.WriteLine("Error combining audio data.");
+                    logger.Error("Channel not permitted; skipping audio");
                 }
 #endif
             }
             else
             {
-
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel }));
             }
         }
