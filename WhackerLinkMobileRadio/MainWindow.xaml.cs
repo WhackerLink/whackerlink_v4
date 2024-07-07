@@ -59,10 +59,12 @@ namespace WhackerLinkMobileRadio
         private readonly DispatcherTimer _pttCooldownTimer;
         private bool _isPttCooldown;
 
+        private const int VK_PTT = 0x20;
         private readonly DispatcherTimer _pttWatchdogTimer;
-        private readonly TimeSpan _pttMaxDuration = TimeSpan.FromSeconds(2);
+        private readonly TimeSpan _pttMaxDuration = TimeSpan.FromSeconds(3000);
         private DateTime _pttStartTime;
         private bool _isPttActive;
+        private bool _pttState;
 
         private static IntPtr _hookID = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
@@ -116,6 +118,13 @@ namespace WhackerLinkMobileRadio
             };
             _pttCooldownTimer.Tick += PttCooldownTimer_Tick;
             _isPttCooldown = false;
+
+            _pttWatchdogTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(100)
+            };
+            _pttWatchdogTimer.Tick += PttWatchdogTimer_Tick;
+            _pttWatchdogTimer.Start();
         }
 
         public bool PowerOn => _powerOn;
@@ -192,6 +201,28 @@ namespace WhackerLinkMobileRadio
             _isPttCooldown = false;
             _pttCooldownTimer.Stop();
         }
+
+        private void PttWatchdogTimer_Tick(object sender, EventArgs e)
+        {
+            _pttState = (NativeMethods.GetAsyncKeyState(VK_PTT) & 0x8000) != 0;
+
+            if (_pttState)
+            {
+                _isPttActive = true;
+/*                if ((DateTime.Now - _pttStartTime) > _pttMaxDuration)
+                {
+                    Console.WriteLine("PTT state exceeded maximum duration. Resetting PTT.");
+                    _isPttActive = false;
+                    PTTButton_MouseUp(null, null);
+                }*/
+            }
+            else if (_isPttActive)
+            {
+                _isPttActive = false;
+                PTTButton_MouseUp(null, null);
+            }
+        }
+
 
         public void KillMasterConnection()
         {
