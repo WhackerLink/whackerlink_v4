@@ -515,7 +515,7 @@ namespace WhackerLinkMobileRadio
             txt_Line2.IsReadOnly = true;
             _isInMenu = false;
             SetupSoftButtons();
-            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true);
+            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, false, false, false);
         }
 
         private void SetupSoftButtons()

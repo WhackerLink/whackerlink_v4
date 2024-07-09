@@ -15,7 +15,7 @@ namespace WhackerLinkCommonLib.UI
             _radioDisplay = radioDisplay;
         }
 
-        public async void UpdateDisplay(Codeplug codeplug, int currentZoneIndex, int currentChannelIndex, bool systemChange = true, bool zoneChange = false)
+        public async void UpdateDisplay(Codeplug codeplug, int currentZoneIndex, int currentChannelIndex, bool systemChange = true, bool zoneChange = false, bool tts =  true)
         {
             if (codeplug != null && codeplug.Zones.Count > 0)
             {
@@ -29,11 +29,15 @@ namespace WhackerLinkCommonLib.UI
                     _radioDisplay.SetLine2Text(channel.Name);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    Task.Run(() => {
-                        if (zoneChange)
-                            Util.SpeakText(zone.Name);
-                        Util.SpeakText(channel.Name);
-                    });
+                    if (tts)
+                    {
+                        Task.Run(() =>
+                        {
+                            if (zoneChange)
+                                Util.SpeakText(zone.Name);
+                            Util.SpeakText(channel.Name);
+                        });
+                    }
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
                     _radioDisplay.CurrentTgid = channel.Tgid;
