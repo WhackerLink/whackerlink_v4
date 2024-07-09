@@ -618,7 +618,7 @@ namespace WhackerLinkMobileRadio
             _proc = HookCallback;
             _hookID = SetHook(_proc);
 
-            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
+            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, true);
         }
 
         private void btn_Emerg_MouseDown(object sender, MouseButtonEventArgs e)
@@ -660,7 +660,7 @@ namespace WhackerLinkMobileRadio
             else if (_currentZoneIndex >= _codeplug.Zones.Count) _currentZoneIndex = 0;
 
             _currentChannelIndex = 0;
-            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
+            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, true);
         }
 
         private void ChangeChannel()
@@ -671,7 +671,7 @@ namespace WhackerLinkMobileRadio
             _currentChannelIndex++;
             if (_currentChannelIndex >= zone.Channels.Count) _currentChannelIndex = 0;
 
-            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex);
+            _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, false);
         }
 
         private void HandleConnectionOpen()
