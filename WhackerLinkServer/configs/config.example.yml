@@ -16,14 +16,25 @@ masters:
     # RESTful interface for internal information such as the affiliation table.
     rest:
         # Enable the REST server
-        enabled: true
+        enabled: false
         # Address to bind REST to
         address: localhost
         # Port to bind REST to
         port: 3002
 
-    # Not used right now
-    controlChannels: []
+    # Send reports via GET requests
+    reporter:
+        # Enable the reporter
+        enabled: false
+        # Address to send to
+        address: localhost
+        # Port to send to
+        port: 3005
+
+    # List of control channels. Not super useful exept for Multi Watch
+    controlChannels:
+      - "854.9625"
+
     # List of available voice channels. If voice channels run out, users will be denied grants.
     voiceChannels:
       - "853.9625"
@@ -32,7 +43,7 @@ masters:
     # Radio ID Access List Configuration
     ridAcl:
         # Enable ACL
-        enabled: true
+        enabled: false
         # Path to ACL File
         path: "rid_acl.yml"
         # Not finished yet

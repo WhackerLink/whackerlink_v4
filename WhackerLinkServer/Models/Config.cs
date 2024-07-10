@@ -18,6 +18,7 @@ namespace WhackerLinkServer.Models
             public string Address { get; set; }
             public int Port { get; set; }
             public RestConfig Rest { get; set; }
+            public ReporterConfiguration Reporter { get; set; }
             public VocoderModes VocoderMode { get; set; }
             public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
@@ -26,6 +27,13 @@ namespace WhackerLinkServer.Models
         }
 
         public class RestConfig
+        {
+            public bool Enabled { get; set; }
+            public string Address { get; set; }
+            public int Port { get; set; }
+        }
+
+        public class ReporterConfiguration
         {
             public bool Enabled { get; set; }
             public string Address { get; set; }

@@ -17,6 +17,7 @@ public class Master : IMasterService
     private WebSocketServer server;
     private RidAclManager aclManager;
     private RestApiServer restServer;
+    private Reporter reporter;
     private AffiliationsManager affiliationsManager;
     private VoiceChannelManager voiceChannelManager;
     private Timer aclReloadTimer;
@@ -111,12 +112,19 @@ public class Master : IMasterService
                 restServer.Start();
             }
 
+            if (config.Reporter.Enabled)
+            {
+                reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger);
+            }
+
             server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
-            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager,
+#pragma warning disable CS0618 // Type or member is obsolete
+            server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, reporter,
 #if !NOVOCODE
                 p25Decoder, p25Encoder,
 #endif
                 logger));
+#pragma warning restore CS0618 // Type or member is obsolete
             server.Start();
 
             logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);

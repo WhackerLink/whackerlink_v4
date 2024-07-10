@@ -12,6 +12,7 @@ namespace WhackerLinkCommonLib.Models
             REJECT,
             DENY,
             REFUSE,
-            FAIL
+            FAIL,
+            UNKOWN = 0xFF
         }
 }
