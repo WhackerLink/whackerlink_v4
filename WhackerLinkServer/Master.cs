@@ -73,6 +73,11 @@ public class Master : IMasterService
         return config.VoiceChannels;
     }
 
+    public List<string> GetControlChannels()
+    {
+        return config.ControlChannels;
+    }
+
     public List<RidAclEntry> GetRidAcl()
     {
         return aclManager.ridAclEntries;

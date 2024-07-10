@@ -10,6 +10,7 @@ namespace WhackerLinkCommonLib.Interfaces
         List<Affiliation> GetAffiliations();
         List<VoiceChannel> GetVoiceChannels();
         List<string> GetAvailableVoiceChannels();
+        List<string> GetControlChannels();
         List<RidAclEntry> GetRidAcl();
         bool GetRidAclEnabled();
         void Start(CancellationToken cancellationToken);

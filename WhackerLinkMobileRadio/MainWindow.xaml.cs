@@ -209,12 +209,6 @@ namespace WhackerLinkMobileRadio
             if (_pttState)
             {
                 _isPttActive = true;
-/*                if ((DateTime.Now - _pttStartTime) > _pttMaxDuration)
-                {
-                    Console.WriteLine("PTT state exceeded maximum duration. Resetting PTT.");
-                    _isPttActive = false;
-                    PTTButton_MouseUp(null, null);
-                }*/
             }
             else if (_isPttActive)
             {

@@ -278,7 +278,8 @@ namespace WhackerLinkServer
                     SrcId = request.SrcId,
                     Frequency = availableChannel,
                     ClientId = ID,
-                    IsActive = true
+                    IsActive = true,
+                    ControlChannel = masterConfig.ControlChannels[0]
                 });
 
                 response.Channel = availableChannel;

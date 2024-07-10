@@ -14,13 +14,12 @@ namespace WhackerLinkServer.RestApi.Modules
         {
             Get("/api/voiceChannel/query", _ =>
             {
-                var availableVoiceChannels = masterService.GetAvailableVoiceChannels();
-                var voiceChannels = masterService.GetVoiceChannels();
 
                 var response = new
                 {
-                    AvailableVoiceChannels = availableVoiceChannels,
-                    ActiveVoiceChannels = voiceChannels
+                    ControlChannels = masterService.GetControlChannels(),
+                    AvailableVoiceChannels = masterService.GetAvailableVoiceChannels(),
+                    ActiveVoiceChannels = masterService.GetVoiceChannels()
                 };
 
                 return Response.AsJson(response);
