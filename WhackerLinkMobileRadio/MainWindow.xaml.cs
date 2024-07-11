@@ -1,4 +1,24 @@
-﻿using System;
+﻿/*
+* WhackerLink - WhackerLinkMobileRadio
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+* 
+* Copyright (C) 2024 Caleb, KO4UYJ
+* 
+*/
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -30,6 +50,9 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace WhackerLinkMobileRadio
 {
+    /// <summary>
+    /// MainWindow
+    /// </summary>
     public partial class MainWindow : Window, IRadioDisplay
     {
         private readonly IWebSocketHandler _webSocketHandler;
@@ -69,6 +92,9 @@ namespace WhackerLinkMobileRadio
         private static IntPtr _hookID = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
 
+        /// <summary>
+        /// Creates an instance of MainWindow
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -133,12 +159,22 @@ namespace WhackerLinkMobileRadio
         public string CurrentTgid { get => _currentTgid; set => _currentTgid = value; }
         public Codeplug.System CurrentSystem { get => _currentSystem; set => _currentSystem = value; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Current_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             //MessageBox.Show($"Unhandled exception: {e.Exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Helper to load the codeplug
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private Codeplug LoadCodeplug(string path)
         {
             try
@@ -157,6 +193,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Handle PTT down
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void PTTButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (_isPttCooldown || !_powerOn) return;
@@ -190,18 +231,31 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Start PTT cooldown timer
+        /// </summary>
         private void StartPttCooldown()
         {
             _isPttCooldown = true;
             _pttCooldownTimer.Start();
         }
 
+        /// <summary>
+        /// PTT Cooldown timer tick
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PttCooldownTimer_Tick(object sender, EventArgs e)
         {
             _isPttCooldown = false;
             _pttCooldownTimer.Stop();
         }
 
+        /// <summary>
+        /// PTT Watchdog timer tick
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PttWatchdogTimer_Tick(object sender, EventArgs e)
         {
             _pttState = (NativeMethods.GetAsyncKeyState(VK_PTT) & 0x8000) != 0;
@@ -217,13 +271,19 @@ namespace WhackerLinkMobileRadio
             }
         }
 
-
+        /// <summary>
+        /// Kill current master connection
+        /// </summary>
         public void KillMasterConnection()
         {
             _webSocketHandler.Disconnect();
             _isInRange = false;
         }
 
+        /// <summary>
+        /// Create a master connection
+        /// </summary>
+        /// <param name="system"></param>
         public void MasterConnection(Codeplug.System system)
         {
             _webSocketHandler.Connect(system.Address, system.Port);
@@ -237,6 +297,9 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Helper to send unit registration to master
+        /// </summary>
         public void SendUnitRegistrationRequest()
         {
             var request = new
@@ -252,6 +315,9 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        /// <summary>
+        /// Helper to send grp aff to master
+        /// </summary>
         public async void SendGroupAffiliationRequest()
         {
             await Task.Delay(1000);
@@ -271,6 +337,9 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        /// <summary>
+        /// Helper to send unit de registration to master
+        /// </summary>
         private void SendUnitDeRegistrationRequest()
         {
             if (!_webSocketHandler.IsConnected) return;
@@ -288,6 +357,9 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        /// <summary>
+        /// Helper to send emergency alarm req to master
+        /// </summary>
         private void SendEmergencyAlarmRequest()
         {
             if (!_webSocketHandler.IsConnected || !_powerOn || !_isRegistered) return;
@@ -304,6 +376,9 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        /// <summary>
+        /// Helper to send call alert req to master
+        /// </summary>
         private void SendCallAlertRequest()
         {
             if (!_webSocketHandler.IsConnected || !_powerOn || !_isRegistered) return;
@@ -320,6 +395,11 @@ namespace WhackerLinkMobileRadio
             _webSocketHandler.SendMessage(request);
         }
 
+        /// <summary>
+        /// Handle PTT Up
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PTTButton_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (!_powerOn || !_isRegistered || _isReceiving) return;
@@ -348,11 +428,21 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Callback for recording stop
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void _waveIn_RecordingStopped(object sender, StoppedEventArgs e)
         {
             _isRecording = false;
         }
 
+        /// <summary>
+        /// Callback for audio available
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
             if (_isKeyedUp)
@@ -372,6 +462,10 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Handle unit reg
+        /// </summary>
+        /// <param name="response"></param>
         private void HandleUnitRegistrationResponse(U_REG_RSP response)
         {
             string text = string.Empty;
@@ -392,16 +486,28 @@ namespace WhackerLinkMobileRadio
             Dispatcher.Invoke(() => txt_Line3.Text = text);
         }
 
+        /// <summary>
+        /// Handle unit de reg response
+        /// </summary>
+        /// <param name="response"></param>
         private void HandleUnitDeRegistrationResponse(U_DE_REG_RSP response)
         {
             _deregistrationCompletionSource?.SetResult(true);
         }
 
+        /// <summary>
+        /// Handle grp aff response
+        /// </summary>
+        /// <param name="response"></param>
         private void HandleGroupAffiliationResponse(GRP_AFF_RSP response)
         {
             Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
         }
 
+        /// <summary>
+        /// Handle grp vch release
+        /// </summary>
+        /// <param name="response"></param>
         private async void HandleVoiceChannelRelease(GRP_VCH_RLS response)
         {
             if (!_powerOn || !_isRegistered || (response.DstId != _currentTgid) || response.SrcId == _myRid) return;
@@ -414,6 +520,10 @@ namespace WhackerLinkMobileRadio
             Dispatcher.Invoke(() => SetRssiSource("RSSI_COLOR_4.png"));
         }
 
+        /// <summary>
+        /// Handle voice channel response
+        /// </summary>
+        /// <param name="response"></param>
         private async void HandleVoiceChannelResponse(GRP_VCH_RSP response)
         {
             if (!_powerOn || !_isRegistered) return;
@@ -447,11 +557,19 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Handle emerg
+        /// </summary>
+        /// <param name="response"></param>
         private void HandleEmergencyAlarmResponse(EMRG_ALRM_RSP response)
         {
             Dispatcher.Invoke(() => SetLine3Text($"EM: {response.SrcId}"));
         }
 
+        /// <summary>
+        /// Handle call alert
+        /// </summary>
+        /// <param name="response"></param>
         private void HandleCallAlert(CALL_ALRT response)
         {
             if (response.DstId != _myRid) return;
@@ -460,6 +578,11 @@ namespace WhackerLinkMobileRadio
             Dispatcher.Invoke(() => SetLine3Text($"Page rcv: {response.SrcId}"));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Space)
@@ -469,6 +592,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Space)
@@ -478,6 +606,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Cleanup
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void Window_Closing(object sender, CancelEventArgs e)
         {
             if (_webSocketHandler != null)
@@ -488,6 +621,9 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Helper to enter the page menu
+        /// </summary>
         private void EnterPageMenu()
         {
             _isInMenu = true;
@@ -503,6 +639,9 @@ namespace WhackerLinkMobileRadio
             txt_Line2.IsReadOnly = false;
         }
 
+        /// <summary>
+        /// Helper to exit the page menu
+        /// </summary>
         private void ExitPageMenu()
         {
             ClearFields(true);
@@ -512,12 +651,19 @@ namespace WhackerLinkMobileRadio
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, false, false, false);
         }
 
+        /// <summary>
+        /// Setup the soft buttons
+        /// </summary>
         private void SetupSoftButtons()
         {
             txt_SoftMenu1.Text = "PAGE";
             txt_SoftMenu4.Text = string.Empty;
         }
 
+        /// <summary>
+        /// Helper to clear most fields
+        /// </summary>
+        /// <param name="forMenu"></param>
         private void ClearFields(bool forMenu = false)
         {
             if (_isInMenu && !forMenu) return;
@@ -530,6 +676,11 @@ namespace WhackerLinkMobileRadio
                 SetRssiSource("");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="forMenu"></param>
         public void SetLine1Text(string text, bool forMenu = false)
         {
             if (_isInMenu && !forMenu) return;
@@ -537,6 +688,11 @@ namespace WhackerLinkMobileRadio
             txt_Line1.Text = text;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="forMenu"></param>
         public void SetLine2Text(string text, bool forMenu = false)
         {
             if (_isInMenu && !forMenu) return;
@@ -544,6 +700,11 @@ namespace WhackerLinkMobileRadio
             txt_Line2.Text = text;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="forMenu"></param>
         public void SetLine3Text(string text, bool forMenu = false)
         {
             if (_isInMenu && !forMenu) return;
@@ -551,6 +712,10 @@ namespace WhackerLinkMobileRadio
             txt_Line3.Text = text;
         }
 
+        /// <summary>
+        /// Helper to set RSSI icon source
+        /// </summary>
+        /// <param name="name"></param>
         public void SetRssiSource(string name)
         {
             if (string.IsNullOrEmpty(name))
@@ -567,6 +732,11 @@ namespace WhackerLinkMobileRadio
             icon_Rssi.Source = bitmap;
         }
 
+        /// <summary>
+        /// Helper to play audio data
+        /// </summary>
+        /// <param name="audioData"></param>
+        /// <param name="voiceChannel"></param>
         private void PlayAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
             if (string.IsNullOrEmpty(_currentChannel)) return;
@@ -579,6 +749,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// Power Button clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_Power_Click(object sender, RoutedEventArgs e)
         {
             if (!_powerOn)
@@ -589,11 +764,19 @@ namespace WhackerLinkMobileRadio
             _powerOn = !_powerOn;
         }
 
+        /// <summary>
+        /// Emerg button clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_Emerg_Click(object sender, RoutedEventArgs e)
         {
             SendEmergencyAlarmRequest();
         }
 
+        /// <summary>
+        /// Helper to power on radio
+        /// </summary>
         private void TogglePowerOn()
         {
             _codeplug = LoadCodeplug("codeplug.yml");
@@ -615,12 +798,20 @@ namespace WhackerLinkMobileRadio
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, true);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_Emerg_MouseDown(object sender, MouseButtonEventArgs e)
         {
             SetLine3Text(null);
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Helper to power off the radio
+        /// </summary>
         private void PowerOff()
         {
             SendUnitDeRegistrationRequest();
@@ -630,6 +821,11 @@ namespace WhackerLinkMobileRadio
             _isRegistered = false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_ZoneUp_Click(object sender, RoutedEventArgs e)
         {
             ChangeZone(1);
@@ -640,11 +836,20 @@ namespace WhackerLinkMobileRadio
             ChangeZone(-1);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_ChangeChannel_Click(object sender, RoutedEventArgs e)
         {
             ChangeChannel();
         }
 
+        /// <summary>
+        /// Helper to change zones
+        /// </summary>
+        /// <param name="direction"></param>
         private void ChangeZone(int direction)
         {
             if (!_powerOn || _codeplug == null) return;
@@ -657,6 +862,9 @@ namespace WhackerLinkMobileRadio
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, true);
         }
 
+        /// <summary>
+        /// Helper to change channels
+        /// </summary>
         private void ChangeChannel()
         {
             if (!_powerOn || _codeplug == null) return;
@@ -668,6 +876,9 @@ namespace WhackerLinkMobileRadio
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, false);
         }
 
+        /// <summary>
+        /// Handle Master connection
+        /// </summary>
         private void HandleConnectionOpen()
         {
             if (_powerOn)
@@ -677,6 +888,9 @@ namespace WhackerLinkMobileRadio
             _reconnectTimer.Stop();
         }
 
+        /// <summary>
+        /// Handle Master connecion close
+        /// </summary>
         private void HandleConnectionClose()
         {
             if (_powerOn)
@@ -689,6 +903,11 @@ namespace WhackerLinkMobileRadio
             _reconnectTimer.Start();
         }
 
+        /// <summary>
+        /// Master reconnect timer tick
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ReconnectTimer_Tick(object sender, EventArgs e)
         {
             if (!_webSocketHandler.IsConnected && _currentSystem != null && _powerOn)
@@ -700,6 +919,11 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_SoftMenu1_Click(object sender, RoutedEventArgs e)
         {
             if (!_isInMenu)
@@ -708,6 +932,11 @@ namespace WhackerLinkMobileRadio
                 SendCallAlertRequest();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_SoftMenu4_Click(object sender, RoutedEventArgs e)
         {
             if (_isInMenu)
@@ -716,6 +945,15 @@ namespace WhackerLinkMobileRadio
                 BeepGenerator.Bonk();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="hwnd"></param>
+        /// <param name="msg"></param>
+        /// <param name="wParam"></param>
+        /// <param name="lParam"></param>
+        /// <param name="handled"></param>
+        /// <returns></returns>
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             const int WM_MOUSEACTIVATE = 0x0021;
@@ -728,6 +966,11 @@ namespace WhackerLinkMobileRadio
             return IntPtr.Zero;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             var hwnd = new WindowInteropHelper(this).Handle;
@@ -735,6 +978,11 @@ namespace WhackerLinkMobileRadio
             HwndSource.FromHwnd(hwnd)?.AddHook(new HwndSourceHook(WndProc));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="proc"></param>
+        /// <returns></returns>
         private IntPtr SetHook(NativeMethods.LowLevelKeyboardProc proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
@@ -744,6 +992,13 @@ namespace WhackerLinkMobileRadio
             }
         }
                 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nCode"></param>
+        /// <param name="wParam"></param>
+        /// <param name="lParam"></param>
+        /// <returns></returns>
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             try
@@ -773,6 +1028,10 @@ namespace WhackerLinkMobileRadio
             return nint.Zero;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="vkCode"></param>
         private void OnGlobalKeyDown(int vkCode)
         {
             if (vkCode == 33)
@@ -781,6 +1040,10 @@ namespace WhackerLinkMobileRadio
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="vkCode"></param>
         private void OnGlobalKeyUp(int vkCode)
         {
             if (vkCode == 33)
@@ -798,11 +1061,21 @@ namespace WhackerLinkMobileRadio
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_Minimize_Click(object sender, RoutedEventArgs e)
         {
             this.WindowState = WindowState.Minimized;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_FocusRadioToggle_Click(object sender, RoutedEventArgs e)
         {
 /*            if (_isFocused)
