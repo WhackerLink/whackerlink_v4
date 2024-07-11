@@ -1,4 +1,24 @@
-﻿using WebSocketSharp;
+﻿/*
+* WhackerLink - WhackerLinkServer
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+* 
+* Copyright (C) 2024 Caleb, KO4UYJ
+* 
+*/
+
+using WebSocketSharp;
 using WebSocketSharp.Server;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,6 +39,9 @@ using vocoder;
 
 namespace WhackerLinkServer
 {
+    /// <summary>
+    /// Class to handle web socket clients
+    /// </summary>
     public class ClientHandler : WebSocketBehavior
     {
         private Config.MasterConfig masterConfig;
@@ -33,6 +56,17 @@ namespace WhackerLinkServer
         private MBEEncoderManaged p25Encoder;
 #endif
 
+        /// <summary>
+        /// Creates an instance of ClientHandler
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="aclManager"></param>
+        /// <param name="affiliationsManager"></param>
+        /// <param name="voiceChannelManager"></param>
+        /// <param name="reporter"></param>
+        /// <param name="p25Decoder"></param>
+        /// <param name="p25Encoder"></param>
+        /// <param name="logger"></param>
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
             VoiceChannelManager voiceChannelManager, Reporter reporter,
 #if !NOVOCODE
@@ -53,6 +87,10 @@ namespace WhackerLinkServer
 #endif
         }
 
+        /// <summary>
+        /// Callback for webhook message
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnMessage(MessageEventArgs e)
         {
             try
@@ -101,6 +139,10 @@ namespace WhackerLinkServer
             }
         }
 
+        /// <summary>
+        /// Called on webhook disconnect
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
@@ -122,18 +164,29 @@ namespace WhackerLinkServer
             logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
         }
 
+        /// <summary>
+        /// Called on webhook error
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnError(ErrorEventArgs e)
         {
             base.OnError(e);
             logger.Error("WebSocket error: {Message}", e.Message);
         }
 
+        /// <summary>
+        /// Called on webhook connection
+        /// </summary>
         protected override void OnOpen()
         {
             base.OnOpen();
             // logger.Information("WebSocket connection opened for client {ClientId}", ID);
         }
 
+        /// <summary>
+        /// Handled emergencyy alarm requests
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
         {
             logger.Information(request.ToString());
@@ -150,6 +203,10 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.EMRG_ALRM_RSP, request.SrcId, request.DstId, null);
         }
 
+        /// <summary>
+        /// Handles call alert requests
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleCallAlertRequest(CALL_ALRT_REQ request)
         {
             logger.Information(request.ToString());
@@ -166,6 +223,10 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.CALL_ALRT, request.SrcId, request.DstId, null);
         }
 
+        /// <summary>
+        /// Handles group affiliation request
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleGroupAffiliationRequest(GRP_AFF_REQ request)
         {
             logger.Information(request.ToString());
@@ -205,6 +266,10 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.GRP_AFF_RSP, request.SrcId, request.DstId, null, (ResponseType)response.Status);
         }
 
+        /// <summary>
+        /// Handles u reg request
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleUnitRegistrationRequest(U_REG_REQ request)
         {
             logger.Information(request.ToString());
@@ -233,6 +298,10 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.U_REG_RSP, request.SrcId, null, null, (ResponseType)response.Status);
         }
 
+        /// <summary>
+        /// Handles u de reg request
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleUnitDeRegistrationRequest(U_DE_REG_REQ request)
         {
             logger.Information(request.ToString());
@@ -270,6 +339,10 @@ namespace WhackerLinkServer
             Context.WebSocket.Close();
         }
 
+        /// <summary>
+        /// Handles voice channel request
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleVoiceChannelRequest(GRP_VCH_REQ request)
         {
             logger.Information(request.ToString());
@@ -312,6 +385,10 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.GRP_VCH_RSP, request.SrcId, request.DstId, null, (ResponseType)response.Status);
         }
 
+        /// <summary>
+        /// Handles voice channel release
+        /// </summary>
+        /// <param name="request"></param>
         private void HandleVoiceChannelRelease(GRP_VCH_RLS request)
         {
             logger.Information(request.ToString());
@@ -349,11 +426,23 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.GRP_VCH_RLS, request.SrcId, request.DstId, null);
         }
 
+        /// <summary>
+        /// Checks if the affiliation is allowed to happen
+        /// </summary>
+        /// <param name="srcId"></param>
+        /// <param name="dstId"></param>
+        /// <returns></returns>
         private bool isAffiliationPermitted(string srcId, string dstId)
         {
             return true; // TODO: Actually use this
         }
 
+        /// <summary>
+        /// Checks if the destination is currently permitted
+        /// </summary>
+        /// <param name="srcId"></param>
+        /// <param name="dstId"></param>
+        /// <returns></returns>
         private bool isDestinationPermitted(string srcId, string dstId)
         {
             bool value = true;
@@ -366,11 +455,20 @@ namespace WhackerLinkServer
             return value;
         }
 
+        /// <summary>
+        /// Checks if RID is authorized
+        /// </summary>
+        /// <param name="srcId"></param>
+        /// <returns></returns>
         private bool isRidAuthed(string srcId)
         {
             return aclManager.IsRidAllowed(srcId);
         }
 
+        /// <summary>
+        /// Gets list of available voice channels
+        /// </summary>
+        /// <returns></returns>
         private string GetAvailableVoiceChannel()
         {
             foreach (var channel in masterConfig.VoiceChannels)
@@ -383,6 +481,11 @@ namespace WhackerLinkServer
             return null;
         }
 
+        /// <summary>
+        /// Broadcasts a message to all clients (Optionally skip the sender
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="skipMe"></param>
         private void BroadcastMessage(string message, bool skipMe = false)
         {
             foreach (var session in Sessions.Sessions)
@@ -394,6 +497,11 @@ namespace WhackerLinkServer
             }
         }
 
+        /// <summary>
+        /// Helper to broadcast audio. Also handles vocoding
+        /// </summary>
+        /// <param name="audioData"></param>
+        /// <param name="voiceChannel"></param>
         private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(voiceChannel.DstId);

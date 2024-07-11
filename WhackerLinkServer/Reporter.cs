@@ -1,9 +1,25 @@
-﻿using System;
+﻿/*
+* WhackerLink - WhackerLinkServer
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+* 
+* Copyright (C) 2024 Caleb, KO4UYJ
+* 
+*/
+
 using System.Globalization;
-using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog;
 using WhackerLinkCommonLib.Models;
@@ -12,6 +28,9 @@ using WhackerLinkCommonLib.Models;
 
 namespace WhackerLinkServer
 {
+    /// <summary>
+    /// Class to send HTTP POST reports 
+    /// </summary>
     public class Reporter
     {
         private string address;
@@ -19,6 +38,12 @@ namespace WhackerLinkServer
         private ILogger logger;
         private readonly HttpClient _httpClient;
 
+        /// <summary>
+        /// Creates an instance of Reporter
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
+        /// <param name="logger"></param>
         public Reporter(string address, int port, ILogger logger)
         {
             this.address = address;

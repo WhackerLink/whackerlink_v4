@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace WhackerLinkServer.Models
 {
+    /// <summary>
+    /// Vocoder mode
+    /// </summary>
     public enum VocoderModes
     {
         DISABLED,

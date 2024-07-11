@@ -1,4 +1,24 @@
-﻿using Serilog;
+﻿/*
+* WhackerLink - WhackerLinkServer
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+* 
+* Copyright (C) 2024 Caleb, KO4UYJ
+* 
+*/
+
+using Serilog;
 using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
@@ -8,6 +28,9 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace WhackerLinkServer
 {
+    /// <summary>
+    /// App Entry class
+    /// </summary>
     class Program
     {
         internal static Config config;
@@ -15,6 +38,11 @@ namespace WhackerLinkServer
         private static List<Task> masterTasks = new List<Task>();
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
+        /// <summary>
+        /// App entry point
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
         static async Task Main(string[] args)
         {
             logger = LoggerSetup.CreateLogger(string.Empty);
@@ -65,6 +93,11 @@ namespace WhackerLinkServer
             }
         }
 
+        /// <summary>
+        /// Helper to load config file
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private static Config LoadConfig(string path)
         {
             try
@@ -83,6 +116,9 @@ namespace WhackerLinkServer
             }
         }
 
+        /// <summary>
+        /// Gracefully kill all masters then die
+        /// </summary>
         private static void Shutdown()
         {
             cancellationTokenSource.Cancel();
