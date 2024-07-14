@@ -356,7 +356,8 @@ namespace WhackerLinkServer
 
             var availableChannel = GetAvailableVoiceChannel();
 
-            if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
+            //if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
+            if (true)
             {
                 voiceChannelManager.AddVoiceChannel(new VoiceChannel
                 {
@@ -505,6 +506,12 @@ namespace WhackerLinkServer
         private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
         {
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(voiceChannel.DstId);
+
+            if (!voiceChannelManager.IsDestinationActive(voiceChannel.DstId))
+            {
+                logger.Warning("Ignoring call; destination not permitted for traffic srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
+                return;
+            }
 
             if (voiceChannel != null && channel.ClientId != ID)
             {
