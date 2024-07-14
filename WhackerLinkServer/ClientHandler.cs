@@ -356,8 +356,7 @@ namespace WhackerLinkServer
 
             var availableChannel = GetAvailableVoiceChannel();
 
-            //if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
-            if (true)
+            if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
             {
                 voiceChannelManager.AddVoiceChannel(new VoiceChannel
                 {
