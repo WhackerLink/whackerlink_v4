@@ -69,13 +69,17 @@ namespace WhackerLinkServer
             if (config.VocoderMode == VocoderModes.DMRAMBE)
             {
                 p25Decoder = new MBEDecoderManaged(MBEMode.DMRAMBE);
+                p25Decoder.AutoGain = true;
                 p25Encoder = new MBEEncoderManaged(MBEMode.DMRAMBE);
+                p25Encoder.GainAdjust = (float)3.0;
                 logger.Information("AMBE Vocoder enabled");
             }
             else if (config.VocoderMode == VocoderModes.IMBE)
             {
                 p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
+                p25Decoder.AutoGain = true;
                 p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
+                p25Encoder.GainAdjust = (float)3.0;
                 logger.Information("IMBE Vocoder enabled");
             }
             else
