@@ -235,7 +235,7 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.GRP_AFF_REQ, request.SrcId, request.DstId, request.Site, null);
 
             var clientId = ID;
-            Affiliation affiliation = new Affiliation(clientId, request.SrcId, request.DstId);
+            Affiliation affiliation = new Affiliation(clientId, request.SrcId, request.DstId, request.Site);
 
             var response = new GRP_AFF_RSP
             {
