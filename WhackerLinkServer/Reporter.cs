@@ -94,7 +94,7 @@ namespace WhackerLinkServer
         /// <param name="srcId"></param>
         /// <param name="dstId"></param>
         /// <param name="extra"></param>
-        public void Send(PacketType type, string srcId, string dstId, string extra, ResponseType responseType = ResponseType.UNKOWN)
+        public void Send(PacketType type, string srcId, string dstId, Site site, string extra, ResponseType responseType = ResponseType.UNKOWN)
         {
             var utcNow = DateTime.UtcNow;
 
@@ -108,6 +108,7 @@ namespace WhackerLinkServer
                 Type = type,
                 SrcId = srcId,
                 DstId = dstId,
+                Site = site,
                 ResponseType = responseType,
                 Extra = extra,
                 Timestamp = timestamp

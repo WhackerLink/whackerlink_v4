@@ -31,14 +31,91 @@ masters:
         # Port to send to
         port: 3005
 
-    # List of control channels. Not super useful exept for Multi Watch
-    controlChannels:
-      - "854.9625"
+    # List of sites. Note: If using with FiveM this should match your sites.yml
+    sites:
+        # Textual alias
+      - name: "Central Site"
+        # Control channel frequency
+        controlChannel: "772.74375"
+        # List of available voice channels. If voice channels run out, users will be denied grants.
+        voiceChannels:
+          - "771.66875"
+          - "772.46875"
+          - "773.74375"
+          - "855.7375"
+        # Site location (Mainly for FiveM)
+        location:
+          x: 757.89
+          y: 1274.17
+          z: 360.3
+        # Site ID
+        systemID: 1
+        # System ID
+        siteID: 1
+        # Site range (Mainly for FiveM)
+        range: 1.5
 
-    # List of available voice channels. If voice channels run out, users will be denied grants.
-    voiceChannels:
-      - "853.9625"
-      - "855.9625"
+      - name: "Central-West Site"
+        controlChannel: "852.8875"
+        voiceChannels:
+          - "857.2625"
+          - "857.4375"
+          - "851.7375"
+        location:
+          x: -2312.05
+          y: 336.79
+          z: 188.6
+        systemID: 1
+        siteID: 2
+        range: 2.0
+
+      - name: "City-FBI Site"
+        controlChannel: "773.66875"
+        voiceChannels:
+          - "774.89375"
+          - "772.11875"
+          - "771.06875"
+          - "770.04375"
+          - "769.28125"
+        location:
+          x: 148.69
+          y: -770.36
+          z: 262.85
+        systemID: 1
+        siteID: 3
+        range: 2.0
+
+      - name: "North-East Site"
+        controlChannel: "854.9625"
+        voiceChannels:
+          - "853.2125"
+          - "852.6625"
+          - "852.0375"
+          - "851.7125"
+          - "773.16875"
+          - "769.36875"
+        location:
+          x: 1869.07
+          y: 3715.00
+          z: 33.06
+        systemID: 1
+        siteID: 4
+        range: 1.5
+
+      - name: "North-Central Site"
+        controlChannel: "856.7625"
+        voiceChannels:
+          - "855.4625"
+          - "855.2125"
+          - "852.9125"
+          - "852.0625"
+        location:
+          x: 450.82
+          y: 5567.40
+          z: 796.62
+        systemID: 1
+        siteID: 5
+        range: 2.0
 
     # Radio ID Access List Configuration
     ridAcl:

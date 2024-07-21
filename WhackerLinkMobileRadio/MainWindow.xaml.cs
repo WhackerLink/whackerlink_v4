@@ -75,6 +75,7 @@ namespace WhackerLinkMobileRadio
         private bool _isRecording = false;
         private bool _isReceiving = false;
         private bool _isInMenu = false;
+        private Site _currentSite;
 
         private TaskCompletionSource<bool> _deregistrationCompletionSource;
         private DispatcherTimer _reconnectTimer;
@@ -157,6 +158,7 @@ namespace WhackerLinkMobileRadio
         public bool IsInRange { get => _isInRange; set => _isInRange = value; }
         public string MyRid { get => _myRid; set => _myRid = value; }
         public string CurrentTgid { get => _currentTgid; set => _currentTgid = value; }
+        public Site CurrentSite { get => _currentSite; set => _currentSite = value; }
         public Codeplug.System CurrentSystem { get => _currentSystem; set => _currentSystem = value; }
 
         /// <summary>
@@ -224,6 +226,7 @@ namespace WhackerLinkMobileRadio
                     {
                         SrcId = _myRid,
                         DstId = _currentTgid,
+                        Site = CurrentSite
                     }
                 };
                 _webSocketHandler.SendMessage(request);
@@ -309,7 +312,8 @@ namespace WhackerLinkMobileRadio
                 {
                     SrcId = _myRid,
                     SysId = "",
-                    Wacn = ""
+                    Wacn = "",
+                    Site = CurrentSite
                 }
             };
             _webSocketHandler.SendMessage(request);
@@ -331,7 +335,8 @@ namespace WhackerLinkMobileRadio
                 {
                     SrcId = _myRid,
                     DstId = _currentTgid,
-                    SysId = ""
+                    SysId = "",
+                    Site = CurrentSite
                 }
             };
             _webSocketHandler.SendMessage(request);
@@ -351,7 +356,8 @@ namespace WhackerLinkMobileRadio
                 {
                     SrcId = _myRid,
                     DstId = _currentTgid,
-                    SysId = ""
+                    SysId = "",
+                    Site = CurrentSite
                 }
             };
             _webSocketHandler.SendMessage(request);
@@ -370,7 +376,8 @@ namespace WhackerLinkMobileRadio
                 data = new EMRG_ALRM_REQ
                 {
                     SrcId = _myRid,
-                    DstId = _currentTgid
+                    DstId = _currentTgid,
+                    Site = CurrentSite
                 }
             };
             _webSocketHandler.SendMessage(request);
@@ -389,7 +396,8 @@ namespace WhackerLinkMobileRadio
                 data = new CALL_ALRT_REQ
                 {
                     SrcId = _myRid,
-                    DstId = txt_Line2.Text
+                    DstId = txt_Line2.Text,
+                    Site = CurrentSite
                 }
             };
             _webSocketHandler.SendMessage(request);
@@ -414,7 +422,8 @@ namespace WhackerLinkMobileRadio
                     {
                         SrcId = _myRid,
                         DstId = _currentTgid,
-                        Channel = _currentChannel
+                        Channel = _currentChannel,
+                        Site = CurrentSite
                     }
                 };
 
@@ -455,8 +464,9 @@ namespace WhackerLinkMobileRadio
                     {
                         SrcId = _myRid,
                         DstId = _currentTgid,
-                        Frequency = _currentChannel
-                    }
+                        Frequency = _currentChannel,
+                    },
+                    site = CurrentSite
                 };
                 _webSocketHandler.SendMessage(audioData);
             }
@@ -794,7 +804,7 @@ namespace WhackerLinkMobileRadio
 
             _proc = HookCallback;
             _hookID = SetHook(_proc);
-
+            
             _radioDisplayUpdater.UpdateDisplay(_codeplug, _currentZoneIndex, _currentChannelIndex, true, true);
         }
 

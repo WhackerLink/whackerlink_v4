@@ -31,6 +31,7 @@ namespace WhackerLinkCommonLib.Models.Radio
             public string Address { get; set; }
             public int Port { get; set; }
             public string Rid { get; set; }
+            public Site Site { get; set; }
         }
 
         public class Zone

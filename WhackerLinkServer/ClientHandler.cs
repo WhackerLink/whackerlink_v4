@@ -48,6 +48,7 @@ namespace WhackerLinkServer
         private RidAclManager aclManager;
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
+        private SiteManager siteManager;
         private Reporter reporter;
         private ILogger logger;
 
@@ -68,7 +69,7 @@ namespace WhackerLinkServer
         /// <param name="p25Encoder"></param>
         /// <param name="logger"></param>
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
-            VoiceChannelManager voiceChannelManager, Reporter reporter,
+            VoiceChannelManager voiceChannelManager, SiteManager siteManager, Reporter reporter,
 #if !NOVOCODE
             MBEDecoderManaged p25Decoder, MBEEncoderManaged p25Encoder,
 #endif
@@ -78,6 +79,7 @@ namespace WhackerLinkServer
             this.aclManager = aclManager;
             this.affiliationsManager = affiliationsManager;
             this.voiceChannelManager = voiceChannelManager;
+            this.siteManager = siteManager;
             this.reporter = reporter;
             this.logger = logger;
 
@@ -122,7 +124,7 @@ namespace WhackerLinkServer
                         HandleCallAlertRequest(data["data"].ToObject<CALL_ALRT_REQ>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
-                        BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>());
+                        BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>(), data["site"].ToObject<Site>());
                         break;
                     default:
                         logger.Warning("Unknown message type: {Type}", type);
@@ -190,7 +192,7 @@ namespace WhackerLinkServer
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.EMRG_ALRM_REQ, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.EMRG_ALRM_REQ, request.SrcId, request.DstId, request.Site, null);
 
             var response = new EMRG_ALRM_RSP
             {
@@ -200,7 +202,7 @@ namespace WhackerLinkServer
 
             BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
             logger.Information(response.ToString());
-            reporter.Send(PacketType.EMRG_ALRM_RSP, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.EMRG_ALRM_RSP, request.SrcId, request.DstId, request.Site, null);
         }
 
         /// <summary>
@@ -210,7 +212,7 @@ namespace WhackerLinkServer
         private void HandleCallAlertRequest(CALL_ALRT_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.CALL_ALRT_REQ, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.CALL_ALRT_REQ, request.SrcId, request.DstId, request.Site, null);
 
             var response = new CALL_ALRT
             {
@@ -220,7 +222,7 @@ namespace WhackerLinkServer
 
             BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
             logger.Information(response.ToString());
-            reporter.Send(PacketType.CALL_ALRT, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.CALL_ALRT, request.SrcId, request.DstId, request.Site, null);
         }
 
         /// <summary>
@@ -230,7 +232,7 @@ namespace WhackerLinkServer
         private void HandleGroupAffiliationRequest(GRP_AFF_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.GRP_AFF_REQ, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.GRP_AFF_REQ, request.SrcId, request.DstId, request.Site, null);
 
             var clientId = ID;
             Affiliation affiliation = new Affiliation(clientId, request.SrcId, request.DstId);
@@ -263,7 +265,7 @@ namespace WhackerLinkServer
 
             BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
             logger.Information(response.ToString());
-            reporter.Send(PacketType.GRP_AFF_RSP, request.SrcId, request.DstId, null, (ResponseType)response.Status);
+            reporter.Send(PacketType.GRP_AFF_RSP, request.SrcId, request.DstId, request.Site, null, (ResponseType)response.Status);
         }
 
         /// <summary>
@@ -273,7 +275,7 @@ namespace WhackerLinkServer
         private void HandleUnitRegistrationRequest(U_REG_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.U_REG_REQ, request.SrcId, null, null);
+            reporter.Send(PacketType.U_REG_REQ, request.SrcId, null, request.Site, null);
 
             var response = new U_REG_RSP
             {
@@ -295,7 +297,7 @@ namespace WhackerLinkServer
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_REG_RSP, data = response }));
             logger.Information(response.ToString());
 
-            reporter.Send(PacketType.U_REG_RSP, request.SrcId, null, null, (ResponseType)response.Status);
+            reporter.Send(PacketType.U_REG_RSP, request.SrcId, null, request.Site, null, (ResponseType)response.Status);
         }
 
         /// <summary>
@@ -305,7 +307,7 @@ namespace WhackerLinkServer
         private void HandleUnitDeRegistrationRequest(U_DE_REG_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.U_DE_REG_REQ, request.SrcId, null, null);
+            reporter.Send(PacketType.U_DE_REG_REQ, request.SrcId, null, request.Site, null);
 
             var response = new U_DE_REG_RSP
             {
@@ -334,7 +336,7 @@ namespace WhackerLinkServer
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_DE_REG_RSP, data = response }));
             logger.Information(response.ToString());
-            reporter.Send(PacketType.U_DE_REG_RSP, request.SrcId, null, null, (ResponseType)response.Status);
+            reporter.Send(PacketType.U_DE_REG_RSP, request.SrcId, null,request.Site, null, (ResponseType)response.Status);
 
             Context.WebSocket.Close();
         }
@@ -346,7 +348,7 @@ namespace WhackerLinkServer
         private void HandleVoiceChannelRequest(GRP_VCH_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.GRP_VCH_REQ, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.GRP_VCH_REQ, request.SrcId, request.DstId, request.Site, null);
 
             var response = new GRP_VCH_RSP
             {
@@ -354,7 +356,17 @@ namespace WhackerLinkServer
                 SrcId = request.SrcId
             };
 
-            var availableChannel = GetAvailableVoiceChannel();
+            var site = siteManager.GetSiteById(request.Site.SiteID);
+
+            if (site == null)
+            {
+                logger.Warning("Site not found for SiteId: {SiteId}", request.Site.SiteID);
+                response.Status = (int)ResponseType.DENY;
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                return;
+            }
+
+            var availableChannel = GetAvailableVoiceChannel(site);
 
             if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
             {
@@ -365,7 +377,7 @@ namespace WhackerLinkServer
                     Frequency = availableChannel,
                     ClientId = ID,
                     IsActive = true,
-                    ControlChannel = masterConfig.ControlChannels[0]
+                    Site = site
                 });
 
                 response.Channel = availableChannel;
@@ -382,7 +394,7 @@ namespace WhackerLinkServer
                 logger.Information(response.ToString());
             }
 
-            reporter.Send(PacketType.GRP_VCH_RSP, request.SrcId, request.DstId, null, (ResponseType)response.Status);
+            reporter.Send(PacketType.GRP_VCH_RSP, request.SrcId, request.DstId, request.Site, null, (ResponseType)response.Status);
         }
 
         /// <summary>
@@ -423,7 +435,7 @@ namespace WhackerLinkServer
                 logger.Warning("Voice channel {Channel} not found to release", request.Channel);
             }
 
-            reporter.Send(PacketType.GRP_VCH_RLS, request.SrcId, request.DstId, null);
+            reporter.Send(PacketType.GRP_VCH_RLS, request.SrcId, request.DstId, request.Site, null);
         }
 
         /// <summary>
@@ -469,9 +481,9 @@ namespace WhackerLinkServer
         /// Gets list of available voice channels
         /// </summary>
         /// <returns></returns>
-        private string GetAvailableVoiceChannel()
+        private string GetAvailableVoiceChannel(Site site)
         {
-            foreach (var channel in masterConfig.VoiceChannels)
+            foreach (var channel in site.VoiceChannels)
             {
                 if (!voiceChannelManager.IsVoiceChannelActive(new VoiceChannel { Frequency = channel }))
                 {
@@ -502,7 +514,7 @@ namespace WhackerLinkServer
         /// </summary>
         /// <param name="audioData"></param>
         /// <param name="voiceChannel"></param>
-        private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel)
+        private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel, Site site)
         {
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(voiceChannel.DstId);
 
@@ -514,7 +526,7 @@ namespace WhackerLinkServer
 
             if (voiceChannel != null && channel.ClientId != ID)
             {
-                logger.Warning("Ingoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
+                logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
                 voiceChannelManager.RemoveVoiceChannelByClientId(ID);
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = voiceChannel.DstId, SrcId = voiceChannel.SrcId } }));
                 return;
@@ -572,7 +584,7 @@ namespace WhackerLinkServer
                 var combinedAudioData = AudioConverter.CombineChunks(processedChunks);
                 if (combinedAudioData != null)
                 {
-                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = combinedAudioData, voiceChannel }));
+                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = combinedAudioData, voiceChannel, site }));
                 }
                 else
                 {
@@ -582,7 +594,7 @@ namespace WhackerLinkServer
             }
             else
             {
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel }));
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel, site }));
             }
         }
     }

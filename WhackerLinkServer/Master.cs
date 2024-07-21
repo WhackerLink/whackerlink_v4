@@ -44,6 +44,7 @@ namespace WhackerLinkServer
         private Reporter reporter;
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
+        private SiteManager siteManager;
         private Timer aclReloadTimer;
         private ILogger logger;
 
@@ -62,6 +63,7 @@ namespace WhackerLinkServer
             this.aclManager = new RidAclManager(config.RidAcl.Enabled);
             this.affiliationsManager = new AffiliationsManager();
             this.voiceChannelManager = new VoiceChannelManager();
+            this.siteManager = new SiteManager();
             this.logger = LoggerSetup.CreateLogger(config.Name);
 
 #if !NOVOCODE
@@ -113,21 +115,12 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
-        /// Get list of available voice channels
+        /// Gets a list of sites
         /// </summary>
         /// <returns></returns>
-        public List<string> GetAvailableVoiceChannels()
+        public List<Site> GetSites()
         {
-            return config.VoiceChannels;
-        }
-
-        /// <summary>
-        /// Gets a list of control channels
-        /// </summary>
-        /// <returns></returns>
-        public List<string> GetControlChannels()
-        {
-            return config.ControlChannels;
+            return config.Sites;
         }
 
         /// <summary>
@@ -180,9 +173,14 @@ namespace WhackerLinkServer
                     reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger);
                 }
 
+                foreach (var site in config.Sites)
+                {
+                    siteManager.AddSite(site);
+                }
+
                 server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
 #pragma warning disable CS0618 // Type or member is obsolete
-                server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, reporter,
+                server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
 #if !NOVOCODE
                     p25Decoder, p25Encoder,
 #endif

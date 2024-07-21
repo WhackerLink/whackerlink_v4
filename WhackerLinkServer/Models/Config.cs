@@ -20,6 +20,8 @@
 
 #nullable disable
 
+using WhackerLinkCommonLib.Models;
+
 namespace WhackerLinkServer.Models
 {
     /// <summary>
@@ -51,8 +53,7 @@ namespace WhackerLinkServer.Models
             public VocoderModes VocoderMode { get; set; }
             public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
-            public List<string> ControlChannels { get; set; }
-            public List<string> VoiceChannels { get; set; }
+            public List<Site> Sites { get; set; }
         }
 
         /// <summary>

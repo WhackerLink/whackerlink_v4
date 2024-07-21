@@ -70,6 +70,7 @@ namespace WhackerLinkCommonLib.UI
                                 await Task.Delay(350);
                             }
 
+                            _radioDisplay.CurrentSite = newSystem.Site;
                             _radioDisplay.SendUnitRegistrationRequest();
                         }
                     }
@@ -88,6 +89,7 @@ namespace WhackerLinkCommonLib.UI
                         }
                     }
 
+                    _radioDisplay.CurrentSite = newSystem.Site;
                     _radioDisplay.SendGroupAffiliationRequest();
                 }
             }

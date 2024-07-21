@@ -9,8 +9,7 @@ namespace WhackerLinkCommonLib.Interfaces
         ILogger Logger {  get; }
         List<Affiliation> GetAffiliations();
         List<VoiceChannel> GetVoiceChannels();
-        List<string> GetAvailableVoiceChannels();
-        List<string> GetControlChannels();
+        List<Site> GetSites();
         List<RidAclEntry> GetRidAcl();
         bool GetRidAclEnabled();
         void Start(CancellationToken cancellationToken);

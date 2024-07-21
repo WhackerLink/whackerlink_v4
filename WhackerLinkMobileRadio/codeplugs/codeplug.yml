@@ -16,6 +16,17 @@ systems:
     address: "localhost"
     port: 3009
     rid: "123456"
+    site:
+        name: "Central Site"
+        controlChannel: "772.74375"
+        voiceChannels: []
+        location:
+          x: 757.89
+          y: 1274.17
+          z: 360.3
+        systemID: 1
+        siteID: 1
+        range: 1.5
 
 zones:
   - name: "Zone 1"

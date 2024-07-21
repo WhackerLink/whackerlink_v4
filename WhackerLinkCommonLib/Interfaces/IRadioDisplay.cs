@@ -1,4 +1,5 @@
-﻿using WhackerLinkCommonLib.Models.Radio;
+﻿using WhackerLinkCommonLib.Models;
+using WhackerLinkCommonLib.Models.Radio;
 
 namespace WhackerLinkCommonLib.Interfaces
 {
@@ -16,6 +17,7 @@ namespace WhackerLinkCommonLib.Interfaces
         bool IsInRange { get; set; }
         string MyRid { get; set; }
         string CurrentTgid { get; set; }
+        Site CurrentSite { get; set; }
         Codeplug.System CurrentSystem { get; set; }
     }
 }

@@ -44,8 +44,7 @@ namespace WhackerLinkServer.RestApi.Modules
 
                 var response = new
                 {
-                    ControlChannels = masterService.GetControlChannels(),
-                    AvailableVoiceChannels = masterService.GetAvailableVoiceChannels(),
+                    Sites = masterService.GetSites(),
                     ActiveVoiceChannels = masterService.GetVoiceChannels()
                 };
 

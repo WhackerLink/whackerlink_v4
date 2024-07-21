@@ -9,6 +9,6 @@ namespace WhackerLinkCommonLib.Models
         public string Frequency { get; set; }
         public string ClientId {  get; set; }
         public bool IsActive { get; set; }
-        public string ControlChannel { get; set; }
+        public Site Site { get; set; }
     }
 }
