@@ -44,6 +44,9 @@ namespace WhackerLinkServer
     /// </summary>
     public class ClientHandler : WebSocketBehavior
     {
+        private Dictionary<string, Timer> talkgroupHangTimers = new Dictionary<string, Timer>();
+        private readonly TimeSpan hangTimeout = TimeSpan.FromMinutes(3);
+
         private Config.MasterConfig masterConfig;
         private RidAclManager aclManager;
         private AffiliationsManager affiliationsManager;
@@ -159,7 +162,22 @@ namespace WhackerLinkServer
             foreach (var channel in channelsToRemove)
             {
                 voiceChannelManager.RemoveVoiceChannel(channel);
+                BroadcastMessage(JsonConvert.SerializeObject(new GRP_VCH_RLS {
+                    SrcId = voiceChannelManager.FindVoiceChannelByClientId(ID).SrcId,
+                    DstId = voiceChannelManager.FindVoiceChannelByClientId(ID).DstId,
+                    Channel = voiceChannelManager.FindVoiceChannelByClientId(ID).Frequency
+                }));
                 logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
+            }
+
+            var affiliations = affiliationsManager.GetAffiliationsByClientId(clientId);
+            foreach (var affiliation in affiliations)
+            {
+                if (talkgroupHangTimers.ContainsKey(affiliation.DstId))
+                {
+                    talkgroupHangTimers[affiliation.DstId].Dispose();
+                    talkgroupHangTimers.Remove(affiliation.DstId);
+                }
             }
 
             affiliationsManager.RemoveAffiliationByClientId(clientId);
@@ -370,6 +388,8 @@ namespace WhackerLinkServer
 
             if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
             {
+                ResetHangTimer(request.DstId, request.SrcId, site);
+
                 voiceChannelManager.AddVoiceChannel(new VoiceChannel
                 {
                     DstId = request.DstId,
@@ -435,6 +455,13 @@ namespace WhackerLinkServer
                 logger.Warning("Voice channel {Channel} not found to release", request.Channel);
             }
 
+            if (talkgroupHangTimers.ContainsKey(request.DstId))
+            {
+                talkgroupHangTimers[request.DstId].Dispose();
+                talkgroupHangTimers.Remove(request.DstId);
+                logger.Information("Stopped hang timer for talkgroup {DstId}", request.DstId);
+            }
+
             reporter.Send(PacketType.GRP_VCH_RLS, request.SrcId, request.DstId, request.Site, null);
         }
 
@@ -494,6 +521,50 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// Helper to reset hang timer
+        /// </summary>
+        /// <param name="talkgroupId"></param>
+        /// <param name="srcId"></param>
+        /// <param name="site"></param>
+        private void ResetHangTimer(string talkgroupId, string srcId, Site site)
+        {
+            if (talkgroupHangTimers.ContainsKey(talkgroupId))
+            {
+                talkgroupHangTimers[talkgroupId].Change(hangTimeout, Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                var timer = new Timer(HangTimerElapsed, new Tuple<string, string, Site>(talkgroupId, srcId, site), hangTimeout, Timeout.InfiniteTimeSpan);
+                talkgroupHangTimers.Add(talkgroupId, timer);
+            }
+        }
+
+        /// <summary>
+        /// Hang timer callback
+        /// </summary>
+        /// <param name="state"></param>
+        private void HangTimerElapsed(object state)
+        {
+            var data = (Tuple<string, string, Site>)state;
+            string talkgroupId = data.Item1;
+            string srcId = data.Item2;
+            Site site = data.Item3;
+
+            talkgroupHangTimers.Remove(talkgroupId);
+
+            var response = new GRP_VCH_RLS
+            {
+                SrcId = srcId,
+                DstId = talkgroupId,
+                Site = site
+            };
+
+            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
+            voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
+            logger.Information("Talkgroup hang timer elapsed, releasing voice channel for talkgroup {TalkgroupId}", talkgroupId);
+        }
+
+        /// <summary>
         /// Broadcasts a message to all clients (Optionally skip the sender
         /// </summary>
         /// <param name="message"></param>
@@ -528,7 +599,7 @@ namespace WhackerLinkServer
             {
                 logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
                 voiceChannelManager.RemoveVoiceChannelByClientId(ID);
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = voiceChannel.DstId, SrcId = voiceChannel.SrcId } }));
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = voiceChannel.DstId, SrcId = voiceChannel.SrcId, Site = site } }));
                 return;
             }
 

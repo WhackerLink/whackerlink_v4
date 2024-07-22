@@ -23,6 +23,8 @@ using System.Linq;
 using System.Text;
 using WhackerLinkServer.Models;
 
+#nullable disable
+
 namespace WhackerLinkServer.Managers
 {
     /// <summary>
@@ -93,6 +95,26 @@ namespace WhackerLinkServer.Managers
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
+        public Affiliation GetAffiliation(string clientId)
+        {
+            return Affiliations.FirstOrDefault(a => a.ClientId == clientId);
+        }
+
+        /// <summary>
+        /// Helper to get affiliations by client id
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
+        public List<Affiliation> GetAffiliationsByClientId(string clientId)
+        {
+            return Affiliations.Where(a => a.ClientId == clientId).ToList();
+        }
+
+        /// <summary>
         /// Helper to check if an affiliation insance is affiliated
         /// </summary>
         /// <param name="affiliation"></param>
@@ -107,7 +129,7 @@ namespace WhackerLinkServer.Managers
         /// </summary>
         /// <param name="srcId"></param>
         /// <returns></returns>
-        public bool iSrcIdAffiliated(string srcId)
+        public bool isSrcIdAffiliated(string srcId)
         {
             return Affiliations.Any(a => a.SrcId == srcId);
         }
