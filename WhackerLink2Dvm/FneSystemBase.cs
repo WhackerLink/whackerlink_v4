@@ -231,6 +231,7 @@ namespace WhackerLink2Dvm
         {
             foreach (Affiliation affiliation in response.Affiliations)
             {
+                fne.SendMasterGroupAffiliationRemoval(Convert.ToUInt32(affiliation.SrcId));
                 fne.SendMasterGroupAffiliation(Convert.ToUInt32(affiliation.SrcId), Convert.ToUInt32(affiliation.DstId));
             }
         }

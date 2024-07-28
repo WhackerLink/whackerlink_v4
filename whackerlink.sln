@@ -17,9 +17,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBEVocoderManaged", "MBEVoc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DVM", "DVM", "{ECDF05BE-A6FD-4105-9313-83E3F8A596B4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fnecore", "DVM\fnecore\fnecore.csproj", "{E2565674-D781-47DE-926D-0F8F3DC28D79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fnecore", "fnecore\fnecore.csproj", "{E2565674-D781-47DE-926D-0F8F3DC28D79}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhackerLink2Dvm", "WhackerLink2Dvm\WhackerLink2Dvm.csproj", "{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E2565674-D781-47DE-926D-0F8F3DC28D79} = {E2565674-D781-47DE-926D-0F8F3DC28D79}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{246EFF00-226C-43FA-942C-7A55450CA42D}"
 	ProjectSection(SolutionItems) = preProject
