@@ -53,7 +53,7 @@ namespace WhackerLink2Dvm
         private static FnePeer Create()
         {
             IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, WhackerLink2Dvm.config.Fne.Port);
-            string presharedKey = WhackerLink2Dvm.config.Fne.Ecnrypted ? WhackerLink2Dvm.config.Fne.PresharedKey : null;
+            string presharedKey = WhackerLink2Dvm.config.Fne.Encrypted ? WhackerLink2Dvm.config.Fne.PresharedKey : null;
 
             if (WhackerLink2Dvm.config.Fne.Address == null)
                 throw new NullReferenceException("address");
