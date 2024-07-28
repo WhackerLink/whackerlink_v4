@@ -9,6 +9,8 @@ fne:
   address: 127.0.0.1
   port: 62031
   passphrase: "RPT1234"
+  encrypted: false
+  presharedKey: "000102030405060708090A0B0C0D0E0F000102030405060708090A0B0C0D0E0F"
 
 whackerLink:
   name: "WL Patch"

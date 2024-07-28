@@ -25,6 +25,8 @@ namespace WhackerLink2Dvm.Models
             public string Address = "127.0.0.1";
             public int Port = 62031;
             public string Passphrase;
+            public bool Ecnrypted;
+            public string PresharedKey;
         }
 
         public class WhackerLinkConfiguration

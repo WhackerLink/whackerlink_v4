@@ -22,6 +22,8 @@ using System.Text;
 using System.Threading.Tasks;
 using WhackerLink2Dvm.Models;
 
+#nullable disable
+
 namespace WhackerLink2Dvm
 {
     /// <summary>
@@ -51,6 +53,7 @@ namespace WhackerLink2Dvm
         private static FnePeer Create()
         {
             IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, WhackerLink2Dvm.config.Fne.Port);
+            string presharedKey = WhackerLink2Dvm.config.Fne.Ecnrypted ? WhackerLink2Dvm.config.Fne.PresharedKey : null;
 
             if (WhackerLink2Dvm.config.Fne.Address == null)
                 throw new NullReferenceException("address");
@@ -69,7 +72,9 @@ namespace WhackerLink2Dvm
                     endpoint = new IPEndPoint(addresses[0], WhackerLink2Dvm.config.Fne.Port);
             }
 
-            FnePeer peer = new FnePeer(WhackerLink2Dvm.config.Fne.Name, WhackerLink2Dvm.config.Fne.PeerId, endpoint);
+            
+
+            FnePeer peer = new FnePeer(WhackerLink2Dvm.config.Fne.Name, WhackerLink2Dvm.config.Fne.PeerId, endpoint, presharedKey);
 
             // set configuration parameters
             peer.RawPacketTrace = true;
