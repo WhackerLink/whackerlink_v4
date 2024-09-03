@@ -36,6 +36,7 @@ namespace WhackerLinkServer
         private string address;
         private int port;
         private ILogger logger;
+        private bool enabled;
         private readonly HttpClient _httpClient;
 
         /// <summary>
@@ -44,10 +45,14 @@ namespace WhackerLinkServer
         /// <param name="address"></param>
         /// <param name="port"></param>
         /// <param name="logger"></param>
-        public Reporter(string address, int port, ILogger logger)
+        public Reporter(string address, int port, ILogger logger, bool enabled = false)
         {
             this.address = address;
             this.port = port;
+            this.enabled = enabled;
+
+            if (!enabled)
+                return;
 
             _httpClient = new HttpClient
             {
@@ -64,27 +69,30 @@ namespace WhackerLinkServer
         /// <returns></returns>
         public async Task SendReportAsync(object reportData)
         {
-                var json = JsonConvert.SerializeObject(reportData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+            if (!enabled)
+                return;
 
-                try
+            var json = JsonConvert.SerializeObject(reportData);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+            try
+            {
+                var response = await _httpClient.PostAsync("/", content);
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = await _httpClient.PostAsync("/", content);
-                    if (response.IsSuccessStatusCode)
-                    {
 #if DEBUG
-                        logger.Debug("[REPORTER] Report sent");
+                    logger.Information("[REPORTER] Report sent");
 #endif
-                    }
-                    else
-                    {
-                        logger.Error($"[REPORTER] Failed to send: {response.StatusCode}");
-                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    logger.Error($"[REPORTER] Error sending report: {ex.Message}");
+                    logger.Error($"[REPORTER] Failed to send: {response.StatusCode}");
                 }
+                }
+            catch (Exception ex)
+            {
+                logger.Error($"[REPORTER] Error sending report: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -96,6 +104,9 @@ namespace WhackerLinkServer
         /// <param name="extra"></param>
         public void Send(PacketType type, string srcId, string dstId, Site site, string extra, ResponseType responseType = ResponseType.UNKOWN)
         {
+            if (!enabled)
+                return;
+
             var utcNow = DateTime.UtcNow;
 
             TimeZoneInfo cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");

@@ -168,10 +168,7 @@ namespace WhackerLinkServer
                     restServer.Start();
                 }
 
-                if (config.Reporter.Enabled)
-                {
-                    reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger);
-                }
+                reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled);
 
                 foreach (var site in config.Sites)
                 {
