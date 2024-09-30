@@ -29,7 +29,7 @@
     ```
 3. Clone the WhackerLink repository:
     ```bash
-    git clone https://github.com/WhackerLink/whackerlink_v4
+    git clone https://github.com/WhackerLink/whackerlink_v4 --recurse-submodules
     cd whackerlink_v4
     ```
 4. Build the solution:
