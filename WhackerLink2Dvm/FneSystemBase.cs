@@ -29,6 +29,9 @@ using WhackerLinkCommonLib.Models.IOSP;
 using WhackerLinkCommonLib.Utils;
 using Nancy;
 using WhackerLinkServer.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using fnecore.P25.LC.TSBK;
+using System.Runtime.InteropServices;
 
 namespace WhackerLink2Dvm
 {
@@ -146,6 +149,7 @@ namespace WhackerLink2Dvm
             webSocketHandler.OnAudioData += WhackerLinkDataReceived;
             webSocketHandler.OnVoiceChannelResponse += WhackerLinkVoiceChannelResponse;
             webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
+            webSocketHandler.OnCallAlert += WhackerLinkCallAlert;
 
             // initialize slot statuses
             this.status = new SlotStatus[3];
@@ -258,6 +262,27 @@ namespace WhackerLink2Dvm
         {
             EndCall(response.SrcId, response.DstId);
             voiceChannel = null;
+        }
+
+        internal void WhackerLinkCallAlert(CALL_ALRT response)
+        {
+            Log.Logger.Information($"WhackerLink CALL ALRT; SrcId: {response.SrcId}, DstId: {response.DstId}");
+
+            try
+            {
+                RemoteCallData callData = new RemoteCallData
+                {
+                    SrcId = UInt32.Parse(response.SrcId),
+                    DstId = UInt32.Parse(response.DstId)
+                };
+
+                byte[] tsbk = new byte[fnecore.P25.P25Defines.P25_TSBK_LENGTH_BYTES];
+                byte[] payload = new byte[fnecore.P25.P25Defines.P25_TSBK_LENGTH_BYTES];
+
+                IOSP_CALL_ALRT callAlert = new IOSP_CALL_ALRT(UInt32.Parse(response.DstId), UInt32.Parse(response.SrcId));
+                callAlert.Encode(ref tsbk, ref payload, true, true);
+                SendP25TSBK(callData, tsbk);
+            } catch (Exception) { /* stub */ }
         }
 
         internal void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)

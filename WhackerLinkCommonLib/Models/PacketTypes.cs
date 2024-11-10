@@ -8,21 +8,21 @@ namespace WhackerLinkCommonLib.Models
 {
         public enum PacketType
         {
-            UNKOWN,
-            AUDIO_DATA,
-            GRP_AFF_REQ,
-            GRP_AFF_RSP,
-            AFF_UPDATE,
-            GRP_VCH_REQ,
-            GRP_VCH_RLS,
-            GRP_VCH_RSP,
-            U_REG_REQ,
-            U_REG_RSP,
-            U_DE_REG_REQ,
-            U_DE_REG_RSP,
-            EMRG_ALRM_REQ,
-            EMRG_ALRM_RSP,
-            CALL_ALRT,
-            CALL_ALRT_REQ
+            UNKOWN = 0x00,
+            AUDIO_DATA = 0x01,
+            GRP_AFF_REQ = 0x02,
+            GRP_AFF_RSP = 0x03,
+            AFF_UPDATE = 0x04,
+            GRP_VCH_REQ = 0x05,
+            GRP_VCH_RLS = 0x06,
+            GRP_VCH_RSP = 0x07,
+            U_REG_REQ = 0x08,
+            U_REG_RSP = 0x09,
+            U_DE_REG_REQ = 0x10,
+            U_DE_REG_RSP = 0x11,
+            EMRG_ALRM_REQ = 0x12,
+            EMRG_ALRM_RSP = 0x13,
+            CALL_ALRT = 0x14,
+            CALL_ALRT_REQ = 0x15
     }
 }
