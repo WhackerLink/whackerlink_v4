@@ -760,7 +760,7 @@ namespace WhackerLink2Dvm
                         IOSP_CALL_ALRT callAlert = new IOSP_CALL_ALRT();
                         callAlert.Decode(tsbk, true);
                         Log.Logger.Information($"({SystemName}) P25D: TSBK *Call Alert     * PEER {e.PeerId} SRC_ID {callAlert.SrcId} DST_ID {callAlert.DstId}");
-                        //SendWhackerLinkCallAlert(callAlert.SrcId, callAlert.DstId);
+                        SendWhackerLinkCallAlert(callAlert.DstId, callAlert.SrcId);
                         break;
                     case P25Defines.TSBK_IOSP_ACK_RSP:
                         IOSP_ACK_RSP ackRsp = new IOSP_ACK_RSP();

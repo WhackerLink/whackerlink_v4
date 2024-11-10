@@ -231,6 +231,11 @@ namespace WhackerLink2Dvm
             netLDU2 = new byte[9 * 25];
         }
 
+        internal void SendWhackerLinkCallAlert(uint dstId, uint srcId)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+        }
+
         internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
         {
             foreach (Affiliation affiliation in response.Affiliations)
