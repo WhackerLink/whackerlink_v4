@@ -12,14 +12,7 @@
 */
 
 using fnecore;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using WhackerLink2Dvm.Models;
 
 #nullable disable
@@ -96,9 +89,7 @@ namespace WhackerLink2Dvm
         /// <exception cref="NotImplementedException"></exception>
         private static void Peer_PeerConnected(object sender, PeerConnectedEvent e)
         {
-            // fake a group affiliation
-            //FnePeer peer = (FnePeer)sender;
-            //peer.SendMasterGroupAffiliation(1, (uint)WhackerLink2Dvm.config.DestinationId);
+            /* stub */
         }
 
         /// <summary>
