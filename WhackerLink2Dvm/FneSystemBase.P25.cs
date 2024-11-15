@@ -22,13 +22,13 @@ using Serilog;
 
 using fnecore;
 using fnecore.P25;
+using fnecore.P25.LC.TSBK;
+using WhackerLinkLib.Utils;
+using WhackerLinkLib.Models;
+using WhackerLinkLib.Models.IOSP;
 #if !NOVODODE
 using vocoder;
 #endif
-using WhackerLinkCommonLib.Models;
-using WhackerLinkCommonLib.Utils;
-using WhackerLinkCommonLib.Models.IOSP;
-using fnecore.P25.LC.TSBK;
 
 namespace WhackerLink2Dvm
 {

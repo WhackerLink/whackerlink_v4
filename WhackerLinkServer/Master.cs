@@ -20,10 +20,12 @@
 
 using Serilog;
 using WebSocketSharp.Server;
-using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using WhackerLinkServer.Managers;
-using WhackerLinkCommonLib.Models;
+using WhackerLinkLib.Models;
+using WhackerLinkLib.Interfaces;
+
+
 #if !NOVOCODE
 using vocoder;
 #endif

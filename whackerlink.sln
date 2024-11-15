@@ -4,8 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhackerLinkServer", "WhackerLinkServer\WhackerLinkServer.csproj", "{ADA6B441-A9F8-46D7-B07A-9D4A4AD62829}"
+	ProjectSection(ProjectDependencies) = postProject
+		{48FF9E65-F845-43FB-BF4E-71471B471C66} = {48FF9E65-F845-43FB-BF4E-71471B471C66}
+	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhackerLinkCommonLib", "WhackerLinkCommonLib\WhackerLinkCommonLib.csproj", "{48FF9E65-F845-43FB-BF4E-71471B471C66}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhackerLinkLib", "WhackerLinkLib\WhackerLinkLib.csproj", "{48FF9E65-F845-43FB-BF4E-71471B471C66}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhackerLinkMobileRadio", "WhackerLinkMobileRadio\WhackerLinkMobileRadio.csproj", "{60C028D3-80DF-436E-AA8A-D95D2060111A}"
 EndProject

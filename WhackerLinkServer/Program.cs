@@ -19,7 +19,6 @@
 */
 
 using Serilog;
-using WhackerLinkCommonLib.Interfaces;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;

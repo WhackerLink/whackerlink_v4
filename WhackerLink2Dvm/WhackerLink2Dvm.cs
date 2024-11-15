@@ -10,8 +10,8 @@ using YamlDotNet.Serialization.NamingConventions;
 
 using WhackerLink2Dvm.Models;
 
-using WhackerLinkCommonLib.Interfaces;
-using WhackerLinkCommonLib.Handlers;
+using WhackerLinkLib.Interfaces;
+using WhackerLinkLib.Handlers;
 using Serilog.Events;
 
 #nullable disable

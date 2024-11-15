@@ -20,7 +20,7 @@
 
 #nullable disable
 
-using WhackerLinkCommonLib.Models;
+using WhackerLinkLib.Models;
 
 namespace WhackerLinkServer.Models
 {

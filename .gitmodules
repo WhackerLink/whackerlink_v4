@@ -1,3 +1,6 @@
 [submodule "fnecore"]
 	path = fnecore
 	url = https://github.com/dvmproject/fnecore
+[submodule "WhackerLinkLib"]
+	path = WhackerLinkLib
+	url = https://github.com/WhackerLink/WhackerLinkLib

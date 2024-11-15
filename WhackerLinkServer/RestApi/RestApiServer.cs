@@ -21,7 +21,7 @@
 using Nancy;
 using Nancy.Hosting.Self;
 using Nancy.TinyIoc;
-using WhackerLinkCommonLib.Interfaces;
+using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer
 {

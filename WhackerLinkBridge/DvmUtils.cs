@@ -1,4 +1,4 @@
-﻿using WhackerLinkCommonLib.Models;
+﻿using WhackerLinkLib.Models;
 
 #nullable disable
 

@@ -26,6 +26,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Timers;
+using WhackerLinkLib.Models;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;

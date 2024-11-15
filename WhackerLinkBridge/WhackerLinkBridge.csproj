@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Configurations>Debug;Release;NoVocode</Configurations>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WhackerLinkCommonLib\WhackerLinkCommonLib.csproj" />
+    <ProjectReference Include="..\WhackerLinkLib\WhackerLinkLib.csproj" />
   </ItemGroup>
 
 </Project>

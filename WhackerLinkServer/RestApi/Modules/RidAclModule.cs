@@ -19,13 +19,7 @@
 */
 
 using Nancy;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WhackerLinkCommonLib.Interfaces;
-using WhackerLinkCommonLib.Models;
+using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer.RestApi.Modules
 {

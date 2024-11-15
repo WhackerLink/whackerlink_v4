@@ -19,7 +19,7 @@
 */
 
 using Nancy;
-using WhackerLinkCommonLib.Interfaces;
+using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer.RestApi.Modules
 {

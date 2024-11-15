@@ -8,7 +8,7 @@
     <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Configurations>Debug;Release;NoVocode</Configurations>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +29,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WhackerLinkCommonLib\WhackerLinkCommonLib.csproj" />
+    <ProjectReference Include="..\WhackerLinkLib\WhackerLinkLib.csproj" />
   </ItemGroup>
 
 </Project>

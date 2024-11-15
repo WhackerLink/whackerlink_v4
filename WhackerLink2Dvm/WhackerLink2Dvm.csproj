@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <Configurations>Debug;Release;NoVodode</Configurations>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\fnecore\fnecore.csproj" />
     <ProjectReference Include="..\MBEVocoderManaged\MBEVocoderManaged.vcxproj" />
-    <ProjectReference Include="..\WhackerLinkCommonLib\WhackerLinkCommonLib.csproj" />
+    <ProjectReference Include="..\WhackerLinkLib\WhackerLinkLib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,6 @@
-﻿using WhackerLinkCommonLib.Models;
-using YamlDotNet.Serialization.NamingConventions;
+﻿using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
+using WhackerLinkLib.Models;
 
 #nullable disable
 
