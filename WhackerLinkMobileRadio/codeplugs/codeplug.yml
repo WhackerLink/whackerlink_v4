@@ -3,7 +3,8 @@ radioWide:
   codeplugVersion: "R01.00.00"
   radioAlias: ""
   serialNumber: "123ABC1234"
-  model: 0
+  model: "CONSOLE"
+  inCarMode: "N/A"
 
 #NOT FULLY READY
 ergonomicsWide:
