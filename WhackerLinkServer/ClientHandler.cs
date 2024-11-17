@@ -317,8 +317,13 @@ namespace WhackerLinkServer
 
             Send(JsonConvert.SerializeObject(new { type = (int)PacketType.U_REG_RSP, data = response }));
             logger.Information(response.ToString());
-
             reporter.Send(PacketType.U_REG_RSP, request.SrcId, null, request.Site, null, (ResponseType)response.Status);
+
+            if (aclManager.IsAuthEnabled(response.SrcId))
+            {
+                Send(JsonConvert.SerializeObject(PacketFactory.CreateAuthDemand(response.SrcId)));
+                logger.Information(PacketFactory.CreateAuthDemand(response.SrcId).ToString());
+            }
         }
 
         /// <summary>
@@ -505,6 +510,16 @@ namespace WhackerLinkServer
         private bool isRidAuthed(string srcId)
         {
             return aclManager.IsRidAllowed(srcId);
+        }
+
+        /// <summary>
+        /// Checks if RID is authorized
+        /// </summary>
+        /// <param name="srcId"></param>
+        /// <returns></returns>
+        private ResponseType isRidLlaValid(string srcId, string hashed)
+        {
+            return aclManager.IsRidAllowed(srcId, hashed);
         }
 
         /// <summary>

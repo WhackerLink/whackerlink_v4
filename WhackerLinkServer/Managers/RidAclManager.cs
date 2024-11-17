@@ -27,6 +27,7 @@ using System.IO;
 using System.Linq;
 using System.Timers;
 using WhackerLinkLib.Models;
+using WhackerLinkLib.Utils;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -86,6 +87,18 @@ namespace WhackerLinkServer.Managers
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rid"></param>
+        /// <returns></returns>
+        public bool IsAuthEnabled(string rid)
+        {
+            var entry = ridAclEntries.FirstOrDefault(a => a.Rid == rid);
+
+            return entry != null && entry.AuthKey != null;
+        }
+
+        /// <summary>
         /// Checks if a rid is allowed using an acl entry
         /// </summary>
         /// <param name="entry"></param>
@@ -108,6 +121,34 @@ namespace WhackerLinkServer.Managers
 
             return ridAclEntries.Any(a => a.Rid == rid && a.Allowed);
         }
+
+        /// <summary>
+        /// Checks if an rid is allowed using a rid and auth key
+        /// </summary>
+        /// <param name="rid"></param>
+        /// <param name="hashedKey"></param>
+        /// <returns></returns>
+        public ResponseType IsRidAllowed(string rid, string hashedKey)
+        {
+            if (!aclEnabled) return ResponseType.GRANT;
+
+            var entry = ridAclEntries.FirstOrDefault(a => a.Rid == rid);
+
+            if (entry == null || !entry.Allowed)
+            {
+                return ResponseType.REFUSE;
+            }
+
+            string hashedInputKey = AuthUtil.HashPassword(hashedKey);
+
+            if (entry.AuthKey != hashedInputKey)
+            {
+                return ResponseType.FAIL;
+            }
+
+            return ResponseType.GRANT;
+        }
+
 
         /// <summary>
         /// Helper to log acl entries to console
