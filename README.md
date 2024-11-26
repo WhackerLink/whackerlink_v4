@@ -57,7 +57,7 @@ If the server does not start as expected, please join the WhackerLink Discord se
 Modify `config.yml` as needed for your environment. For specific questions or more detailed setup options, refer to discussions in the WhackerLink Discord server.
 
 ## Desktop App Setup
-1. For the desktop application, copy `codeplug.yml` from `WhackerLinkMobileRadio/configs` to the output directory at `WhackerLinkMobileRadio/bin/Debug`.
+1. For the desktop application, copy `codeplug.yml` from `WhackerLinkMobileRadio/codeplugs` to the output directory at `WhackerLinkMobileRadio/bin/Debug`.
 
 ## About
 WhackerLink V1 was a static HTML and NodeJS backend application using WebRTC and Socket.IO.
