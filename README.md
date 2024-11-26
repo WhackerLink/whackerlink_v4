@@ -34,6 +34,7 @@
     ```
 4. Build the solution:
     ```bash
+    dotnet restore
     msbuild
     ```
 5. Navigate to the debug output directory:
