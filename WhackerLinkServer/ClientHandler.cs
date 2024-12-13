@@ -31,9 +31,6 @@ using WhackerLinkLib.Models;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Utils;
 
-
-
-
 #if !NOVOCODE
 using vocoder;
 #endif
@@ -128,6 +125,9 @@ namespace WhackerLinkServer
                         break;
                     case (int)PacketType.CALL_ALRT_REQ:
                         HandleCallAlertRequest(data["data"].ToObject<CALL_ALRT_REQ>());
+                        break;
+                    case (int)PacketType.REL_DEMAND:
+                        HandleReleaseDemand(data["data"].ToObject<REL_DEMND>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>(), data["site"].ToObject<Site>());
@@ -247,6 +247,16 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// Handles release demands
+        /// </summary>
+        /// <param name="request"></param>
+        private void HandleReleaseDemand(REL_DEMND request)
+        {
+            logger.Information(request.ToString());
+            // TODO: Actually handle?
+        }
+
+        /// <summary>
         /// Handles group affiliation request
         /// </summary>
         /// <param name="request"></param>
@@ -321,8 +331,10 @@ namespace WhackerLinkServer
 
             if (aclManager.IsAuthEnabled(response.SrcId))
             {
-                Send(JsonConvert.SerializeObject(PacketFactory.CreateAuthDemand(response.SrcId)));
-                logger.Information(PacketFactory.CreateAuthDemand(response.SrcId).ToString());
+                AUTH_DEMAND authDemand = new AUTH_DEMAND { SrcId = response.SrcId };
+
+                Send(JsonConvert.SerializeObject(authDemand.GetData()));
+                logger.Information(authDemand.ToString());
             }
         }
 
