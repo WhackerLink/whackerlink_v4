@@ -102,7 +102,7 @@ namespace WhackerLinkServer
         /// <param name="srcId"></param>
         /// <param name="dstId"></param>
         /// <param name="extra"></param>
-        public void Send(PacketType type, string srcId, string dstId, Site site, string extra, ResponseType responseType = ResponseType.UNKOWN)
+        public void Send(PacketType type, string srcId, string dstId, Site site, string extra, string lat, string longi, ResponseType responseType = ResponseType.UNKOWN)
         {
             if (!enabled)
                 return;
@@ -122,6 +122,8 @@ namespace WhackerLinkServer
                 Site = site,
                 ResponseType = responseType,
                 Extra = extra,
+                Lat = longi,
+                Long = longi,
                 Timestamp = timestamp
             };
 
