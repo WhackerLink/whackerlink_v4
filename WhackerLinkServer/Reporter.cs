@@ -122,7 +122,7 @@ namespace WhackerLinkServer
                 Site = site,
                 ResponseType = responseType,
                 Extra = extra,
-                Lat = longi,
+                Lat = lat,
                 Long = longi,
                 Timestamp = timestamp
             };

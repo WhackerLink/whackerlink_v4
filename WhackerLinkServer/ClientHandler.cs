@@ -129,11 +129,14 @@ namespace WhackerLinkServer
                     case (int)PacketType.REL_DEMAND:
                         HandleReleaseDemand(data["data"].ToObject<REL_DEMND>());
                         break;
+                    case (int)PacketType.LOC_BCAST:
+                        HandleLocBcast(data["data"].ToObject<LOC_BCAST>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>(), data["site"].ToObject<Site>());
                         break;
                     default:
-                        logger.Warning("Unknown message type: {Type}", type);
+                        logger.Warning("Unhandled Wlink Packet, Opcode: {Type}", type);
                         break;
                 }
             }
@@ -213,7 +216,7 @@ namespace WhackerLinkServer
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
         {
             logger.Information(request.ToString());
-            reporter.Send(PacketType.EMRG_ALRM_REQ, request.SrcId, request.DstId, request.Site, null);
+            reporter.Send(PacketType.EMRG_ALRM_REQ, request.SrcId, request.DstId, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
 
             var response = new EMRG_ALRM_RSP
             {
@@ -254,6 +257,16 @@ namespace WhackerLinkServer
         {
             logger.Information(request.ToString());
             // TODO: Actually handle?
+        }
+
+        /// <summary>
+        /// Handles location broadcasts
+        /// </summary>
+        /// <param name="request"></param>
+        private void HandleLocBcast(LOC_BCAST request)
+        {
+            logger.Information(request.ToString());
+            Send(request.GetStrData()); // for now, only log and repeate the packet. maybe in the future we do something fun server side?
         }
 
         /// <summary>
