@@ -90,6 +90,17 @@ namespace WhackerLinkServer
             this.p25Encoder = p25Encoder;
             this.p25Decoder = p25Decoder;
 #endif
+
+            IntervalRunner siteBcastInterval = new IntervalRunner();
+            SITE_BCAST siteBcast = new SITE_BCAST();
+
+            siteBcast.Sites = masterConfig.Sites;
+
+            siteBcastInterval.Start(() =>
+            {
+                // BroadcastMessage(siteBcast.GetStrData());
+                reporter.Send(PacketType.SITE_BCAST, siteBcast);
+            }, 5000);
         }
 
         /// <summary>
@@ -269,7 +280,7 @@ namespace WhackerLinkServer
             if (!masterConfig.DisableLocBcastLogs)
                 logger.Information(request.ToString());
 
-            reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, null, null, ResponseType.UNKOWN, request.Lat, request.Long);
+            reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
             Send(request.GetStrData());
         }
 

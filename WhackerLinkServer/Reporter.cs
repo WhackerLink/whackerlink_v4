@@ -23,6 +23,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Serilog;
 using WhackerLinkLib.Models;
+using WhackerLinkLib.Models.IOSP;
 
 #nullable disable
 
@@ -124,6 +125,33 @@ namespace WhackerLinkServer
                 Extra = extra,
                 Lat = lat,
                 Long = longi,
+                Timestamp = timestamp
+            };
+
+            Task.Run(() => SendReportAsync(reportData));
+        }
+
+        /// <summary>
+        /// Helper to send site bcast report
+        /// </summary>
+        /// <param name="type"></param>
+        ///
+        public void Send(PacketType type, SITE_BCAST siteBcast)
+        {
+            if (!enabled)
+                return;
+
+            var utcNow = DateTime.UtcNow;
+
+            TimeZoneInfo cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            DateTime cdtTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, cdtZone);
+
+            string timestamp = cdtTime.ToString("yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture);
+
+            var reportData = new
+            {
+                Type = type,
+                Sites = siteBcast.Sites,
                 Timestamp = timestamp
             };
 
