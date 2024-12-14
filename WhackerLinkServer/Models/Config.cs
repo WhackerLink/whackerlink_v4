@@ -48,6 +48,7 @@ namespace WhackerLinkServer.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public bool DisableLocBcastLogs { get; set; }
             public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
             public VocoderModes VocoderMode { get; set; }

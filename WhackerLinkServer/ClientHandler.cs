@@ -265,8 +265,12 @@ namespace WhackerLinkServer
         /// <param name="request"></param>
         private void HandleLocBcast(LOC_BCAST request)
         {
-            logger.Information(request.ToString());
-            Send(request.GetStrData()); // for now, only log and repeate the packet. maybe in the future we do something fun server side?
+            // for now, only log, report, and repeate the packet. maybe in the future we do something fun server side?
+            if (!masterConfig.DisableLocBcastLogs)
+                logger.Information(request.ToString());
+
+            reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, null, null, ResponseType.UNKOWN, request.Lat, request.Long);
+            Send(request.GetStrData());
         }
 
         /// <summary>
