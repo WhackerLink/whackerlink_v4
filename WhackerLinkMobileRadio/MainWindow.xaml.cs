@@ -748,14 +748,14 @@ namespace WhackerLinkMobileRadio
         /// </summary>
         /// <param name="audioData"></param>
         /// <param name="voiceChannel"></param>
-        private void PlayAudio(byte[] audioData, VoiceChannel voiceChannel)
+        private void PlayAudio(AudioPacket audioPacket)
         {
             if (string.IsNullOrEmpty(_currentChannel)) return;
 
-            if (voiceChannel.Frequency == _currentChannel && voiceChannel.DstId == _currentTgid && voiceChannel.SrcId != _myRid)
+            if (audioPacket.VoiceChannel.Frequency == _currentChannel && audioPacket.VoiceChannel.DstId == _currentTgid && audioPacket.VoiceChannel.SrcId != _myRid)
             {
                 _isReceiving = true;
-                _waveProvider.AddSamples(audioData, 0, audioData.Length);
+                _waveProvider.AddSamples(audioPacket.Data, 0, audioPacket.Data.Length);
                 _waveOut.Play();
             }
         }

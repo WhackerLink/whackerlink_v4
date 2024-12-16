@@ -286,7 +286,7 @@ namespace WhackerLink2Dvm
             } catch (Exception) { /* stub */ }
         }
 
-        internal void WhackerLinkDataReceived(byte[] audioData, VoiceChannel voiceChannel)
+        internal void WhackerLinkDataReceived(AudioPacket audioPacket)
         {
             FnePeer peer = (FnePeer)fne;
 
@@ -316,7 +316,7 @@ namespace WhackerLink2Dvm
 
             if (audioDetect && !callInProgress)
             {
-                var chunks = AudioConverter.SplitToChunks(audioData);
+                var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 foreach (var chunk in chunks)
                 {
                     P25EncodeAudioFrame(chunk, Convert.ToUInt32(voiceChannel.SrcId), Convert.ToUInt32(voiceChannel.DstId));

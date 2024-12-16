@@ -147,7 +147,7 @@ namespace WhackerLinkServer
                         HandleStsBcast(data["data"].ToObject<STS_BCAST>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
-                        BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>(), data["site"].ToObject<Site>());
+                        BroadcastAudio(data["data"].ToObject<AudioPacket>());
                         break;
                     default:
                         logger.Warning("Unhandled Wlink Packet, Opcode: {Type}", type);
@@ -659,21 +659,21 @@ namespace WhackerLinkServer
         /// </summary>
         /// <param name="audioData"></param>
         /// <param name="voiceChannel"></param>
-        private void BroadcastAudio(byte[] audioData, VoiceChannel voiceChannel, Site site)
+        private void BroadcastAudio(AudioPacket audioPacket)
         {
-            VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(voiceChannel.DstId);
+            VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
 
-            if (!voiceChannelManager.IsDestinationActive(voiceChannel.DstId))
+            if (!voiceChannelManager.IsDestinationActive(audioPacket.VoiceChannel.DstId))
             {
-                logger.Warning("Ignoring call; destination not permitted for traffic srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
+                logger.Warning("Ignoring call; destination not permitted for traffic srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 return;
             }
 
-            if (voiceChannel != null && channel.ClientId != ID)
+            if (audioPacket.VoiceChannel != null && channel.ClientId != ID)
             {
-                logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", voiceChannel.SrcId, voiceChannel.DstId);
+                logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 voiceChannelManager.RemoveVoiceChannelByClientId(ID);
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = voiceChannel.DstId, SrcId = voiceChannel.SrcId, Site = site } }));
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
                 return;
             }
 
@@ -688,7 +688,7 @@ namespace WhackerLinkServer
                     return;
                 }
 
-                var chunks = AudioConverter.SplitToChunks(audioData);
+                var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
                 {
                     Console.WriteLine("Invalid audio data length for conversion.");
@@ -729,7 +729,8 @@ namespace WhackerLinkServer
                 var combinedAudioData = AudioConverter.CombineChunks(processedChunks);
                 if (combinedAudioData != null)
                 {
-                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = combinedAudioData, voiceChannel, site }));
+                    audioPacket.Data = combinedAudioData;
+                    BroadcastMessage(audioPacket.GetStrData());
                 }
                 else
                 {
@@ -739,7 +740,7 @@ namespace WhackerLinkServer
             }
             else
             {
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AUDIO_DATA, data = audioData, voiceChannel, site }));
+                BroadcastMessage(audioPacket.GetStrData());
             }
         }
     }

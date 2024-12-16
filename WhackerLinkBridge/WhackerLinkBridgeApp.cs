@@ -131,12 +131,12 @@ namespace WhackerLinkBridge
             }
         }
 
-        internal async void HandleWebSocketAudioData(byte[] audioData, VoiceChannel voiceChannel)
+        internal async void HandleWebSocketAudioData(AudioPacket audioPacket)
         {
             switch (_config.system.Mode)
             {
                 case BridgeModes.DVM:
-                    await DvmUtils.SendToDvm(this, audioData, voiceChannel);
+                    await DvmUtils.SendToDvm(this, audioPacket.Data, audioPacket.VoiceChannel);
                     break;
                 case BridgeModes.ALLSTARLINK:
                 case BridgeModes.NONE:
