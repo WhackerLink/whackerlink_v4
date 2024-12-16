@@ -143,6 +143,9 @@ namespace WhackerLinkServer
                     case (int)PacketType.LOC_BCAST:
                         HandleLocBcast(data["data"].ToObject<LOC_BCAST>());
                         break;
+                    case (int)PacketType.STS_BCAST:
+                        HandleStsBcast(data["data"].ToObject<STS_BCAST>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<byte[]>(), data["voiceChannel"].ToObject<VoiceChannel>(), data["site"].ToObject<Site>());
                         break;
@@ -281,7 +284,20 @@ namespace WhackerLinkServer
                 logger.Information(request.ToString());
 
             reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
-            Send(request.GetStrData());
+            BroadcastMessage(request.GetStrData());
+        }
+
+        /// <summary>
+        /// Handles location broadcasts
+        /// </summary>
+        /// <param name="request"></param>
+        private void HandleStsBcast(STS_BCAST request)
+        {
+            // for now, only log, report, and repeate
+            logger.Information(request.ToString());
+            reporter.Send(PacketType.STS_BCAST, request);
+
+            BroadcastMessage(request.GetStrData());
         }
 
         /// <summary>
