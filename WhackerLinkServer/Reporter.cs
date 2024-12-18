@@ -176,7 +176,8 @@ namespace WhackerLinkServer
             var reportData = new
             {
                 Type = type,
-                Extra = $"{stsBcast.Site.Name}, {stsBcast.Site.ControlChannel}, {stsBcast.Status}",
+                Site = stsBcast.Site,
+                Status = stsBcast.Status,
                 Timestamp = timestamp
             };
 

@@ -23,8 +23,6 @@ using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-#nullable disable
-
 namespace WhackerLinkServer
 {
     /// <summary>
@@ -60,6 +58,9 @@ namespace WhackerLinkServer
                     logger.Error("Failed to load config.");
                     return;
                 }
+
+                logger.Information("WhackerLink Server - Main networking router and handler for WhackerLink");
+                logger.Information("Copyright (C) 2024 Caleb, K4PHP (_php_)");
 
                 logger.Information("Initializing Master instances");
 
