@@ -179,29 +179,37 @@ namespace WhackerLinkServer
                 .Select(vc => vc.Frequency)
                 .ToList();
 
-            foreach (var channel in channelsToRemove)
+            if (channelsToRemove != null && channelsToRemove.Count > 0)
             {
-                voiceChannelManager.RemoveVoiceChannel(channel);
-                BroadcastMessage(JsonConvert.SerializeObject(new GRP_VCH_RLS {
-                    SrcId = voiceChannelManager.FindVoiceChannelByClientId(ID).SrcId,
-                    DstId = voiceChannelManager.FindVoiceChannelByClientId(ID).DstId,
-                    Channel = voiceChannelManager.FindVoiceChannelByClientId(ID).Frequency
-                }));
-                logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
-            }
-
-            var affiliations = affiliationsManager.GetAffiliationsByClientId(clientId);
-            foreach (var affiliation in affiliations)
-            {
-                if (talkgroupHangTimers.ContainsKey(affiliation.DstId))
+                foreach (var channel in channelsToRemove)
                 {
-                    talkgroupHangTimers[affiliation.DstId].Dispose();
-                    talkgroupHangTimers.Remove(affiliation.DstId);
+                    voiceChannelManager.RemoveVoiceChannel(channel);
+                    BroadcastMessage(JsonConvert.SerializeObject(new GRP_VCH_RLS
+                    {
+                        SrcId = voiceChannelManager.FindVoiceChannelByClientId(ID).SrcId,
+                        DstId = voiceChannelManager.FindVoiceChannelByClientId(ID).DstId,
+                        Channel = voiceChannelManager.FindVoiceChannelByClientId(ID).Frequency
+                    }));
+                    logger.Information("Voice channel {Channel} removed for disconnected client {ClientId}", channel, clientId);
                 }
             }
 
-            affiliationsManager.RemoveAffiliationByClientId(clientId);
-            logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
+            var affiliations = affiliationsManager.GetAffiliationsByClientId(clientId);
+
+            if (affiliations != null && affiliations.Count > 0)
+            {
+                foreach (var affiliation in affiliations)
+                {
+                    if (talkgroupHangTimers.ContainsKey(affiliation.DstId))
+                    {
+                        talkgroupHangTimers[affiliation.DstId].Dispose();
+                        talkgroupHangTimers.Remove(affiliation.DstId);
+                    }
+                }
+
+                affiliationsManager.RemoveAffiliationByClientId(clientId);
+                logger.Information("Affiliations removed for disconnected client {ClientId}", clientId);
+            }
         }
 
         /// <summary>
