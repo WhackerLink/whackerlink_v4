@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <Configurations>Debug;Release;NoVocode</Configurations>
+    <Configurations>Debug;Release;NoVocode;AmbeVocode</Configurations>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 

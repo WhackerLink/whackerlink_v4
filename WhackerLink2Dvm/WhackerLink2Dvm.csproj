@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Configurations>Debug;Release;NoVodode</Configurations>
+    <Configurations>Debug;Release;NoVodode;AmbeVocode</Configurations>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 

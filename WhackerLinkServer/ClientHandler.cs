@@ -30,12 +30,17 @@ using Nancy;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Utils;
+using System.Collections.Generic;
+using System.Threading;
+using System;
+using System.IO;
+using System.Linq;
 
-#if !NOVOCODE
+
+
+#if !NOVOCODE && !AMBEVOCODE
 using vocoder;
 #endif
-
-#nullable disable
 
 namespace WhackerLinkServer
 {
@@ -55,9 +60,14 @@ namespace WhackerLinkServer
         private Reporter reporter;
         private ILogger logger;
 
-#if !NOVOCODE
+#if !NOVOCODE && !AMBEVOCODE
         private MBEDecoderManaged p25Decoder;
         private MBEEncoderManaged p25Encoder;
+#endif
+
+#if AMBEVOCODE
+        private AmbeVocoder extFullRateVocoder;
+        private AmbeVocoder extHalfRateVocoder;
 #endif
 
         /// <summary>
@@ -73,8 +83,11 @@ namespace WhackerLinkServer
         /// <param name="logger"></param>
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
             VoiceChannelManager voiceChannelManager, SiteManager siteManager, Reporter reporter,
-#if !NOVOCODE
+#if !NOVOCODE && !AMBEVOCODE
             MBEDecoderManaged p25Decoder, MBEEncoderManaged p25Encoder,
+#endif
+#if AMBEVOCODE && !NOVOCODE
+            AmbeVocoder extFullRateVocoder, AmbeVocoder extHalfRateVocoder,
 #endif
             ILogger logger)
         {
@@ -86,9 +99,14 @@ namespace WhackerLinkServer
             this.reporter = reporter;
             this.logger = logger;
 
-#if !NOVOCODE
+#if !NOVOCODE && !AMBEVOCODE
             this.p25Encoder = p25Encoder;
             this.p25Decoder = p25Decoder;
+#endif
+
+#if AMBEVOCODE && !NOVOCODE
+            this.extFullRateVocoder = extHalfRateVocoder;
+            this.extFullRateVocoder = extFullRateVocoder;
 #endif
 
             IntervalRunner siteBcastInterval = new IntervalRunner();
@@ -687,14 +705,23 @@ namespace WhackerLinkServer
 
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
-#if !NOVOCODE
+#if !NOVOCODE || AMBEVOCODE
                 byte[] imbe = null;
 
+#if !AMBEVOCODE
                 if (p25Encoder == null || p25Decoder == null)
                 {
                     Console.WriteLine("Vocoder is not initialized; This should not happen.");
                     return;
                 }
+#endif
+#if AMBEVOCODE
+                if (extFullRateVocoder == null)
+                {
+                    Console.WriteLine("EXTERNAL Vocoder is not initialized; This should not happen.");
+                    return;
+                }
+#endif
 
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
@@ -715,10 +742,30 @@ namespace WhackerLinkServer
                         smpIdx++;
                     }
 
+#if !AMBEVOCODE
                     p25Encoder.encode(samples, out imbe);
+#else
+                    if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                    {
+                        extFullRateVocoder.encode(samples, out imbe);
+                    } else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                    {
+                        extHalfRateVocoder.encode(samples, out imbe);
+                    }
+#endif
 
                     short[] samp2 = null;
+#if !AMBEVOCODE
                     int errs = p25Decoder.decode(imbe, out samp2);
+#else
+                    if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                    {
+                        int errs = extFullRateVocoder.decode(imbe, out samp2);
+                    } else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                    {
+                        int errs = extHalfRateVocoder.decode(imbe, out samp2);
+                    }
+#endif
                     if (samples != null)
                     {
                         int pcmIdx = 0;
@@ -745,7 +792,7 @@ namespace WhackerLinkServer
                     logger.Error("Channel not permitted; skipping audio");
                 }
 #endif
-            }
+                }
             else
             {
                 BroadcastMessage(audioPacket.GetStrData());

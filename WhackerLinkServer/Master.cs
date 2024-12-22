@@ -24,13 +24,11 @@ using WhackerLinkServer.Models;
 using WhackerLinkServer.Managers;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Interfaces;
-
+using System.Reflection;
 
 #if !NOVOCODE
 using vocoder;
 #endif
-
-#nullable disable
 
 namespace WhackerLinkServer
 {
@@ -50,9 +48,13 @@ namespace WhackerLinkServer
         private Timer aclReloadTimer;
         private ILogger logger;
 
-#if !NOVOCODE
+#if !NOVOCODE && !AMBEVOCODE
         private MBEDecoderManaged p25Decoder;
         private MBEEncoderManaged p25Encoder;
+#endif
+#if AMBEVOCODE && !NOVOCODE
+        private AmbeVocoder extFullRateVocoder;
+        private AmbeVocoder extHalfRateVocoder;
 #endif
 
         /// <summary>
@@ -68,8 +70,7 @@ namespace WhackerLinkServer
             this.siteManager = new SiteManager();
             this.logger = LoggerSetup.CreateLogger(config.Name);
 
-#if !NOVOCODE
-
+#if !NOVOCODE && !AMBEVOCODE
             if (config.VocoderMode == VocoderModes.DMRAMBE)
             {
                 p25Decoder = new MBEDecoderManaged(MBEMode.DMRAMBE);
@@ -89,6 +90,26 @@ namespace WhackerLinkServer
             else
             {
                 logger.Information("Vocoding disbaled");
+            }
+#endif
+#if AMBEVOCODE
+            // initialize external AMBE vocoder
+#pragma warning disable SYSLIB0012 // Type or member is obsolete
+            string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+#pragma warning restore SYSLIB0012 // Type or member is obsolete
+            UriBuilder uri = new UriBuilder(codeBase);
+            string path = Uri.UnescapeDataString(uri.Path);
+
+            // if the assembly executing directory contains the external DVSI USB-3000 interface DLL
+            // setup the external vocoder code
+            if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
+            {
+                extFullRateVocoder = new AmbeVocoder();
+                extHalfRateVocoder = new AmbeVocoder(false);
+                logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder", this.config.Name);
+            } else
+            {
+                logger.Error("ERROR AMBE.DLL DOES NOT EXIST!");
             }
 #endif
         }
@@ -180,8 +201,11 @@ namespace WhackerLinkServer
                 server = new WebSocketServer($"ws://{config.Address}:{config.Port}");
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
-#if !NOVOCODE
+#if !NOVOCODE && !AMBEVOCODE
                     p25Decoder, p25Encoder,
+#endif
+#if AMBEVOCODE && !NOVOCODE
+                    extFullRateVocoder, extHalfRateVocoder,
 #endif
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
