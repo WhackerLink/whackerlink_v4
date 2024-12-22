@@ -105,7 +105,7 @@ namespace WhackerLinkServer
 #endif
 
 #if AMBEVOCODE && !NOVOCODE
-            this.extFullRateVocoder = extHalfRateVocoder;
+            this.extHalfRateVocoder = extHalfRateVocoder;
             this.extFullRateVocoder = extFullRateVocoder;
 #endif
 
