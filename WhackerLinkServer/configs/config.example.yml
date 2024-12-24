@@ -2,6 +2,7 @@
 system:
   debug: false
 
+# List of WhackerLink masters (servers)
 masters:
     # Textual Alias
   - name: "Dev Master"
