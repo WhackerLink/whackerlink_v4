@@ -695,7 +695,7 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (audioPacket.VoiceChannel != null && channel.ClientId != ID)
+            if (audioPacket.VoiceChannel != null && channel.ClientId != ID && channel.DstId == audioPacket.VoiceChannel.DstId)
             {
                 logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 voiceChannelManager.RemoveVoiceChannelByClientId(ID);
