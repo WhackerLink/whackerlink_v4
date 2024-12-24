@@ -457,19 +457,18 @@ namespace WhackerLinkMobileRadio
         {
             if (_isKeyedUp)
             {
-                var audioData = new
+                AudioPacket audioData = new AudioPacket
                 {
-                    type = (int)PacketType.AUDIO_DATA,
-                    data = e.Buffer,
-                    voiceChannel = new VoiceChannel
+                    Data = e.Buffer,
+                    VoiceChannel = new VoiceChannel
                     {
                         SrcId = _myRid,
                         DstId = _currentTgid,
                         Frequency = _currentChannel,
                     },
-                    site = CurrentSite
+                    Site = CurrentSite
                 };
-                _webSocketHandler.SendMessage(audioData);
+                _webSocketHandler.SendMessage(audioData.GetData());
             }
         }
 
