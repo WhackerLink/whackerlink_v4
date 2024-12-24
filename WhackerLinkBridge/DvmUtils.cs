@@ -1,4 +1,6 @@
-﻿using WhackerLinkLib.Models;
+﻿using WhackerLinkBridge.Models;
+using WhackerLinkLib.Models;
+using static WhackerLinkLib.Models.Radio.Codeplug;
 
 #nullable disable
 
@@ -65,7 +67,7 @@ namespace WhackerLinkBridge
             }
         }
 
-        internal static async Task HandleInboundDvm(WhackerLinkBridgeApp app)
+        internal static async Task HandleInboundDvm(WhackerLinkBridgeApp app, Config config)
         {
             const int chunkSize = 320;
             const int originalPcmLength = 1600;
@@ -116,19 +118,30 @@ namespace WhackerLinkBridge
 
                     if (!app._callInProgress)
                     {
-                        app.SendVoiceChannelRequest(srcId.ToString(), dstId.ToString());
-                        Console.WriteLine("Call Start Detected");
-                        app._callInProgress = true;
+                        try
+                        {
+                            app.SendVoiceChannelRequest(srcId.ToString(), dstId.ToString());
+                            Console.WriteLine("Call Start Detected");
+                            app._callInProgress = true;
+                        } catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
                     }
 
                     if (app.isGranted)
                     {
-                        app._webSocketHandler.SendMessage(new
+                        object voicePaket = new
                         {
-                            type = (int)PacketType.AUDIO_DATA,
-                            data = fullPcmData,
-                            voiceChannel = app.currentVoiceChannel
-                        });
+                            type = PacketType.AUDIO_DATA,
+                            data = new
+                            {
+                                Data = fullPcmData,
+                                VoiceChannel = app.currentVoiceChannel,
+                                Site = config.system.Site 
+                            }
+                        };
+                        app._webSocketHandler.SendMessage(voicePaket);
                     }
                     else
                     {

@@ -8,6 +8,8 @@ using WhackerLinkLib.Handlers;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Interfaces;
 using WhackerLinkLib.Models;
+using static WhackerLinkLib.Models.Radio.Codeplug;
+using System.Threading.Channels;
 
 #nullable disable
 
@@ -51,7 +53,15 @@ namespace WhackerLinkBridge
         public void Start()
         {
             _webSocketHandler.Connect(_config.master.Address, _config.master.Port);
-            Task.Run(() => ListenToUdpAudio());
+            Task.Run(() => {
+                try
+                {
+                    ListenToUdpAudio(_config);
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+             });
         }
 
         internal void HandleVoiceChannelResponse(GRP_VCH_RSP response)
@@ -62,7 +72,8 @@ namespace WhackerLinkBridge
                 {
                     Frequency = response.Channel,
                     SrcId = response.SrcId,
-                    DstId = response.DstId
+                    DstId = response.DstId,
+                    Site = _config.system.Site
                 };
 
                 isGranted = true;
@@ -75,42 +86,35 @@ namespace WhackerLinkBridge
 
         internal void SendVoiceChannelRequest(string srcId, string dstId)
         {
-            var request = new
+            GRP_VCH_REQ request = new GRP_VCH_REQ
             {
-                type = (int)PacketType.GRP_VCH_REQ,
-                data = new GRP_VCH_REQ
-                {
-                    SrcId = srcId,
-                    DstId = dstId,
-                }
+                SrcId = srcId,
+                DstId = dstId,
+                Site = _config.system.Site
             };
 
-            Console.WriteLine(request.ToString());
-            _webSocketHandler.SendMessage(request);
+            _webSocketHandler.SendMessage(request.GetData());
         }
 
         internal void SendVoiceChannelRelease(VoiceChannel voiceChannel)
         {
-            var request = new
+            GRP_VCH_RLS release = new GRP_VCH_RLS
             {
-                type = (int)PacketType.GRP_VCH_RLS,
-                data = new GRP_VCH_RLS
-                {
-                    SrcId = voiceChannel.SrcId,
-                    DstId = voiceChannel.DstId,
-                    Channel = voiceChannel.Frequency
-                }
+                SrcId = voiceChannel.SrcId,
+                DstId = voiceChannel.DstId,
+                Channel = voiceChannel.Frequency,
+                Site = null
             };
 
-            _webSocketHandler.SendMessage(request);
+            _webSocketHandler.SendMessage(release.GetData());
         }
 
-        internal async Task ListenToUdpAudio()
+        internal async Task ListenToUdpAudio(Config config)
         {
             switch (_config.system.Mode)
             {
                 case BridgeModes.DVM:
-                    await DvmUtils.HandleInboundDvm(this);
+                    await DvmUtils.HandleInboundDvm(this, config);
                     break;
                 case BridgeModes.ALLSTARLINK:
                 case BridgeModes.NONE:

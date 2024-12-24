@@ -15,6 +15,7 @@ namespace WhackerLinkBridge.Models
         public class SystemConfiguration
         {
             public BridgeModes Mode;
+            public Site Site;
             public string dstId;
         }
 
