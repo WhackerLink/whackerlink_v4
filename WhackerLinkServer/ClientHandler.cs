@@ -61,13 +61,10 @@ namespace WhackerLinkServer
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
-        private MBEDecoderManaged p25Decoder;
-        private MBEEncoderManaged p25Encoder;
+        private readonly Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances;
 #endif
-
-#if AMBEVOCODE
-        private AmbeVocoder extFullRateVocoder;
-        private AmbeVocoder extHalfRateVocoder;
+#if AMBEVOCODE && !NOVOCODE
+        private readonly Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances;
 #endif
 
         /// <summary>
@@ -84,10 +81,10 @@ namespace WhackerLinkServer
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
             VoiceChannelManager voiceChannelManager, SiteManager siteManager, Reporter reporter,
 #if !NOVOCODE && !AMBEVOCODE
-            MBEDecoderManaged p25Decoder, MBEEncoderManaged p25Encoder,
+            Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances,
 #endif
 #if AMBEVOCODE && !NOVOCODE
-            AmbeVocoder extFullRateVocoder, AmbeVocoder extHalfRateVocoder,
+            Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances,
 #endif
             ILogger logger)
         {
@@ -100,13 +97,10 @@ namespace WhackerLinkServer
             this.logger = logger;
 
 #if !NOVOCODE && !AMBEVOCODE
-            this.p25Encoder = p25Encoder;
-            this.p25Decoder = p25Decoder;
+            this.vocoderInstances = vocoderInstances;
 #endif
-
 #if AMBEVOCODE && !NOVOCODE
-            this.extHalfRateVocoder = extHalfRateVocoder;
-            this.extFullRateVocoder = extFullRateVocoder;
+            this.ambeVocoderInstances = ambeVocoderInstances;
 #endif
 
             IntervalRunner siteBcastInterval = new IntervalRunner();
@@ -532,6 +526,18 @@ namespace WhackerLinkServer
                 voiceChannelManager.RemoveVoiceChannel(request.Channel);
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
+#if !NOVOCODE && !AMBEVOCODE
+                if (vocoderInstances.ContainsKey(request.DstId))
+                {
+                    vocoderInstances.Remove(request.DstId);
+                }
+#endif
+#if AMBEVOCODE
+                if (ambeVocoderInstances.ContainsKey(request.DstId))
+                {
+                    ambeVocoderInstances.Remove(request.DstId);
+                }
+#endif
             }
             else
             {
@@ -540,6 +546,18 @@ namespace WhackerLinkServer
                     logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
                     BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
+#if !NOVOCODE && !AMBEVOCODE
+                if (vocoderInstances.ContainsKey(request.DstId))
+                {
+                    vocoderInstances.Remove(request.DstId);
+                }
+#endif
+#if AMBEVOCODE
+                    if (ambeVocoderInstances.ContainsKey(request.DstId))
+                    {
+                        ambeVocoderInstances.Remove(request.DstId);
+                    }
+#endif
                 }
 
                 logger.Warning("Voice channel {Channel} not found to release", request.Channel);
@@ -688,6 +706,7 @@ namespace WhackerLinkServer
         private void BroadcastAudio(AudioPacket audioPacket)
         {
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
+            string dstId = audioPacket.VoiceChannel.DstId;
 
             if (!voiceChannelManager.IsDestinationActive(audioPacket.VoiceChannel.DstId))
             {
@@ -708,25 +727,30 @@ namespace WhackerLinkServer
 #if !NOVOCODE || AMBEVOCODE
                 byte[] imbe = null;
 
-#if !AMBEVOCODE
-                if (p25Encoder == null || p25Decoder == null)
+                // Ensure a vocoder instance exists for the channel
+#if !NOVOCODE && !AMBEVOCODE
+                if (!vocoderInstances.ContainsKey(dstId))
                 {
-                    Console.WriteLine("Vocoder is not initialized; This should not happen.");
-                    return;
+                    vocoderInstances[dstId] = CreateInternalVocoderInstance();
+                    logger.Information("Created new vocoder instance for channel {ChannelId}", dstId);
                 }
+
+                var (decoder, encoder) = vocoderInstances[dstId];
 #endif
-#if AMBEVOCODE
-                if (extFullRateVocoder == null)
+#if AMBEVOCODE && !NOVOCODE
+                if (!ambeVocoderInstances.ContainsKey(dstId))
                 {
-                    Console.WriteLine("EXTERNAL Vocoder is not initialized; This should not happen.");
-                    return;
+                    ambeVocoderInstances[dstId] = CreateExternalVocoderInstance();
+                    logger.Information("Created new external vocoder instance for dstId {dstId}", dstId);
                 }
+
+                var (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
 #endif
 
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
                 {
-                    Console.WriteLine("Invalid audio data length for conversion.");
+                    logger.Error("Invalid audio data length for conversion.");
                     return;
                 }
 
@@ -743,41 +767,45 @@ namespace WhackerLinkServer
                     }
 
 #if !AMBEVOCODE
-                    p25Encoder.encode(samples, out imbe);
+            encoder.encode(samples, out imbe);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
-                        extFullRateVocoder.encode(samples, out imbe);
-                    } else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                        fullRateVocoder.encode(samples, out imbe);
+                    }
+                    else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
                     {
-                        extHalfRateVocoder.encode(samples, out imbe);
+                        halfRateVocoder.encode(samples, out imbe);
                     }
 #endif
 
-                    short[] samp2 = null;
+                    short[] decodedSamples = null;
+
 #if !AMBEVOCODE
-                    int errs = p25Decoder.decode(imbe, out samp2);
+            int errors = decoder.decode(imbe, out decodedSamples);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
-                        int errs = extFullRateVocoder.decode(imbe, out samp2);
-                    } else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                        int errors = fullRateVocoder.decode(imbe, out decodedSamples);
+                    }
+                    else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
                     {
-                        int errs = extHalfRateVocoder.decode(imbe, out samp2);
+                        int errors = halfRateVocoder.decode(imbe, out decodedSamples);
                     }
 #endif
-                    if (samples != null)
+
+                    if (decodedSamples != null)
                     {
                         int pcmIdx = 0;
-                        byte[] pcm2 = new byte[samp2.Length * 2];
-                        for (int smpIdx2 = 0; smpIdx2 < samp2.Length; smpIdx2++)
+                        byte[] pcmData = new byte[decodedSamples.Length * 2];
+                        for (int i = 0; i < decodedSamples.Length; i++)
                         {
-                            pcm2[pcmIdx] = (byte)(samp2[smpIdx2] & 0xFF);
-                            pcm2[pcmIdx + 1] = (byte)((samp2[smpIdx2] >> 8) & 0xFF);
+                            pcmData[pcmIdx] = (byte)(decodedSamples[i] & 0xFF);
+                            pcmData[pcmIdx + 1] = (byte)((decodedSamples[i] >> 8) & 0xFF);
                             pcmIdx += 2;
                         }
 
-                        processedChunks.Add(pcm2);
+                        processedChunks.Add(pcmData);
                     }
                 }
 
@@ -789,14 +817,48 @@ namespace WhackerLinkServer
                 }
                 else
                 {
-                    logger.Error("Channel not permitted; skipping audio");
+                    logger.Error("Failed to combine processed audio chunks for dstId {dstId}", dstId);
                 }
 #endif
-                }
+            }
             else
             {
                 BroadcastMessage(audioPacket.GetStrData());
             }
+        }
+
+#if !NOVOCODE && !AMBEVOCODE
+        private (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder) CreateInternalVocoderInstance()
+        {
+            var decoder = new MBEDecoderManaged(masterConfig.VocoderMode == VocoderModes.IMBE ? MBEMode.IMBE : MBEMode.DMRAMBE);
+            var encoder = new MBEEncoderManaged(masterConfig.VocoderMode == VocoderModes.IMBE ? MBEMode.IMBE : MBEMode.DMRAMBE);
+            return (decoder, encoder);
+        }
+#endif
+
+#if AMBEVOCODE && !NOVOCODE
+        private (AmbeVocoder FullRate, AmbeVocoder HalfRate) CreateExternalVocoderInstance()
+        {
+            return (new AmbeVocoder(), new AmbeVocoder(false));
+        }
+#endif
+
+        private void CleanupVocoderInstance(string channelId)
+        {
+#if !NOVOCODE && !AMBEVOCODE
+            if (vocoderInstances.ContainsKey(channelId))
+            {
+                vocoderInstances.Remove(channelId);
+                logger.Information("Removed vocoder instance for channel {ChannelId}", channelId);
+            }
+#endif
+#if AMBEVOCODE && !NOVOCODE
+            if (ambeVocoderInstances.ContainsKey(channelId))
+            {
+                ambeVocoderInstances.Remove(channelId);
+                logger.Information("Removed external vocoder instance for channel {ChannelId}", channelId);
+            }
+#endif
         }
     }
 }

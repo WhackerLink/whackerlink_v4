@@ -49,12 +49,12 @@ namespace WhackerLinkServer
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
-        private MBEDecoderManaged p25Decoder;
-        private MBEEncoderManaged p25Encoder;
+        private Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances = 
+            new Dictionary<string, (MBEDecoderManaged, MBEEncoderManaged)>();
 #endif
 #if AMBEVOCODE && !NOVOCODE
-        private AmbeVocoder extFullRateVocoder;
-        private AmbeVocoder extHalfRateVocoder;
+        private Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances =
+            new Dictionary<string, (AmbeVocoder, AmbeVocoder)>();
 #endif
 
         /// <summary>
@@ -71,45 +71,29 @@ namespace WhackerLinkServer
             this.logger = LoggerSetup.CreateLogger(config.Name);
 
 #if !NOVOCODE && !AMBEVOCODE
-            if (config.VocoderMode == VocoderModes.DMRAMBE)
+            if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
             {
-                p25Decoder = new MBEDecoderManaged(MBEMode.DMRAMBE);
-                p25Decoder.AutoGain = true;
-                p25Encoder = new MBEEncoderManaged(MBEMode.DMRAMBE);
-                p25Encoder.GainAdjust = (float)3.0;
-                logger.Information("AMBE Vocoder enabled");
-            }
-            else if (config.VocoderMode == VocoderModes.IMBE)
-            {
-                p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
-                p25Decoder.AutoGain = true;
-                p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
-                p25Encoder.GainAdjust = (float)3.0;
-                logger.Information("IMBE Vocoder enabled");
+                logger.Information($"{config.VocoderMode} Vocoder mode enabled");
             }
             else
             {
-                logger.Information("Vocoding disbaled");
+                logger.Information("Vocoding disabled");
             }
 #endif
 #if AMBEVOCODE
-            // initialize external AMBE vocoder
 #pragma warning disable SYSLIB0012 // Type or member is obsolete
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
 #pragma warning restore SYSLIB0012 // Type or member is obsolete
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
 
-            // if the assembly executing directory contains the external DVSI USB-3000 interface DLL
-            // setup the external vocoder code
             if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
             {
-                extFullRateVocoder = new AmbeVocoder();
-                extHalfRateVocoder = new AmbeVocoder(false);
-                logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder", this.config.Name);
-            } else
+                logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder");
+            }
+            else
             {
-                logger.Error("ERROR AMBE.DLL DOES NOT EXIST!");
+                logger.Error("ERROR: AMBE.DLL DOES NOT EXIST!");
             }
 #endif
         }
@@ -202,10 +186,10 @@ namespace WhackerLinkServer
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
 #if !NOVOCODE && !AMBEVOCODE
-                    p25Decoder, p25Encoder,
+                        vocoderInstances,
 #endif
 #if AMBEVOCODE && !NOVOCODE
-                    extFullRateVocoder, extHalfRateVocoder,
+                        ambeVocoderInstances,
 #endif
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
