@@ -2,6 +2,13 @@
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
+## Want to just try downloading the server and see if it works?
+1. Install [NET 8.0 runtime](https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x64&rid=win-x64&os=win10&apphost_version=8.0.11).
+2. Install [ASP NET Core framework](https://aka.ms/dotnet-core-applaunch?framework=Microsoft.AspNetCore.App&framework_version=8.0.0&arch=x64&rid=win-x64&os=win10).
+3. Download WhackerLinkServer from the releases tab.
+4. Try running `WhackerLinkServer.exe -c configs/config.example.yml`, you should see the server start with the default values. 
+5. If these steps do not work, either ask for help in the discord or follow the below steps for manual compliation.
+
 ## Installing Git
 1. Download Git from [this link](https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/Git-2.45.2-64-bit.exe).
 2. Run the downloaded installer. Follow the prompts, leaving all options at their default settings.
