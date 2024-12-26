@@ -714,13 +714,15 @@ namespace WhackerLinkServer
                 return;
             }
 
-/*            if (audioPacket.VoiceChannel != null && channel.ClientId != ID && channel.DstId == audioPacket.VoiceChannel.DstId)
+/*
+            if (audioPacket.VoiceChannel != null && channel.ClientId != ID && channel.DstId == audioPacket.VoiceChannel.DstId)
             {
                 logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 voiceChannelManager.RemoveVoiceChannelByClientId(ID);
                 BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
                 return;
-            }*/
+            }
+*/
 
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
@@ -746,7 +748,6 @@ namespace WhackerLinkServer
 
                 var (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
 #endif
-
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
                 {
@@ -767,7 +768,7 @@ namespace WhackerLinkServer
                     }
 
 #if !AMBEVOCODE
-            encoder.encode(samples, out imbe);
+                    encoder.encode(samples, out imbe);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
@@ -782,7 +783,7 @@ namespace WhackerLinkServer
                     short[] decodedSamples = null;
 
 #if !AMBEVOCODE
-            int errors = decoder.decode(imbe, out decodedSamples);
+                    int errors = decoder.decode(imbe, out decodedSamples);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
@@ -812,6 +813,7 @@ namespace WhackerLinkServer
                 var combinedAudioData = AudioConverter.CombineChunks(processedChunks);
                 if (combinedAudioData != null)
                 {
+                    audioPacket.AudioMode = AudioMode.PCM_8_16;
                     audioPacket.Data = combinedAudioData;
                     BroadcastMessage(audioPacket.GetStrData());
                 }
@@ -823,6 +825,7 @@ namespace WhackerLinkServer
             }
             else
             {
+                audioPacket.AudioMode = AudioMode.PCM_8_16;
                 BroadcastMessage(audioPacket.GetStrData());
             }
         }
