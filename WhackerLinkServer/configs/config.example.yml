@@ -9,7 +9,7 @@ masters:
     # Port for the master to bind to
     port: 3000
     # Address for the master to bind to
-    address: 127.0.0.1
+    address: 0.0.0.0
 
     # Disables logging of location broadcasts 
     disableLocBcastLogs: true
@@ -120,6 +120,38 @@ masters:
         systemID: 1
         siteID: 5
         range: 2.0
+
+      ###
+      # Uncomment the following if your FiveM server has Roxwood
+      ###
+      # - name: "Roxwood Central Site"
+      #   controlChannel: "771.3625"
+      #   voiceChannels:
+      #       - "770.8625"
+      #       - "772.5125"
+      #       - "773.8625"
+      #       - "851.9125"
+      #   location:
+      #       X: -441.88
+      #       Y: 7128.51
+      #       Z: 38.94
+      #   systemID: 2
+      #   siteID: 6
+      #   range: 2.5
+
+      # - name: "Roxwood West Site"
+      #   controlChannel: "854.5125"
+      #   voiceChannels:
+      #     - "853.8625"
+      #     - "853.3125"
+      #     - "852.6125"
+      #   location:
+      #     X: -1707.05
+      #     Y: 6824.27
+      #     Z: 94.5
+      #   systemID: 2
+      #   siteID: 7
+      #   range: 1.8
 
     # Radio ID Access List Configuration
     ridAcl:
