@@ -71,7 +71,7 @@ masters:
           z: 188.6
         systemID: 1
         siteID: 2
-        range: 2.0
+        range: 1.5
 
       - name: "City-FBI Site"
         controlChannel: "773.66875"
@@ -124,20 +124,6 @@ masters:
       ###
       # Uncomment the following if your FiveM server has Roxwood
       ###
-      # - name: "Roxwood Central Site"
-      #   controlChannel: "771.3625"
-      #   voiceChannels:
-      #       - "770.8625"
-      #       - "772.5125"
-      #       - "773.8625"
-      #       - "851.9125"
-      #   location:
-      #       X: -441.88
-      #       Y: 7128.51
-      #       Z: 38.94
-      #   systemID: 2
-      #   siteID: 6
-      #   range: 2.5
 
       # - name: "Roxwood West Site"
       #   controlChannel: "854.5125"
@@ -146,12 +132,12 @@ masters:
       #     - "853.3125"
       #     - "852.6125"
       #   location:
-      #     X: -1707.05
-      #     Y: 6824.27
-      #     Z: 94.5
+      #     x: -1707.05
+      #     y: 6824.27
+      #     z: 94.5
       #   systemID: 2
       #   siteID: 7
-      #   range: 1.8
+      #   range: 1.5
 
     # Radio ID Access List Configuration
     ridAcl:
