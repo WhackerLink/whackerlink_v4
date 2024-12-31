@@ -18,6 +18,7 @@
 * 
 */
 
+#if AMBEVOCODE
 namespace WhackerLinkServer
 {
     public class AmbeVocoderManager
@@ -48,3 +49,4 @@ namespace WhackerLinkServer
     }
 
 }
+#endif
