@@ -53,8 +53,8 @@ namespace WhackerLinkServer
             new Dictionary<string, (MBEDecoderManaged, MBEEncoderManaged)>();
 #endif
 #if AMBEVOCODE && !NOVOCODE
-        private Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances =
-            new Dictionary<string, (AmbeVocoder, AmbeVocoder)>();
+        private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
+            new Dictionary<string, (AmbeVocoderManager, AmbeVocoderManager)>();
 #endif
 
         /// <summary>

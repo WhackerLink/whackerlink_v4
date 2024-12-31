@@ -64,7 +64,7 @@ namespace WhackerLinkServer
         private readonly Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances;
 #endif
 #if AMBEVOCODE && !NOVOCODE
-        private readonly Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances;
+        private readonly Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances;
 #endif
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace WhackerLinkServer
             Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances,
 #endif
 #if AMBEVOCODE && !NOVOCODE
-            Dictionary<string, (AmbeVocoder FullRate, AmbeVocoder HalfRate)> ambeVocoderInstances,
+            Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
 #endif
             ILogger logger)
         {
@@ -772,11 +772,11 @@ namespace WhackerLinkServer
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
-                        fullRateVocoder.encode(samples, out imbe);
+                        fullRateVocoder.Encode(samples, out imbe);
                     }
                     else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
                     {
-                        halfRateVocoder.encode(samples, out imbe);
+                        halfRateVocoder.Encode(samples, out imbe);
                     }
 #endif
 
@@ -787,11 +787,11 @@ namespace WhackerLinkServer
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
-                        int errors = fullRateVocoder.decode(imbe, out decodedSamples);
+                        int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
                     }
                     else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
                     {
-                        int errors = halfRateVocoder.decode(imbe, out decodedSamples);
+                        int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
                     }
 #endif
 
@@ -840,9 +840,9 @@ namespace WhackerLinkServer
 #endif
 
 #if AMBEVOCODE && !NOVOCODE
-        private (AmbeVocoder FullRate, AmbeVocoder HalfRate) CreateExternalVocoderInstance()
+        private (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate) CreateExternalVocoderInstance()
         {
-            return (new AmbeVocoder(), new AmbeVocoder(false));
+            return (new AmbeVocoderManager(), new AmbeVocoderManager(false));
         }
 #endif
 
