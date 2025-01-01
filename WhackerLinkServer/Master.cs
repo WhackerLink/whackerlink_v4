@@ -25,6 +25,10 @@ using WhackerLinkServer.Managers;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Interfaces;
 using System.Reflection;
+using WhackerLinkLib.Models.IOSP;
+
+using WhackerLinkLib.Utils;
+
 
 #if !NOVOCODE
 using vocoder;
@@ -196,6 +200,17 @@ namespace WhackerLinkServer
                 server.Start();
 
                 logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
+
+                IntervalRunner siteBcastInterval = new IntervalRunner();
+                SITE_BCAST siteBcast = new SITE_BCAST();
+
+                siteBcast.Sites = config.Sites;
+
+                siteBcastInterval.Start(() =>
+                {
+                    // BroadcastMessage(siteBcast.GetStrData());
+                    reporter.Send(PacketType.SITE_BCAST, siteBcast);
+                }, 5000);
 
                 while (!cancellationToken.IsCancellationRequested)
                 {

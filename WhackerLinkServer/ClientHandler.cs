@@ -106,17 +106,6 @@ namespace WhackerLinkServer
 #if AMBEVOCODE && !NOVOCODE
             this.ambeVocoderInstances = ambeVocoderInstances;
 #endif
-
-            IntervalRunner siteBcastInterval = new IntervalRunner();
-            SITE_BCAST siteBcast = new SITE_BCAST();
-
-            siteBcast.Sites = masterConfig.Sites;
-
-            siteBcastInterval.Start(() =>
-            {
-                // BroadcastMessage(siteBcast.GetStrData());
-                reporter.Send(PacketType.SITE_BCAST, siteBcast);
-            }, 5000);
         }
 
         /// <summary>
