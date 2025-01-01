@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * 
-* Copyright (C) 2024 Caleb, K4PHP
+* Copyright (C) 2024-2025 Caleb, K4PHP
 * 
 */
 
@@ -201,16 +201,21 @@ namespace WhackerLinkServer
 
                 logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
 
-                IntervalRunner siteBcastInterval = new IntervalRunner();
-                SITE_BCAST siteBcast = new SITE_BCAST();
-
-                siteBcast.Sites = config.Sites;
-
-                siteBcastInterval.Start(() =>
+                if (config.Sites.Count > 0)
                 {
-                    // BroadcastMessage(siteBcast.GetStrData());
-                    reporter.Send(PacketType.SITE_BCAST, siteBcast);
-                }, 5000);
+                    IntervalRunner siteBcastInterval = new IntervalRunner();
+                    SITE_BCAST siteBcast = new SITE_BCAST();
+
+                    siteBcast.Sites = config.Sites;
+
+                    logger.Information("Started SITE_BCAST interval");
+
+                    siteBcastInterval.Start(() =>
+                    {
+                        // BroadcastMessage(siteBcast.GetStrData());
+                        reporter.Send(PacketType.SITE_BCAST, siteBcast);
+                    }, 5000);
+                }
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
