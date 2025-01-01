@@ -16,6 +16,8 @@ masters:
 
     # Audio Vocoder mode. 0 = Disbaled, 1 = DMRAMBE, 2 = IMBE; ***NOTE*** This is ignored if you compile it as NoVocode.
     vocoderMode: 2
+    # Pre Vocoder encode PCM gain
+    preEncodeGain: 1.0
 
     # RESTful interface for internal information such as the affiliation table.
     rest:

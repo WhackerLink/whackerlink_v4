@@ -51,6 +51,7 @@ namespace WhackerLinkServer.Models
             public bool DisableLocBcastLogs { get; set; }
             public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
+            public float PreEncodeGain { get; set; } = 1.0f;
             public VocoderModes VocoderMode { get; set; }
             public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }

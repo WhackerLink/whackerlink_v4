@@ -35,6 +35,8 @@ using System.Threading;
 using System;
 using System.IO;
 using System.Linq;
+using Microsoft.VisualBasic;
+using NAudio.Wave;
 
 
 
@@ -59,6 +61,8 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private Reporter reporter;
         private ILogger logger;
+
+        private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
 
 #if !NOVOCODE && !AMBEVOCODE
         private readonly Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances;
@@ -759,6 +763,14 @@ namespace WhackerLinkServer
 
                 foreach (var chunk in chunks)
                 {
+                    // Thanks gatekeep :wink:
+                    BufferedWaveProvider buffer = new BufferedWaveProvider(waveFormat);
+                    buffer.AddSamples(chunk, 0, chunk.Length);
+
+                    VolumeWaveProvider16 gainControl = new VolumeWaveProvider16(buffer);
+                    gainControl.Volume = masterConfig.PreEncodeGain;
+                    gainControl.Read(chunk, 0, chunk.Length);
+
                     int smpIdx = 0;
                     short[] samples = new short[chunk.Length / 2];
                     for (int pcmIdx = 0; pcmIdx < chunk.Length; pcmIdx += 2)
@@ -815,7 +827,7 @@ namespace WhackerLinkServer
                 {
                     audioPacket.AudioMode = AudioMode.PCM_8_16;
                     audioPacket.Data = combinedAudioData;
-                    BroadcastMessage(audioPacket.GetStrData());
+                    BroadcastMessage(audioPacket.GetStrData(), true);
                 }
                 else
                 {
@@ -826,7 +838,7 @@ namespace WhackerLinkServer
             else
             {
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
-                BroadcastMessage(audioPacket.GetStrData());
+                BroadcastMessage(audioPacket.GetStrData(), true);
             }
         }
 
