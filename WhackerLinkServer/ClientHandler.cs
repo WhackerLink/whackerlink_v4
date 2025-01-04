@@ -719,6 +719,8 @@ namespace WhackerLinkServer
 
             if (audioPacket.LopServerVocode)
             {
+                // This is mainly for the console sending tones.
+                // Lops off the vocoder so you dont lop off your ears.
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
                 BroadcastMessage(audioPacket.GetStrData());
                 return;
