@@ -707,15 +707,23 @@ namespace WhackerLinkServer
                 return;
             }
 
-/*
-            if (audioPacket.VoiceChannel != null && channel.ClientId != ID && channel.DstId == audioPacket.VoiceChannel.DstId)
+            /*
+                        if (audioPacket.VoiceChannel != null && channel.ClientId != ID && channel.DstId == audioPacket.VoiceChannel.DstId)
+                        {
+                            logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                            voiceChannelManager.RemoveVoiceChannelByClientId(ID);
+                            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
+                            return;
+                        }
+            */
+
+            if (audioPacket.LopServerVocode)
             {
-                logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
-                voiceChannelManager.RemoveVoiceChannelByClientId(ID);
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
+                audioPacket.AudioMode = AudioMode.PCM_8_16;
+                BroadcastMessage(audioPacket.GetStrData());
                 return;
             }
-*/
+
 
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
