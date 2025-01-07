@@ -362,6 +362,9 @@ namespace WhackerLinkServer
                 case PacketType.CALL_ALRT:
                     BroadcastMessage(response.GetStrData());
                     break;
+                case PacketType.SPEC_FUNC:
+                    BroadcastMessage(response.GetStrData());
+                    break;
                 default:
                     logger.Warning($"Unhandled ACK RSP service: {response.Service}");
                     break;
