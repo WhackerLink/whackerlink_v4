@@ -152,6 +152,9 @@ namespace WhackerLinkServer
                     case (int)PacketType.SPEC_FUNC:
                         HandleSpecFunc(data["data"].ToObject<SPEC_FUNC>());
                         break;
+                    case (int)PacketType.ACK_RSP:
+                        HandleAckResponse(data["data"].ToObject<ACK_RSP>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<AudioPacket>());
                         break;
@@ -342,6 +345,25 @@ namespace WhackerLinkServer
                     break;
                 default:
                     logger.Warning($"Unhandled SPEC_FUNC function: {request.Function}");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Handle ack response
+        /// </summary>
+        /// <param name="response"></param>
+        private void HandleAckResponse(ACK_RSP response)
+        {
+            logger.Information(response.ToString());
+
+            switch (response.Service)
+            {
+                case PacketType.CALL_ALRT:
+                    BroadcastMessage(response.GetStrData());
+                    break;
+                default:
+                    logger.Warning($"Unhandled ACK RSP service: {response.Service}");
                     break;
             }
         }
