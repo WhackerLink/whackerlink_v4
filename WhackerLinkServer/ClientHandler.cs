@@ -38,8 +38,6 @@ using System.Linq;
 using Microsoft.VisualBasic;
 using NAudio.Wave;
 
-
-
 #if !NOVOCODE && !AMBEVOCODE
 using vocoder;
 #endif
@@ -150,6 +148,9 @@ namespace WhackerLinkServer
                         break;
                     case (int)PacketType.STS_BCAST:
                         HandleStsBcast(data["data"].ToObject<STS_BCAST>());
+                        break;
+                    case (int)PacketType.SPEC_FUNC:
+                        HandleSpecFunc(data["data"].ToObject<SPEC_FUNC>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
                         BroadcastAudio(data["data"].ToObject<AudioPacket>());
@@ -311,6 +312,38 @@ namespace WhackerLinkServer
             reporter.Send(PacketType.STS_BCAST, request);
 
             BroadcastMessage(request.GetStrData());
+        }
+
+        /// <summary>
+        /// Handles special function
+        /// </summary>
+        /// <param name="request"></param>
+        private void HandleSpecFunc(SPEC_FUNC request)
+        {
+            logger.Information(request.ToString());
+
+            SPEC_FUNC response = new SPEC_FUNC
+            {
+                Function = SpecFuncType.UNKOWN,
+                SrcId = request.SrcId,
+                DstId = request.DstId,
+            };
+
+            switch (request.Function)
+            {
+
+                case SpecFuncType.RID_INHIBIT: // TODO: Store radio inhibit status
+                    response.Function = SpecFuncType.RID_INHIBIT;
+                    BroadcastMessage(response.GetStrData());
+                    break;
+                case SpecFuncType.RID_UNINHIBIT: // TODO: Store radio uninhibit status
+                    response.Function = SpecFuncType.RID_UNINHIBIT;
+                    BroadcastMessage(response.GetStrData());
+                    break;
+                default:
+                    logger.Warning($"Unhandled SPEC_FUNC function: {request.Function}");
+                    break;
+            }
         }
 
         /// <summary>
@@ -790,7 +823,6 @@ namespace WhackerLinkServer
                         halfRateVocoder.Encode(samples, out imbe);
                     }
 #endif
-
                     short[] decodedSamples = null;
 
 #if !AMBEVOCODE
