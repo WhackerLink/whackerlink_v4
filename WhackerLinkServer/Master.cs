@@ -237,6 +237,26 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// Helper to broadcast packet to clients
+        /// </summary>
+        /// <param name="packet"></param>
+        public void BroadcastPacket(string packet)
+        {
+            try
+            {
+                foreach (var path in server.WebSocketServices.Paths)
+                {
+                    var serviceHost = server.WebSocketServices[path];
+                    serviceHost.Sessions.Broadcast(packet);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Failed to broadcast packet from master");
+            }
+        }
+
+        /// <summary>
         /// Reload the ACL file
         /// </summary>
         /// <param name="state"></param>
