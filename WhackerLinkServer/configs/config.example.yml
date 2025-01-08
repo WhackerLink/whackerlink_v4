@@ -14,7 +14,7 @@ masters:
     # Secure network communications
     ssl:
         # Enables SSL
-        enabled: true
+        enabled: false
         # Path to PFX cert
         certificatePath: "./cert.pfx"
         # PFX cert password
