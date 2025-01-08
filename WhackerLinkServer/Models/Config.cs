@@ -48,6 +48,7 @@ namespace WhackerLinkServer.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public SslConfig Ssl { get; set; }
             public bool DisableLocBcastLogs { get; set; }
             public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
@@ -56,6 +57,16 @@ namespace WhackerLinkServer.Models
             public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
             public List<Site> Sites { get; set; }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public class SslConfig
+        {
+            public bool Enabled { get; set; }
+            public string CertificatePath { get; set; }
+            public string CertificatePassword { get; set; }
         }
 
         /// <summary>

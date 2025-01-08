@@ -11,6 +11,15 @@ masters:
     # Address for the master to bind to
     address: 0.0.0.0
 
+    # Secure network communications
+    ssl:
+        # Enables SSL
+        enabled: true
+        # Path to PFX cert
+        certificatePath: "./cert.pfx"
+        # PFX cert password
+        certificatePassword: ""
+
     # Disables logging of location broadcasts 
     disableLocBcastLogs: true
 
