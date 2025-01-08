@@ -104,6 +104,7 @@ namespace WhackerLinkServer
             {
                 var deserializer = new DeserializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .IgnoreUnmatchedProperties()
                     .Build();
 
                 var yaml = File.ReadAllText(path);
