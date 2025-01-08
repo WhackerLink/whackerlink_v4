@@ -186,26 +186,32 @@ namespace WhackerLinkServer
                     siteManager.AddSite(site);
                 }
 
-                string serverAddress = config.Ssl.Enabled
-                    ? $"wss://{config.Address}:{config.Port}"
-                    : $"ws://{config.Address}:{config.Port}";
+                string serverAddress = $"ws://{config.Address}:{config.Port}";
+
+                if (config.Ssl != null) {
+                    serverAddress = config.Ssl.Enabled
+                        ? $"wss://{config.Address}:{config.Port}"
+                        : $"ws://{config.Address}:{config.Port}";
+                }
 
                 server = new WebSocketServer(serverAddress);
 
-                if (config.Ssl.Enabled)
+                if (config.Ssl != null)
                 {
-                    if (string.IsNullOrEmpty(config.Ssl.CertificatePath))
-                    {
-                        logger.Error("SSL is enabled, but no certificate path is provided.");
-                        throw new InvalidOperationException("SSL requires a valid certificate path.");
+                    if (config.Ssl.Enabled) {
+                        if (string.IsNullOrEmpty(config.Ssl.CertificatePath))
+                        {
+                            logger.Error("SSL is enabled, but no certificate path is provided.");
+                            throw new InvalidOperationException("SSL requires a valid certificate path.");
+                        }
+
+                        server.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(
+                            config.Ssl.CertificatePath,
+                            config.Ssl.CertificatePassword);
+
+                        server.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                        logger.Information("SSL Enabled");
                     }
-
-                    server.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(
-                        config.Ssl.CertificatePath,
-                        config.Ssl.CertificatePassword);
-
-                    server.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-                    logger.Information("SSL Enabled");
                 }
 
 #pragma warning disable CS0618 // Type or member is obsolete
