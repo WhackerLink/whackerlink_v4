@@ -49,7 +49,6 @@ namespace WhackerLinkServer
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
         private SiteManager siteManager;
-        private Timer aclReloadTimer;
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
@@ -166,7 +165,7 @@ namespace WhackerLinkServer
 
                 if (config.RidAcl.ReloadInterval > 0)
                 {
-                    aclReloadTimer = new Timer(ReloadAclFile, null, 0, config.RidAcl.ReloadInterval * 1000);
+                    aclManager.StartReloadTimer(config.RidAcl.ReloadInterval * 1000);
                 }
                 else
                 {
@@ -280,23 +279,6 @@ namespace WhackerLinkServer
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to broadcast packet from master");
-            }
-        }
-
-        /// <summary>
-        /// Reload the ACL file
-        /// </summary>
-        /// <param name="state"></param>
-        private void ReloadAclFile(object state)
-        {
-            try
-            {
-                aclManager.Load(config.RidAcl.Path);
-                logger.Information("Reloaded RID ACL entries from {Path}", config.RidAcl.Path);
-            }
-            catch (Exception ex)
-            {
-                logger.Error("Error reloading RID ACL: {Message}", ex.Message);
             }
         }
     }
