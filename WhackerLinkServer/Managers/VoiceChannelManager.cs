@@ -14,17 +14,16 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * 
-* Copyright (C) 2024 Caleb, K4PHP
+* Copyright (C) 2024-2025 Caleb, K4PHP
 * 
 */
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Timers;
 using WhackerLinkLib.Models;
 using WhackerLinkServer.Models;
-
-#nullable disable
 
 namespace WhackerLinkServer.Managers
 {
@@ -33,7 +32,11 @@ namespace WhackerLinkServer.Managers
     /// </summary>
     public class VoiceChannelManager
     {
+        private Dictionary<VoiceChannel, System.Timers.Timer> vchUpdateTimers = new Dictionary<VoiceChannel, System.Timers.Timer>();
+
         public List<VoiceChannel> VoiceChannels { get; private set; }
+
+        public event Action<VoiceChannel> VoiceChannelUpdated;
 
         /// <summary>
         /// Creates an instance of channel grant manager
@@ -81,6 +84,7 @@ namespace WhackerLinkServer.Managers
             if (!IsVoiceChannelActive(voiceChannel))
             {
                 VoiceChannels.Add(voiceChannel);
+                StartVchBroadcast(voiceChannel);
             }
             else
             {
@@ -94,6 +98,10 @@ namespace WhackerLinkServer.Managers
         /// <param name="frequency"></param>
         public void RemoveVoiceChannel(string frequency)
         {
+            VoiceChannel channel = VoiceChannels.Find(vc => vc.Frequency == frequency);
+
+            StopVchBroadcast(channel);
+
             VoiceChannels.RemoveAll(vc => vc.Frequency == frequency);
         }
 
@@ -103,6 +111,10 @@ namespace WhackerLinkServer.Managers
         /// <param name="clientId"></param>
         public void RemoveVoiceChannelByClientId(string clientId)
         {
+            VoiceChannel channel = VoiceChannels.Find(vc => vc.ClientId == clientId);
+
+            StopVchBroadcast(channel);
+
             VoiceChannels.RemoveAll(vc => vc.ClientId == clientId);
         }
 
@@ -112,6 +124,10 @@ namespace WhackerLinkServer.Managers
         /// <param name="dstId"></param>
         public void RemoveVoiceChannelByDstId(string dstId)
         {
+            VoiceChannel channel = VoiceChannels.Find(vc => vc.DstId == dstId);
+
+            StopVchBroadcast(channel);
+
             VoiceChannels.RemoveAll(vc => vc.DstId == dstId);
         }
 
@@ -143,6 +159,55 @@ namespace WhackerLinkServer.Managers
         public bool IsTransmissionActiveForDstId(string dstId)
         {
             return VoiceChannels.Any(vc => vc.DstId == dstId && vc.IsActive);
+        }
+
+        /// <summary>
+        /// Start GRP_VCH_UPD interval for a <see cref="VoiceChannel"/>
+        /// </summary>
+        /// <param name="voiceChannel"></param>
+        public void StartVchBroadcast(VoiceChannel voiceChannel)
+        {
+            try
+            {
+                if (vchUpdateTimers.ContainsKey(voiceChannel) && vchUpdateTimers[voiceChannel] != null)
+                    vchUpdateTimers[voiceChannel].Stop();
+                else
+                {
+                    vchUpdateTimers.Add(voiceChannel, new System.Timers.Timer(Defines.VHC_UPD_INTERVAL));
+                    vchUpdateTimers[voiceChannel].Elapsed += (sender, args) => VchUpdateElapsed(voiceChannel);
+                }
+
+                vchUpdateTimers[voiceChannel].Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="voiceChannel"></param>
+        public void StopVchBroadcast(VoiceChannel voiceChannel)
+        {
+            try
+            {
+                vchUpdateTimers[voiceChannel].Stop();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Invoke voice channel update
+        /// </summary>
+        /// <param name="voiceChannel"></param>
+        public void VchUpdateElapsed(VoiceChannel voiceChannel)
+        {
+            VoiceChannelUpdated?.Invoke(voiceChannel);
         }
 
         /// <summary>

@@ -73,6 +73,8 @@ namespace WhackerLinkServer
             this.siteManager = new SiteManager();
             this.logger = LoggerSetup.CreateLogger(config.Name);
 
+            voiceChannelManager.VoiceChannelUpdated += VoiceChannelUpdate;
+
 #if !NOVOCODE && !AMBEVOCODE
             if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
             {
@@ -260,6 +262,19 @@ namespace WhackerLinkServer
             {
                 Log.CloseAndFlush();
             }
+        }
+
+        /// <summary>
+        /// Broadcast <see cref="GRP_VCH_UPD"/>
+        /// </summary>
+        /// <param name="channel"></param>
+        public void VoiceChannelUpdate(VoiceChannel channel)
+        {
+            GRP_VCH_UPD packet = new GRP_VCH_UPD { VoiceChannel = channel };
+            
+            logger.Information(packet.ToString());
+
+            BroadcastPacket(packet.GetStrData());
         }
 
         /// <summary>
