@@ -209,6 +209,15 @@ namespace WhackerLinkServer
             {
                 foreach (var affiliation in affiliations)
                 {
+                    U_DE_REG_RSP packet = new U_DE_REG_RSP
+                    {
+                        SrcId = affiliation.SrcId,
+                        SysId = affiliation.Site.SystemID
+                    };
+
+                    logger.Information(packet.ToString());
+                    BroadcastMessage(packet.GetStrData());
+
                     if (talkgroupHangTimers.ContainsKey(affiliation.DstId))
                     {
                         talkgroupHangTimers[affiliation.DstId].Dispose();
