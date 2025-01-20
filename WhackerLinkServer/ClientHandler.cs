@@ -250,7 +250,7 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
-        /// Handled emergencyy alarm requests
+        /// Handled emergency alarm requests
         /// </summary>
         /// <param name="request"></param>
         private void HandleEmergencyAlarmRequest(EMRG_ALRM_REQ request)
