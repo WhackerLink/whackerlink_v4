@@ -36,7 +36,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using NAudio.Wave;
 using Newtonsoft.Json;
-using WhackerLinkLib.Handlers;
+using WhackerLinkLib.Network;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Interfaces;
@@ -56,7 +56,7 @@ namespace WhackerLinkMobileRadio
     /// </summary>
     public partial class MainWindow : Window, IRadioDisplay
     {
-        private readonly IWebSocketHandler _webSocketHandler;
+        private readonly IPeer _webSocketHandler;
         private readonly RadioDisplayUpdater _radioDisplayUpdater;
         private readonly WaveInEvent _waveIn;
         private readonly WaveOutEvent _waveOut;
@@ -106,7 +106,7 @@ namespace WhackerLinkMobileRadio
 
             Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
-            _webSocketHandler = new WebSocketHandler();
+            _webSocketHandler = new Peer();
             _radioDisplayUpdater = new RadioDisplayUpdater(this);
 
             _webSocketHandler.OnUnitRegistrationResponse += HandleUnitRegistrationResponse;

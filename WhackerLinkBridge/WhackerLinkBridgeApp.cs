@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using WhackerLinkBridge.Models;
-using WhackerLinkLib.Handlers;
+using WhackerLinkLib.Network;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Interfaces;
 using WhackerLinkLib.Models;
@@ -18,7 +18,7 @@ namespace WhackerLinkBridge
     public class WhackerLinkBridgeApp
     {
         internal readonly Config _config;
-        internal readonly IWebSocketHandler _webSocketHandler;
+        internal readonly IPeer _webSocketHandler;
         internal readonly UdpAudioHandler _udpAudioHandler;
 
         internal VoiceChannel currentVoiceChannel;
@@ -31,7 +31,7 @@ namespace WhackerLinkBridge
         public WhackerLinkBridgeApp(string configPath)
         {
             _config = ConfigLoader.LoadConfig(configPath);
-            _webSocketHandler = new WebSocketHandler();
+            _webSocketHandler = new Peer();
             _udpAudioHandler = new UdpAudioHandler(
                 _config.dvmBridge.Address,
                 _config.dvmBridge.TxPort,

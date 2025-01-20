@@ -11,7 +11,7 @@ using YamlDotNet.Serialization.NamingConventions;
 using WhackerLink2Dvm.Models;
 
 using WhackerLinkLib.Interfaces;
-using WhackerLinkLib.Handlers;
+using WhackerLinkLib.Network;
 using Serilog.Events;
 
 #nullable disable

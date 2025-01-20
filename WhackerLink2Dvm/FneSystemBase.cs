@@ -27,7 +27,7 @@ using WhackerLinkLib.Models;
 using WhackerLinkLib.Interfaces;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models.IOSP;
-using WhackerLinkLib.Handlers;
+using WhackerLinkLib.Network;
 
 namespace WhackerLink2Dvm
 {
@@ -120,7 +120,7 @@ namespace WhackerLink2Dvm
         private Random rand;
         private uint txStreamId;
 
-        private IWebSocketHandler webSocketHandler;
+        private IPeer webSocketHandler;
 
         private VoiceChannel voiceChannel;
 
@@ -138,7 +138,7 @@ namespace WhackerLink2Dvm
 
             this.rand = new Random(Guid.NewGuid().GetHashCode());
 
-            webSocketHandler = new WebSocketHandler();
+            webSocketHandler = new Peer();
             webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
             webSocketHandler.OnAffiliationUpdate += WhackerLinkAffiliationUpdate;
             webSocketHandler.OnUnitDeRegistrationResponse += WhackerLinkUniteDeRegistration;
