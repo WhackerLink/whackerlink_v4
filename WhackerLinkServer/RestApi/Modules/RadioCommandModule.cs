@@ -96,6 +96,34 @@ namespace WhackerLinkServer.RestApi.Modules
                     return Response.AsJson(new { error = ex.Message }, HttpStatusCode.InternalServerError);
                 }
             });
+
+            Post("/netfail", parameters =>
+            {
+                try
+                {
+                    var requestBody = this.Bind<NetFailRequest>();
+
+                    if (requestBody == null)
+                    {
+                        return Response.AsJson(new { error = "Invalid request. 'Status' is required." }, HttpStatusCode.BadRequest);
+                    }
+
+                    NET_FAIL packet = new NET_FAIL
+                    {
+                        Status = requestBody.Status
+                    };
+
+                    masterService.Logger.Information(packet.ToString());
+
+                    masterService.BroadcastPacket(packet.GetStrData());
+
+                    return Response.AsJson(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    return Response.AsJson(new { error = ex.Message }, HttpStatusCode.InternalServerError);
+                }
+            });
         }
     }
 
@@ -105,5 +133,13 @@ namespace WhackerLinkServer.RestApi.Modules
     public class InhibitRequest
     {
         public string DstId { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for net fail request
+    /// </summary>
+    public class NetFailRequest
+    {
+        public byte Status { get; set; } = 0xFF;
     }
 }
