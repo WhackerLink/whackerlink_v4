@@ -156,7 +156,7 @@ namespace WhackerLinkServer
                         HandleAckResponse(data["data"].ToObject<ACK_RSP>());
                         break;
                     case (int)PacketType.AUDIO_DATA:
-                        BroadcastAudio(data["data"].ToObject<AudioPacket>());
+                        Task.Run(() => BroadcastAudio(data["data"].ToObject<AudioPacket>()));
                         break;
                     default:
                         logger.Warning("Unhandled Wlink Packet, Opcode: {Type}", type);
