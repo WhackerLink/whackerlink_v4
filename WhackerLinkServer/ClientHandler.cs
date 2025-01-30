@@ -37,6 +37,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.VisualBasic;
 using NAudio.Wave;
+using WhackerLinkLib.Interfaces;
 
 #if !NOVOCODE && !AMBEVOCODE
 using vocoder;
@@ -58,6 +59,7 @@ namespace WhackerLinkServer
         private VoiceChannelManager voiceChannelManager;
         private SiteManager siteManager;
         private Reporter reporter;
+        private IMasterService master;
         private ILogger logger;
 
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
@@ -88,6 +90,7 @@ namespace WhackerLinkServer
 #if AMBEVOCODE && !NOVOCODE
             Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
 #endif
+            IMasterService master,
             ILogger logger)
         {
             this.masterConfig = config;
@@ -892,7 +895,7 @@ namespace WhackerLinkServer
                 {
                     audioPacket.AudioMode = AudioMode.PCM_8_16;
                     audioPacket.Data = combinedAudioData;
-                    BroadcastMessage(audioPacket.GetStrData());
+                    master.BroadcastPacket(audioPacket.GetStrData());
                 }
                 else
                 {
@@ -903,7 +906,7 @@ namespace WhackerLinkServer
             else
             {
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
-                BroadcastMessage(audioPacket.GetStrData());
+                master.BroadcastPacket(audioPacket.GetStrData());
             }
         }
 

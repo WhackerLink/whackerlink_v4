@@ -223,6 +223,7 @@ namespace WhackerLinkServer
 #if AMBEVOCODE && !NOVOCODE
                         ambeVocoderInstances,
 #endif
+                        this,
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
                 server.Start();
