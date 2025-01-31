@@ -898,7 +898,7 @@ namespace WhackerLinkServer
                 {
                     audioPacket.AudioMode = AudioMode.PCM_8_16;
                     audioPacket.Data = combinedAudioData;
-                    master.BroadcastPacket(audioPacket.GetStrData());
+                    BroadcastMessage(audioPacket.GetStrData());
                 }
                 else
                 {
@@ -909,7 +909,7 @@ namespace WhackerLinkServer
             else
             {
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
-                master.BroadcastPacket(audioPacket.GetStrData());
+                BroadcastMessage(audioPacket.GetStrData());
             }
         }
 
