@@ -308,6 +308,9 @@ namespace WhackerLinkServer
         /// <param name="request"></param>
         private void HandleLocBcast(LOC_BCAST request)
         {
+            if (masterConfig.DisableLocationBroadcasts)
+                return;
+
             // for now, only log, report, and repeate the packet. maybe in the future we do something fun server side?
             if (!masterConfig.DisableLocBcastLogs)
                 logger.Information(request.ToString());
@@ -746,7 +749,7 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
-        /// Broadcasts a message to all clients (Optionally skip the sender
+        /// Broadcasts a message to all clients (Optionally skip the sender)
         /// </summary>
         /// <param name="message"></param>
         /// <param name="skipMe"></param>

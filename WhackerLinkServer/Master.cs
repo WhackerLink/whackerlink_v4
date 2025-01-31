@@ -232,18 +232,23 @@ namespace WhackerLinkServer
 
                 if (config.Sites.Count > 0)
                 {
-                    IntervalRunner siteBcastInterval = new IntervalRunner();
-                    SITE_BCAST siteBcast = new SITE_BCAST();
-
-                    siteBcast.Sites = config.Sites;
-
-                    logger.Information("Started SITE_BCAST interval");
-
-                    siteBcastInterval.Start(() =>
+                    if (!config.DisableSiteBcast)
                     {
-                        // BroadcastMessage(siteBcast.GetStrData());
-                        reporter.Send(PacketType.SITE_BCAST, siteBcast);
-                    }, 5000);
+                        IntervalRunner siteBcastInterval = new IntervalRunner();
+                        SITE_BCAST siteBcast = new SITE_BCAST();
+
+                        siteBcast.Sites = config.Sites;
+
+                        logger.Information("Started SITE_BCAST interval");
+
+                        siteBcastInterval.Start(() =>
+                        {
+                            // BroadcastMessage(siteBcast.GetStrData());
+                            reporter.Send(PacketType.SITE_BCAST, siteBcast);
+                        }, 5000);
+                    }
+                    else
+                        logger.Information("SITE_BCAST interval not enabled");
                 }
 
                 while (!cancellationToken.IsCancellationRequested)
@@ -271,6 +276,9 @@ namespace WhackerLinkServer
         /// <param name="channel"></param>
         public void VoiceChannelUpdate(VoiceChannel channel)
         {
+            if (config.DisableVchUpdates)
+                return;
+
             GRP_VCH_UPD packet = new GRP_VCH_UPD { VoiceChannel = channel };
             
             logger.Information(packet.ToString());

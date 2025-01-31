@@ -20,6 +20,12 @@ masters:
         # PFX cert password
         certificatePassword: ""
 
+    # Disable site broadcasts
+    disableSiteBcast: false
+    # Disable group vch update broadcasts
+    disableVchUpdates: false
+    # Disable location broadcast repeate
+    disableLocationBroadcasts: false
     # Disables logging of location broadcasts 
     disableLocBcastLogs: true
 
