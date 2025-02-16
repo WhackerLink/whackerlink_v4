@@ -12,7 +12,7 @@ masters:
     port: 3000
     # Address for the master to bind to
       # If hosted locally, bind to internal IP (0.0.0.0, 127.0.0.1, or private IP (Interal Network IP))
-      # If hosted remotely on a VPS, bing to the Public IP of your VPS.
+      # If hosted remotely on a VPS, bind to the Public IP of your VPS.
     address: 0.0.0.0
 
     # Secure network communications
