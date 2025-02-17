@@ -11,7 +11,12 @@
 	  <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<PropertyGroup>
+		<GitInfoEnabled>true</GitInfoEnabled>
+	</PropertyGroup>
+
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutputPath>$(SolutionDir)x64\Debug</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
