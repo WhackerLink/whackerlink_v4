@@ -59,7 +59,14 @@ namespace WhackerLinkServer
                     return;
                 }
 
+                string debug = string.Empty;
+
+#if DEBUG
+                debug = "DEBUG_PROTO_LABTOOL';
+#endif
+
                 logger.Information("WhackerLink Server - Main networking router and handler for WhackerLink");
+                logger.Information($"Server Version {System.Reflection.ThisAssembly.Git.Commit} Dirty: {System.Reflection.ThisAssembly.Git.IsDirtyString} {debug}");
                 logger.Information("Copyright (C) 2024-2025 Caleb, K4PHP (_php_)");
 
                 logger.Information("Initializing Master instances");
