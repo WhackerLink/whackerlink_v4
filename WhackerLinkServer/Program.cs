@@ -62,7 +62,7 @@ namespace WhackerLinkServer
                 string debug = string.Empty;
 
 #if DEBUG
-                debug = "DEBUG_PROTO_LABTOOL';
+                debug = "DEBUG_PROTO_LABTOOL";
 #endif
 
                 logger.Information("WhackerLink Server - Main networking router and handler for WhackerLink");
