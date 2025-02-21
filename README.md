@@ -6,7 +6,7 @@
 1. Install [NET 8.0 runtime](https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x64&rid=win-x64&os=win10&apphost_version=8.0.11).
 2. Install [ASP NET Core framework](https://aka.ms/dotnet-core-applaunch?framework=Microsoft.AspNetCore.App&framework_version=8.0.0&arch=x64&rid=win-x64&os=win10).
 3. Download WhackerLinkServer from the releases tab.
-4. Try running `WhackerLinkServer.exe -c configs/config.example.yml`, you should see the server start with the default values. 
+4. Try running `WhackerLinkServer.exe -c config.example.yml`, you should see the server start with the default values. 
 5. If these steps do not work, either ask for help in the discord or follow the below steps for manual compliation.
 
 ## Installing Git
