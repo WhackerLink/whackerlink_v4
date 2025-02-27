@@ -808,6 +808,12 @@ namespace WhackerLinkServer
                 return;
             }
 
+            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict)
+            {
+                logger.Warning("Ignoring call; source not affiliated to destination srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                return;
+            }
+
             List<string> affiliatedClients = affiliationsManager.GetAffiliations()
                                            .Where(a => a.DstId == dstId)
                                            .Select(a => a.ClientId)
