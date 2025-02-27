@@ -24,6 +24,11 @@ masters:
         # PFX cert password
         certificatePassword: ""
 
+    # Only pass traffic to peers that have affiliations to that dstId (recommended to stay true!)
+    affilationRestricted: true
+    # Do not repeat voice traffic back to one's self (recommended to stay true!)
+    noSelfRepeat: true
+
     # Disable site broadcasts
     disableSiteBcast: false
     # Disable group vch update broadcasts
