@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * 
-* Copyright (C) 2024 Caleb, K4PHP
+* Copyright (C) 2024-2025 Caleb, K4PHP
 * 
 */
 
@@ -48,6 +48,9 @@ namespace WhackerLinkServer.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public bool AffilationRestricted { get; set; } = true;
+            public bool NoSelfRepeat { get; set; } = true;
+            public bool EnableMbeTones { get; set; } = false;
             public bool DisableSiteBcast { get; set; } = false;
             public bool DisableVchUpdates { get; set; } = false;
             public bool DisableLocationBroadcasts { get; set; } = false;

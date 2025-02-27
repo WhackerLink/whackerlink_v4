@@ -136,6 +136,16 @@ namespace WhackerLinkServer.Managers
         }
 
         /// <summary>
+        /// Checks if a srcid is affiliated to a dstid
+        /// </summary>
+        /// <param name="srcId"></param>
+        /// <returns></returns>
+        public bool isSrcIdAffiliated(string srcId, string dstId)
+        {
+            return Affiliations.Any(a => a.SrcId == srcId && a.DstId == dstId);
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>

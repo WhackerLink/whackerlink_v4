@@ -38,6 +38,8 @@ using System.Linq;
 using Microsoft.VisualBasic;
 using NAudio.Wave;
 using WhackerLinkLib.Interfaces;
+using NWaves.Signals;
+using vocoder;
 
 #if !NOVOCODE && !AMBEVOCODE
 using vocoder;
@@ -60,6 +62,7 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private Reporter reporter;
         private IMasterService master;
+        private ToneDetector toneDetecor = new ToneDetector();
         private ILogger logger;
 
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
@@ -408,7 +411,11 @@ namespace WhackerLinkServer
             if (isAffiliationPermitted(request.SrcId, request.DstId))
             {
                 response.Status = (int)ResponseType.GRANT;
-                affiliationsManager.RemoveAffiliation(request.SrcId);
+
+                // only remove the aff if the srcid is actually on that tg. This is mainly so the console can be on multi talkgroups. Idk if this is right.
+                if (affiliationsManager.isSrcIdAffiliated(request.SrcId, request.DstId))
+                    affiliationsManager.RemoveAffiliation(request.SrcId);
+
                 affiliationsManager.AddAffiliation(affiliation);
 
                 AFF_UPDATE affUpdate = new AFF_UPDATE
@@ -758,9 +765,28 @@ namespace WhackerLinkServer
             foreach (var session in Sessions.Sessions)
             {
                 if (skipMe && ID == session.ID)
-                    return;
+                    continue;
 
                 Sessions.SendTo(message, session.ID);
+            }
+        }
+
+        /// <summary>
+        /// Broadcast message to a specific list of clients
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="clientIds"></param>
+        private void BroadcastMessage(string message, List<string> clientIds, bool skipMe)
+        {
+            foreach (var clientId in clientIds)
+            {
+                if (Sessions.TryGetSession(clientId, out var session))
+                {
+                    if (skipMe && ID == session.ID)
+                        continue;
+
+                    Sessions.SendTo(message, session.ID);
+                }
             }
         }
 
@@ -771,12 +797,25 @@ namespace WhackerLinkServer
         /// <param name="voiceChannel"></param>
         private void BroadcastAudio(AudioPacket audioPacket)
         {
+            bool affRestrict = masterConfig.AffilationRestricted;
+
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
             string dstId = audioPacket.VoiceChannel.DstId;
 
             if (!voiceChannelManager.IsDestinationActive(audioPacket.VoiceChannel.DstId))
             {
                 logger.Warning("Ignoring call; destination not permitted for traffic srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                return;
+            }
+
+            List<string> affiliatedClients = affiliationsManager.GetAffiliations()
+                                           .Where(a => a.DstId == dstId)
+                                           .Select(a => a.ClientId)
+                                           .ToList();
+
+            if (affiliatedClients.Count == 0 && affRestrict)
+            {
+                logger.Warning("No affiliations found for dstId: {DstId}??", dstId);
                 return;
             }
 
@@ -795,7 +834,12 @@ namespace WhackerLinkServer
                 // This is mainly for the console sending tones.
                 // Lops off the vocoder so you dont lop off your ears.
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
-                BroadcastMessage(audioPacket.GetStrData());
+
+                if (!affRestrict)
+                    BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                else
+                    BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
+
                 return;
             }
 
@@ -851,22 +895,66 @@ namespace WhackerLinkServer
                         smpIdx++;
                     }
 
-#if !AMBEVOCODE
-                    encoder.encode(samples, out imbe);
-#else
-                    if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                    int tone = 0;
+
+                    if (masterConfig.EnableMbeTones)
                     {
-                        fullRateVocoder.Encode(samples, out imbe);
+                        float[] fSamples = AudioConverter.PcmToFloat(samples);
+
+                        // Convert to signal
+                        DiscreteSignal signal = new DiscreteSignal(waveFormat.SampleRate, fSamples, true);
+
+                        try
+                        {
+                            tone = toneDetecor.Detect(signal);
+                            logger.Debug($"ANA: {tone} Detected");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error: {ex.Message}");
+                        }
                     }
-                    else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+
+                    if (tone == 0)
                     {
-                        halfRateVocoder.Encode(samples, out imbe);
+
+#if !AMBEVOCODE
+                        encoder.encode(samples, out imbe);
+#else
+
+                        if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                        {
+                            fullRateVocoder.Encode(samples, out imbe);
+                        }
+                        else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                        {
+                            halfRateVocoder.Encode(samples, out imbe);
+                        }
                     }
 #endif
                     short[] decodedSamples = null;
 
+                    if (tone > 0 && masterConfig.EnableMbeTones)
+                    {
+                        try
+                        {
+                            if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                                MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
+                            else
+                                MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)127, imbe);
+
+                            logger.Debug($"P25: {tone} Detected");
+                        } catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
+                    }
+
+                    if (imbe == null)
+                        return;
+
 #if !AMBEVOCODE
-                    int errors = decoder.decode(imbe, out decodedSamples);
+                        int errors = decoder.decode(imbe, out decodedSamples);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
@@ -898,7 +986,11 @@ namespace WhackerLinkServer
                 {
                     audioPacket.AudioMode = AudioMode.PCM_8_16;
                     audioPacket.Data = combinedAudioData;
-                    BroadcastMessage(audioPacket.GetStrData());
+
+                    if (!affRestrict)
+                        BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                    else
+                        BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
                 }
                 else
                 {
@@ -909,7 +1001,10 @@ namespace WhackerLinkServer
             else
             {
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
-                BroadcastMessage(audioPacket.GetStrData());
+                if (!affRestrict)
+                    BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                else
+                    BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
             }
         }
 
