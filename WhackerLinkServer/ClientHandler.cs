@@ -930,8 +930,10 @@ namespace WhackerLinkServer
                         {
                             halfRateVocoder.Encode(samples, out imbe);
                         }
-                    }
+                    
 #endif
+                    }
+
                     short[] decodedSamples = null;
 
                     if (tone > 0 && masterConfig.EnableMbeTones)
