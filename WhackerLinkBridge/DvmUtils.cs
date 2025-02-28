@@ -120,7 +120,7 @@ namespace WhackerLinkBridge
                     {
                         try
                         {
-                            app.SendVoiceChannelRequest(srcId.ToString(), dstId.ToString());
+                            app.SendVoiceChannelRequest(srcId.ToString(), WhackerLinkBridgeApp.Talkgroup);
                             Console.WriteLine("Call Start Detected");
                             app._callInProgress = true;
                         } catch (Exception ex)

@@ -17,6 +17,8 @@ namespace WhackerLinkBridge
 {
     public class WhackerLinkBridgeApp
     {
+        public static string Talkgroup = "1"; 
+
         internal readonly Config _config;
         internal readonly IPeer _webSocketHandler;
         internal readonly UdpAudioHandler _udpAudioHandler;
@@ -37,6 +39,23 @@ namespace WhackerLinkBridge
                 _config.dvmBridge.TxPort,
                 "0.0.0.0",
                 _config.dvmBridge.RxPort);
+
+            Talkgroup = _config.system.dstId;
+
+            _webSocketHandler.OnOpen += () =>
+            {
+                Console.WriteLine("Connection to whackerlink master established");
+
+
+                // fake aff to receive aff restricted traffic
+                GRP_AFF_REQ aff = new GRP_AFF_REQ
+                {
+                    SrcId = "1",
+                    DstId = _config.system.dstId,
+                };
+
+                _webSocketHandler.SendMessage(aff.GetData());
+            };
 
             _webSocketHandler.OnAudioData += HandleWebSocketAudioData;
             _webSocketHandler.OnVoiceChannelResponse += HandleVoiceChannelResponse;
@@ -86,6 +105,15 @@ namespace WhackerLinkBridge
 
         internal void SendVoiceChannelRequest(string srcId, string dstId)
         {
+            // fake aff to send aff restricted traffic
+            GRP_AFF_REQ aff = new GRP_AFF_REQ
+            {
+                SrcId = srcId,
+                DstId = dstId,
+            };
+
+            _webSocketHandler.SendMessage(aff.GetData());
+
             GRP_VCH_REQ request = new GRP_VCH_REQ
             {
                 SrcId = srcId,
@@ -103,7 +131,7 @@ namespace WhackerLinkBridge
                 SrcId = voiceChannel.SrcId,
                 DstId = voiceChannel.DstId,
                 Channel = voiceChannel.Frequency,
-                Site = null
+                Site = _config.system.Site
             };
 
             _webSocketHandler.SendMessage(release.GetData());

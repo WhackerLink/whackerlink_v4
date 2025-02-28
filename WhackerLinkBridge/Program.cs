@@ -6,18 +6,32 @@ namespace WhackerLinkBridge
     {
         static void Main(string[] args)
         {
-            if (args.Length == 0)
+            string configPath = null;
+
+            for (int i = 0; i < args.Length; i++)
             {
-                Console.WriteLine("Usage: WhackerLinkBridge <configPath>");
+                if (args[i] == "-c" && i + 1 < args.Length)
+                {
+                    configPath = args[i + 1];
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(configPath))
+            {
+                Console.WriteLine("Usage: WhackerLinkBridge -c <configPath>");
                 return;
             }
 
-            var configPath = args[0];
             var app = new WhackerLinkBridgeApp(configPath);
             app.Start();
 
-            Console.WriteLine("WhackerLinkBridge is running");
-            Console.ReadLine();
+            Console.WriteLine("WhackerLinkBridge is running. Press Ctrl+C to exit.");
+
+            while (true)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
         }
     }
 }
