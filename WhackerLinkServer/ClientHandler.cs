@@ -440,7 +440,7 @@ namespace WhackerLinkServer
 
                 // only remove the aff if the srcid is actually on that tg. This is mainly so the console can be on multi talkgroups. Idk if this is right.
                 if (affiliationsManager.isSrcIdAffiliated(request.SrcId, request.DstId))
-                    affiliationsManager.RemoveAffiliation(request.SrcId);
+                    affiliationsManager.RemoveAffiliation(request.SrcId, request.DstId);
 
                 affiliationsManager.AddAffiliation(affiliation);
 

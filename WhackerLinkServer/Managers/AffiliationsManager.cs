@@ -87,6 +87,16 @@ namespace WhackerLinkServer.Managers
         }
 
         /// <summary>
+        /// Helper to remove an affiliation by srcId and dstId.
+        /// </summary>
+        /// <param name="srcId">The source ID of the affiliation.</param>
+        /// <param name="dstId">The destination ID (talkgroup) of the affiliation.</param>
+        public void RemoveAffiliation(string srcId, string dstId)
+        {
+            Affiliations.RemoveAll(a => a.SrcId == srcId && a.DstId == dstId);
+        }
+
+        /// <summary>
         /// Helper to remove affiliation by client id
         /// </summary>
         /// <param name="clientId"></param>
