@@ -69,7 +69,7 @@ namespace WhackerLinkServer
             this.config = config;
             this.aclManager = new RidAclManager(config.RidAcl.Enabled);
             this.affiliationsManager = new AffiliationsManager();
-            this.voiceChannelManager = new VoiceChannelManager();
+            this.voiceChannelManager = new VoiceChannelManager(config.DisableVchUpdates);
             this.siteManager = new SiteManager();
             this.logger = LoggerSetup.CreateLogger(config.Name);
 

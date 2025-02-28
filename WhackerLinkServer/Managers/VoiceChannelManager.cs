@@ -38,12 +38,15 @@ namespace WhackerLinkServer.Managers
 
         public event Action<VoiceChannel> VoiceChannelUpdated;
 
+        private bool disableVchBcast = false;
+
         /// <summary>
         /// Creates an instance of channel grant manager
         /// </summary>
-        public VoiceChannelManager()
+        public VoiceChannelManager(bool disableVchBcast = false)
         {
             VoiceChannels = new List<VoiceChannel>();
+            this.disableVchBcast = disableVchBcast;
         }
 
         /// <summary>
@@ -167,6 +170,8 @@ namespace WhackerLinkServer.Managers
         /// <param name="voiceChannel"></param>
         public void StartVchBroadcast(VoiceChannel voiceChannel)
         {
+            if (disableVchBcast) return;
+
             try
             {
                 if (vchUpdateTimers.ContainsKey(voiceChannel) && vchUpdateTimers[voiceChannel] != null)
@@ -191,6 +196,8 @@ namespace WhackerLinkServer.Managers
         /// <param name="voiceChannel"></param>
         public void StopVchBroadcast(VoiceChannel voiceChannel)
         {
+            if (disableVchBcast) return;
+
             try
             {
                 vchUpdateTimers[voiceChannel].Stop();
@@ -207,6 +214,8 @@ namespace WhackerLinkServer.Managers
         /// <param name="voiceChannel"></param>
         public void VchUpdateElapsed(VoiceChannel voiceChannel)
         {
+            if (disableVchBcast) return;
+
             VoiceChannelUpdated?.Invoke(voiceChannel);
         }
 

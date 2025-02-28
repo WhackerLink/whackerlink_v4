@@ -750,9 +750,16 @@ namespace WhackerLinkServer
                 Site = site
             };
 
-            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
-            voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
-            logger.Information("Talkgroup hang timer elapsed, releasing voice channel for talkgroup {TalkgroupId}", talkgroupId);
+            if (Sessions.TryGetSession(ID, out var session))
+            {
+                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
+                voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
+                logger.Information($"Talkgroup hang timer elapsed, releasing voice channel for talkgroup {talkgroupId}");
+            }
+            else
+            {
+                logger.Warning($"Skipping hang timer cleanup. Client {ID} is disconnected.");
+            }
         }
 
         /// <summary>
@@ -762,12 +769,25 @@ namespace WhackerLinkServer
         /// <param name="skipMe"></param>
         private void BroadcastMessage(string message, bool skipMe = false)
         {
-            foreach (var session in Sessions.Sessions)
+            foreach (var session in Sessions.Sessions.ToList())
             {
                 if (skipMe && ID == session.ID)
                     continue;
 
-                Sessions.SendTo(message, session.ID);
+                if (!Sessions.TryGetSession(session.ID, out var activeSession))
+                {
+                    logger.Warning($"Skipping message send. Session {session.ID} is no longer active.");
+                    continue;
+                }
+
+                try
+                {
+                    Sessions.SendTo(message, session.ID);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"Failed to send WebSocket message to {session.ID}: {ex.Message}");
+                }
             }
         }
 
@@ -913,11 +933,32 @@ namespace WhackerLinkServer
                         try
                         {
                             tone = toneDetecor.Detect(signal);
-                            logger.Debug($"ANA: {tone} Detected");
+                            //logger.Debug($"ANA: {tone} Detected");
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"Error: {ex.Message}");
+                        }
+                    }
+
+                    if (tone > 0 && masterConfig.EnableMbeTones)
+                    {
+                        try
+                        {
+                            if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                            {
+                                imbe = new byte[11];
+                                MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
+                            }
+                            else
+                            {
+                                imbe = new byte[9];
+                                MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)120, imbe);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
                         }
                     }
 
@@ -936,27 +977,10 @@ namespace WhackerLinkServer
                         {
                             halfRateVocoder.Encode(samples, out imbe);
                         }
-                    
 #endif
                     }
 
                     short[] decodedSamples = null;
-
-                    if (tone > 0 && masterConfig.EnableMbeTones)
-                    {
-                        try
-                        {
-                            if (masterConfig.VocoderMode == VocoderModes.IMBE)
-                                MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
-                            else
-                                MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)127, imbe);
-
-                            logger.Debug($"P25: {tone} Detected");
-                        } catch (Exception ex)
-                        {
-                            Console.WriteLine(ex);
-                        }
-                    }
 
                     if (imbe == null)
                         return;
