@@ -215,6 +215,8 @@ namespace WhackerLinkServer
                     }
                 }
 
+                var masterInstance = this;
+
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
 #if !NOVOCODE && !AMBEVOCODE
@@ -223,7 +225,7 @@ namespace WhackerLinkServer
 #if AMBEVOCODE && !NOVOCODE
                         ambeVocoderInstances,
 #endif
-                        this,
+                        masterInstance,
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
                 server.Start();
@@ -258,7 +260,11 @@ namespace WhackerLinkServer
             }
             catch (IOException ex)
             {
-                logger.Error(ex, "IO Error");
+                logger.Error(ex, "IO Error occurred while starting the server.");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                logger.Warning(ex, "ObjectDisposedException: Attempted to access a disposed object.");
             }
             catch (Exception ex)
             {
@@ -287,22 +293,61 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
-        /// Helper to broadcast packet to clients
+        /// Broadcasts a message to all connected clients (Optionally skip the sender)
         /// </summary>
-        /// <param name="packet"></param>
-        public void BroadcastPacket(string packet)
+        /// <param name="message"></param>
+        /// <param name="skipClientId"></param>
+        public void BroadcastPacket(string message, string skipClientId = null)
         {
             try
             {
                 foreach (var path in server.WebSocketServices.Paths)
                 {
                     var serviceHost = server.WebSocketServices[path];
-                    serviceHost.Sessions.Broadcast(packet);
+
+                    foreach (var sessionId in serviceHost.Sessions.IDs)
+                    {
+                        if (skipClientId != null && sessionId == skipClientId)
+                            continue;
+
+                        serviceHost.Sessions.SendTo(message, sessionId);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Failed to broadcast packet from master");
+                logger.Error(ex, "Failed to broadcast message from master");
+            }
+        }
+
+        /// <summary>
+        /// Broadcasts a message to a specific list of client IDs
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="clientIds"></param>
+        /// <param name="skipClientId"></param>
+        public void BroadcastPacket(string message, List<string> clientIds, string skipClientId = null)
+        {
+            try
+            {
+                foreach (var path in server.WebSocketServices.Paths)
+                {
+                    var serviceHost = server.WebSocketServices[path];
+                    foreach (var clientId in clientIds)
+                    {
+                        if (skipClientId != null && clientId == skipClientId)
+                            continue;
+
+                        if (serviceHost.Sessions.TryGetSession(clientId, out var session))
+                        {
+                            serviceHost.Sessions.SendTo(message, clientId);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Failed to broadcast message to specific clients from master");
             }
         }
     }

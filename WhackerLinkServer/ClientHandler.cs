@@ -102,6 +102,7 @@ namespace WhackerLinkServer
             this.voiceChannelManager = voiceChannelManager;
             this.siteManager = siteManager;
             this.reporter = reporter;
+            this.master = master;
             this.logger = logger;
 
 #if !NOVOCODE && !AMBEVOCODE
@@ -169,13 +170,17 @@ namespace WhackerLinkServer
                         break;
                 }
             }
+            catch (ObjectDisposedException ex)
+            {
+                logger.Warning(ex, "WebSocket message processing failed: NetworkStream was disposed.");
+            }
             catch (IOException ex)
             {
-                logger.Error(ex, "IOException occurred while processing message.");
+                logger.Error(ex, "IOException occurred while processing WebSocket message.");
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "An error occurred while processing message.");           
+                logger.Error(ex, "An error occurred while processing WebSocket message.");
             }
         }
 
@@ -199,7 +204,7 @@ namespace WhackerLinkServer
                 foreach (var channel in channelsToRemove)
                 {
                     voiceChannelManager.RemoveVoiceChannel(channel);
-                    BroadcastMessage(JsonConvert.SerializeObject(new GRP_VCH_RLS
+                    master.BroadcastPacket(JsonConvert.SerializeObject(new GRP_VCH_RLS
                     {
                         SrcId = voiceChannelManager.FindVoiceChannelByClientId(ID).SrcId,
                         DstId = voiceChannelManager.FindVoiceChannelByClientId(ID).DstId,
@@ -222,7 +227,7 @@ namespace WhackerLinkServer
                     };
 
                     logger.Information(packet.ToString());
-                    BroadcastMessage(packet.GetStrData());
+                    master.BroadcastPacket(packet.GetStrData());
 
                     if (talkgroupHangTimers.ContainsKey(affiliation.DstId))
                     {
@@ -240,10 +245,31 @@ namespace WhackerLinkServer
         /// Called on webhook error
         /// </summary>
         /// <param name="e"></param>
+        /// <summary>
+        /// Called on webhook error
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnError(ErrorEventArgs e)
         {
-            base.OnError(e);
-            logger.Error("WebSocket error: {Message}", e.Message);
+            try
+            {
+                if (e.Exception is ObjectDisposedException)
+                {
+                    logger.Warning("WebSocket error: Attempted to use a disposed NetworkStream. Connection may have been lost.");
+                }
+                else if (e.Exception is NotSupportedException)
+                {
+                    logger.Warning("WebSocket error: Operation is not supported on this platform.");
+                }
+                else
+                {
+                    logger.Error(e.Exception, "Unexpected WebSocket error: {Message}", e.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Fatal(ex, "An unhandled exception occurred in WebSocket error handling.");
+            }
         }
 
         /// <summary>
@@ -270,7 +296,7 @@ namespace WhackerLinkServer
                 DstId = request.DstId
             };
 
-            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
+            master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.EMRG_ALRM_RSP, data = response }));
             logger.Information(response.ToString());
             reporter.Send(PacketType.EMRG_ALRM_RSP, request.SrcId, request.DstId, request.Site, null);
         }
@@ -290,7 +316,7 @@ namespace WhackerLinkServer
                 DstId = request.DstId
             };
 
-            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
+            master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.CALL_ALRT, data = response }));
             logger.Information(response.ToString());
             reporter.Send(PacketType.CALL_ALRT, request.SrcId, request.DstId, request.Site, null);
         }
@@ -319,7 +345,7 @@ namespace WhackerLinkServer
                 logger.Information(request.ToString());
 
             reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
-            BroadcastMessage(request.GetStrData());
+            master.BroadcastPacket(request.GetStrData());
         }
 
         /// <summary>
@@ -332,7 +358,7 @@ namespace WhackerLinkServer
             logger.Information(request.ToString());
             reporter.Send(PacketType.STS_BCAST, request);
 
-            BroadcastMessage(request.GetStrData());
+            master.BroadcastPacket(request.GetStrData());
         }
 
         /// <summary>
@@ -355,11 +381,11 @@ namespace WhackerLinkServer
 
                 case SpecFuncType.RID_INHIBIT: // TODO: Store radio inhibit status
                     response.Function = SpecFuncType.RID_INHIBIT;
-                    BroadcastMessage(response.GetStrData());
+                    master.BroadcastPacket(response.GetStrData());
                     break;
                 case SpecFuncType.RID_UNINHIBIT: // TODO: Store radio uninhibit status
                     response.Function = SpecFuncType.RID_UNINHIBIT;
-                    BroadcastMessage(response.GetStrData());
+                    master.BroadcastPacket(response.GetStrData());
                     break;
                 default:
                     logger.Warning($"Unhandled SPEC_FUNC function: {request.Function}");
@@ -378,10 +404,10 @@ namespace WhackerLinkServer
             switch (response.Service)
             {
                 case PacketType.CALL_ALRT:
-                    BroadcastMessage(response.GetStrData());
+                    master.BroadcastPacket(response.GetStrData());
                     break;
                 case PacketType.SPEC_FUNC:
-                    BroadcastMessage(response.GetStrData());
+                    master.BroadcastPacket(response.GetStrData());
                     break;
                 default:
                     logger.Warning($"Unhandled ACK RSP service: {response.Service}");
@@ -423,7 +449,7 @@ namespace WhackerLinkServer
                     Affiliations = affiliationsManager.GetAffiliations()
                 };
 
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AFF_UPDATE, data = affUpdate }));
+                master.BroadcastPacket(affUpdate.GetStrData());
             }
             else
             {
@@ -431,7 +457,7 @@ namespace WhackerLinkServer
                 affiliationsManager.RemoveAffiliation(affiliation);
             }
 
-            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_AFF_RSP, data = response }));
+            master.BroadcastPacket(response.GetStrData());
             logger.Information(response.ToString());
             reporter.Send(PacketType.GRP_AFF_RSP, request.SrcId, request.DstId, request.Site, null, (ResponseType)response.Status);
         }
@@ -501,7 +527,7 @@ namespace WhackerLinkServer
                     Affiliations = affiliationsManager.GetAffiliations()
                 };
 
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.AFF_UPDATE, data = affUpdate }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.AFF_UPDATE, data = affUpdate }));
             }
             else
             {
@@ -537,7 +563,7 @@ namespace WhackerLinkServer
             {
                 logger.Warning("Site not found for SiteId: {SiteId}", request.Site.SiteID);
                 response.Status = (int)ResponseType.DENY;
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 return;
             }
 
@@ -560,14 +586,14 @@ namespace WhackerLinkServer
                 response.Channel = availableChannel;
                 response.Status = (int)ResponseType.GRANT;
 
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 logger.Information(response.ToString());
             }
             else
             {
                 response.Status = (int)ResponseType.DENY;
 
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
                 logger.Information(response.ToString());
             }
 
@@ -597,7 +623,7 @@ namespace WhackerLinkServer
             if (voiceChannelManager.IsVoiceChannelActive(new VoiceChannel { Frequency = request.Channel }))
             {
                 voiceChannelManager.RemoveVoiceChannel(request.Channel);
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
 #if !NOVOCODE && !AMBEVOCODE
                 if (vocoderInstances.ContainsKey(request.DstId))
@@ -617,7 +643,7 @@ namespace WhackerLinkServer
                 if (request.Channel.IsNullOrEmpty())
                 {
                     logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
-                    BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
+                    master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
 #if !NOVOCODE && !AMBEVOCODE
                 if (vocoderInstances.ContainsKey(request.DstId))
@@ -752,61 +778,13 @@ namespace WhackerLinkServer
 
             if (Sessions.TryGetSession(ID, out var session))
             {
-                BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
                 logger.Information($"Talkgroup hang timer elapsed, releasing voice channel for talkgroup {talkgroupId}");
             }
             else
             {
                 logger.Warning($"Skipping hang timer cleanup. Client {ID} is disconnected.");
-            }
-        }
-
-        /// <summary>
-        /// Broadcasts a message to all clients (Optionally skip the sender)
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="skipMe"></param>
-        private void BroadcastMessage(string message, bool skipMe = false)
-        {
-            foreach (var session in Sessions.Sessions.ToList())
-            {
-                if (skipMe && ID == session.ID)
-                    continue;
-
-                if (!Sessions.TryGetSession(session.ID, out var activeSession))
-                {
-                    logger.Warning($"Skipping message send. Session {session.ID} is no longer active.");
-                    continue;
-                }
-
-                try
-                {
-                    Sessions.SendTo(message, session.ID);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error($"Failed to send WebSocket message to {session.ID}: {ex.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Broadcast message to a specific list of clients
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="clientIds"></param>
-        private void BroadcastMessage(string message, List<string> clientIds, bool skipMe)
-        {
-            foreach (var clientId in clientIds)
-            {
-                if (Sessions.TryGetSession(clientId, out var session))
-                {
-                    if (skipMe && ID == session.ID)
-                        continue;
-
-                    Sessions.SendTo(message, session.ID);
-                }
             }
         }
 
@@ -818,6 +796,11 @@ namespace WhackerLinkServer
         private void BroadcastAudio(AudioPacket audioPacket)
         {
             bool affRestrict = masterConfig.AffilationRestricted;
+
+            string client = ID;
+
+            if (!masterConfig.NoSelfRepeat)
+                client = string.Empty;
 
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
             string dstId = audioPacket.VoiceChannel.DstId;
@@ -850,7 +833,7 @@ namespace WhackerLinkServer
                         {
                             logger.Warning("Ignoring call; traffic collision srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                             voiceChannelManager.RemoveVoiceChannelByClientId(ID);
-                            BroadcastMessage(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
+                            _master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { DstId = audioPacket.VoiceChannel.DstId, SrcId = audioPacket.VoiceChannel.SrcId, Site = audioPacket.Site } }));
                             return;
                         }
             */
@@ -862,9 +845,9 @@ namespace WhackerLinkServer
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
 
                 if (!affRestrict)
-                    BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                    master.BroadcastPacket(audioPacket.GetStrData(), client);
                 else
-                    BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
+                    master.BroadcastPacket(audioPacket.GetStrData(), affiliatedClients, client);
 
                 return;
             }
@@ -1020,9 +1003,9 @@ namespace WhackerLinkServer
                     audioPacket.Data = combinedAudioData;
 
                     if (!affRestrict)
-                        BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                        master.BroadcastPacket(audioPacket.GetStrData(), client);
                     else
-                        BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
+                        master.BroadcastPacket(audioPacket.GetStrData(), affiliatedClients, client);
                 }
                 else
                 {
@@ -1034,9 +1017,9 @@ namespace WhackerLinkServer
             {
                 audioPacket.AudioMode = AudioMode.PCM_8_16;
                 if (!affRestrict)
-                    BroadcastMessage(audioPacket.GetStrData(), masterConfig.NoSelfRepeat);
+                    master.BroadcastPacket(audioPacket.GetStrData(), client);
                 else
-                    BroadcastMessage(audioPacket.GetStrData(), affiliatedClients, masterConfig.NoSelfRepeat);
+                    master.BroadcastPacket(audioPacket.GetStrData(), affiliatedClients, client);
             }
         }
 
