@@ -2,6 +2,17 @@
 system:
   mode: 1 # (Dont change not used rn)
   dstId: "2001" # TGID that will be passed for bridging
+  site:
+    name: "Central Site"
+    controlChannel: "772.74375"
+    voiceChannels: []
+    location:
+      x: 757.89
+      y: 1274.17
+      z: 360.3
+    systemID: 1
+    siteID: 1
+    range: 1.5
 
 # DVM Bridge Configuration
 dvmBridge:
