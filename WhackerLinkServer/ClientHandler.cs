@@ -499,6 +499,13 @@ namespace WhackerLinkServer
                 Send(JsonConvert.SerializeObject(authDemand.GetData()));
                 logger.Information(authDemand.ToString());
             }
+
+            AFF_UPDATE affUpdate = new AFF_UPDATE
+            {
+                Affiliations = affiliationsManager.GetAffiliations()
+            };
+
+            master.BroadcastPacket(affUpdate.GetStrData());
         }
 
         /// <summary>
