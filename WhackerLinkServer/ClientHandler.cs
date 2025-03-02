@@ -818,6 +818,12 @@ namespace WhackerLinkServer
                 return;
             }
 
+            if (!voiceChannelManager.IsSrcGranted(audioPacket.VoiceChannel.DstId, audioPacket.VoiceChannel.SrcId))
+            {
+                logger.Warning("Ignoring call; source not permitted for destination's traffic srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                return;
+            }
+
             if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict)
             {
                 logger.Warning("Ignoring call; source not affiliated to destination srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);

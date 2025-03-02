@@ -165,6 +165,17 @@ namespace WhackerLinkServer.Managers
         }
 
         /// <summary>
+        /// Checks if a srcid is permitted to a dstId
+        /// </summary>
+        /// <param name="dstId"></param>
+        /// <param name="srcId"></param>
+        /// <returns></returns>
+        public bool IsSrcGranted(string dstId, string srcId)
+        {
+            return VoiceChannels.Any(vc => vc.DstId == dstId && vc.SrcId == srcId);
+        }
+
+        /// <summary>
         /// Start GRP_VCH_UPD interval for a <see cref="VoiceChannel"/>
         /// </summary>
         /// <param name="voiceChannel"></param>
