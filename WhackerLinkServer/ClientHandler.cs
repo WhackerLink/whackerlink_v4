@@ -345,7 +345,9 @@ namespace WhackerLinkServer
                 logger.Information(request.ToString());
 
             reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
-            master.BroadcastPacket(request.GetStrData());
+
+            if (!masterConfig.DisableLocationBroadcastsRepeats)
+                master.BroadcastPacket(request.GetStrData());
         }
 
         /// <summary>

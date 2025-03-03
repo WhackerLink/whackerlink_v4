@@ -54,6 +54,7 @@ namespace WhackerLinkServer.Models
             public bool DisableSiteBcast { get; set; } = false;
             public bool DisableVchUpdates { get; set; } = false;
             public bool DisableLocationBroadcasts { get; set; } = false;
+            public bool DisableLocationBroadcastsRepeats { get; set; } = true;
             public bool DisableLocBcastLogs { get; set; }
             public SslConfig Ssl { get; set; }
             public RestConfig Rest { get; set; }
