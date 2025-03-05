@@ -218,7 +218,6 @@ namespace WhackerLinkServer
                     }
                 }
 
-
                 if (config.Auth != null) 
                     authKeyManager = new AuthKeyFileManager(config.Auth.Path, config.Name, config.Auth.Enabled, logger, config.Auth.ReloadInterval);
                 else

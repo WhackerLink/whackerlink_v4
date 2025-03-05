@@ -24,12 +24,6 @@ masters:
         # Reload interval
         reloadInterval: 3000
 
-    # Auth keys for Peers
-    authKeys:
-        - "EXAMPLE KEY 1"
-        - "B8vCIgCeAyq1yTrNvhGQP2L8Q7GBP5a4"
-        - "USER 1 KEY 1"
-
     # Secure network communications
     ssl:
         # Enables SSL
