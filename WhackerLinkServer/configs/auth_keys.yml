@@ -1,0 +1,12 @@
+﻿entries:
+  - enabled: true
+    alias: "FiveM Key"
+    authKey: "SuperSecretKey1"
+
+  - enabled: true
+    alias: "Auto Disaptch"
+    authKey: "AnotherKey123"
+
+  - enabled: true
+    alias: "Dispatch OP 1"
+    authKey: "AnotherKey12345"

@@ -57,13 +57,23 @@ namespace WhackerLinkServer.Models
             public bool DisableLocationBroadcasts { get; set; } = false;
             public bool DisableLocationBroadcastsRepeats { get; set; } = true;
             public bool DisableLocBcastLogs { get; set; }
-            public List<string> AuthKeys { get; set; }
+            public AuthConfig Auth { get; set; }
             public SslConfig Ssl { get; set; }
             public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
             public VocoderModes VocoderMode { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
             public List<Site> Sites { get; set; }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public class AuthConfig
+        {
+            public bool Enabled { get; set; }
+            public string Path { get; set; }
+            public int ReloadInterval { get; set; }
         }
 
         /// <summary>

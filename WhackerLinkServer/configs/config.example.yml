@@ -15,6 +15,15 @@ masters:
       # If hosted remotely on a VPS, bind to the Public IP of your VPS.
     address: 0.0.0.0
 
+    # Auth Key file configuration
+    auth:
+        # Enable Auth Keys
+        enabled: true
+        # Path to ACL File
+        path: "auth_keys.yml"
+        # Reload interval
+        reloadInterval: 3000
+
     # Auth keys for Peers
     authKeys:
         - "EXAMPLE KEY 1"

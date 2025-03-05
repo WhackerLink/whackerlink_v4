@@ -51,7 +51,7 @@ namespace WhackerLinkServer
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
         private SiteManager siteManager;
-        private AuthKeyManager authKeyManager;
+        private AuthKeyFileManager authKeyManager;
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
@@ -218,10 +218,11 @@ namespace WhackerLinkServer
                     }
                 }
 
-                authKeyManager = new AuthKeyManager(new Dictionary<string, List<string>>
-                {
-                    { config.Name, config.AuthKeys ?? new List<string>() }
-                });
+
+                if (config.Auth != null) 
+                    authKeyManager = new AuthKeyFileManager(config.Auth.Path, config.Name, config.Auth.Enabled, logger, config.Auth.ReloadInterval);
+                else
+                    authKeyManager = new AuthKeyFileManager(string.Empty, config.Name, false, logger, 0);
 
                 var masterInstance = this;
 

@@ -39,7 +39,6 @@ using Microsoft.VisualBasic;
 using NAudio.Wave;
 using WhackerLinkLib.Interfaces;
 using NWaves.Signals;
-using vocoder;
 using WhackerLinkLib.Managers;
 
 
@@ -64,7 +63,7 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private Reporter reporter;
         private IMasterService master;
-        private AuthKeyManager authKeyManager;
+        private AuthKeyFileManager authKeyManager;
         private ILogger logger;
 
         private ToneDetector toneDetecor = new ToneDetector();
@@ -98,7 +97,7 @@ namespace WhackerLinkServer
             Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
 #endif
             IMasterService master,
-            AuthKeyManager authManager,
+            AuthKeyFileManager authManager,
             ILogger logger)
         {
             this.masterConfig = config;
@@ -294,7 +293,7 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (!authKeyManager.IsValidKey(masterConfig.Name, providedKey))
+            if (!authKeyManager.IsValidAuthKey(providedKey))
             {
                 logger.Warning("[NET] peer authentication failed for client {ClientId}: Invalid auth key", ID);
                 Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Invalid auth key.");

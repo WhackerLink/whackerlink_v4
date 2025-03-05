@@ -49,6 +49,7 @@ namespace WhackerLinkServer
             this.address = address;
             this.port = port;
             this.enabled = enabled;
+            this.logger = logger;
 
             if (!enabled)
                 return;
