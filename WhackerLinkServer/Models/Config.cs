@@ -48,6 +48,7 @@ namespace WhackerLinkServer.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public float PreEncodeGain { get; set; } = 1.0f;
             public bool AffilationRestricted { get; set; } = true;
             public bool NoSelfRepeat { get; set; } = true;
             public bool EnableMbeTones { get; set; } = false;
@@ -56,12 +57,11 @@ namespace WhackerLinkServer.Models
             public bool DisableLocationBroadcasts { get; set; } = false;
             public bool DisableLocationBroadcastsRepeats { get; set; } = true;
             public bool DisableLocBcastLogs { get; set; }
+            public List<string> AuthKeys { get; set; }
             public SslConfig Ssl { get; set; }
             public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
-            public float PreEncodeGain { get; set; } = 1.0f;
             public VocoderModes VocoderMode { get; set; }
-            public string TgAclPath { get; set; }
             public RidAclConfiguration RidAcl { get; set; }
             public List<Site> Sites { get; set; }
         }

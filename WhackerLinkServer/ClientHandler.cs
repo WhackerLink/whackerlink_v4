@@ -40,6 +40,8 @@ using NAudio.Wave;
 using WhackerLinkLib.Interfaces;
 using NWaves.Signals;
 using vocoder;
+using WhackerLinkLib.Managers;
+
 
 #if !NOVOCODE && !AMBEVOCODE
 using vocoder;
@@ -62,8 +64,10 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private Reporter reporter;
         private IMasterService master;
-        private ToneDetector toneDetecor = new ToneDetector();
+        private AuthKeyManager authKeyManager;
         private ILogger logger;
+
+        private ToneDetector toneDetecor = new ToneDetector();
 
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
 
@@ -94,6 +98,7 @@ namespace WhackerLinkServer
             Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
 #endif
             IMasterService master,
+            AuthKeyManager authManager,
             ILogger logger)
         {
             this.masterConfig = config;
@@ -103,6 +108,7 @@ namespace WhackerLinkServer
             this.siteManager = siteManager;
             this.reporter = reporter;
             this.master = master;
+            this.authKeyManager = authManager;
             this.logger = logger;
 
 #if !NOVOCODE && !AMBEVOCODE
@@ -278,7 +284,24 @@ namespace WhackerLinkServer
         protected override void OnOpen()
         {
             base.OnOpen();
-            // logger.Information("WebSocket connection opened for client {ClientId}", ID);
+
+            string providedKey = Context.QueryString["authKey"];
+
+            if (string.IsNullOrEmpty(providedKey))
+            {
+                logger.Warning("[NET] peer authentication failed for client {ClientId}: Missing auth key");
+                Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Missing auth key.");
+                return;
+            }
+
+            if (!authKeyManager.IsValidKey(masterConfig.Name, providedKey))
+            {
+                logger.Warning("[NET] peer authentication failed for client {ClientId}: Invalid auth key", ID);
+                Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Invalid auth key.");
+                return;
+            }
+
+            //logger.Information("WebSocket authentication successful for {ClientId}", ID);
         }
 
         /// <summary>

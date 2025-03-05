@@ -59,5 +59,13 @@
     <ProjectReference Include="..\MBEVocoder\MBEVocoder.vcxproj" />
     <ProjectReference Include="..\WhackerLinkLib\WhackerLinkLib.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="configs\config.example.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\rid_acl.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

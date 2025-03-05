@@ -28,6 +28,8 @@ using System.Reflection;
 using WhackerLinkLib.Models.IOSP;
 
 using WhackerLinkLib.Utils;
+using WhackerLinkLib.Managers;
+
 
 
 #if !NOVOCODE
@@ -49,6 +51,7 @@ namespace WhackerLinkServer
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
         private SiteManager siteManager;
+        private AuthKeyManager authKeyManager;
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
@@ -215,6 +218,11 @@ namespace WhackerLinkServer
                     }
                 }
 
+                authKeyManager = new AuthKeyManager(new Dictionary<string, List<string>>
+                {
+                    { config.Name, config.AuthKeys ?? new List<string>() }
+                });
+
                 var masterInstance = this;
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -226,11 +234,13 @@ namespace WhackerLinkServer
                         ambeVocoderInstances,
 #endif
                         masterInstance,
+                        authKeyManager,
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
+
                 server.Start();
 
-                logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
+                logger.Information("Master {Name} Listening on port {Port}; address: {Address}", config.Name, config.Port, config.Address);
 
                 if (config.Sites.Count > 0)
                 {

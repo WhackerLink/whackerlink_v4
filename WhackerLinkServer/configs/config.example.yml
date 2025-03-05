@@ -15,6 +15,12 @@ masters:
       # If hosted remotely on a VPS, bind to the Public IP of your VPS.
     address: 0.0.0.0
 
+    # Auth keys for Peers
+    authKeys:
+        - "EXAMPLE KEY 1"
+        - "B8vCIgCeAyq1yTrNvhGQP2L8Q7GBP5a4"
+        - "USER 1 KEY 1"
+
     # Secure network communications
     ssl:
         # Enables SSL
