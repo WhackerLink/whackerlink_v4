@@ -71,7 +71,7 @@ namespace WhackerLinkServer.Models
         /// </summary>
         public class AuthConfig
         {
-            public bool Enabled { get; set; }
+            public bool Enabled { get; set; } = false;
             public string Path { get; set; }
             public int ReloadInterval { get; set; }
         }

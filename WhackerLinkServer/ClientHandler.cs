@@ -284,20 +284,25 @@ namespace WhackerLinkServer
         {
             base.OnOpen();
 
-            string providedKey = Context.QueryString["authKey"];
+            if (masterConfig.Auth != null) {
+                if (masterConfig.Auth.Enabled)
+                {
+                    string providedKey = Context.QueryString["authKey"];
 
-            if (string.IsNullOrEmpty(providedKey))
-            {
-                logger.Warning("[NET] peer authentication failed for client {ClientId}: Missing auth key");
-                Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Missing auth key.");
-                return;
-            }
+                    if (string.IsNullOrEmpty(providedKey))
+                    {
+                        logger.Warning("[NET] peer authentication failed for client {ClientId}: Missing auth key");
+                        Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Missing auth key.");
+                        return;
+                    }
 
-            if (!authKeyManager.IsValidAuthKey(providedKey))
-            {
-                logger.Warning("[NET] peer authentication failed for client {ClientId}: Invalid auth key", ID);
-                Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Invalid auth key.");
-                return;
+                    if (!authKeyManager.IsValidAuthKey(providedKey))
+                    {
+                        logger.Warning("[NET] peer authentication failed for client {ClientId}: Invalid auth key", ID);
+                        Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Invalid auth key.");
+                        return;
+                    }
+                }
             }
 
             //logger.Information("WebSocket authentication successful for {ClientId}", ID);
