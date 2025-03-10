@@ -148,6 +148,15 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// Gets the current auth key manager instance
+        /// </summary>
+        /// <returns>the insance of <see cref="AuthKeyFileManager"/></returns>
+        public AuthKeyFileManager GetAuthManager()
+        {
+            return authKeyManager;
+        }
+
+        /// <summary>
         /// Gets if the RID ACL is enabled
         /// </summary>
         /// <returns></returns>

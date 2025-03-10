@@ -298,6 +298,8 @@ namespace WhackerLinkServer
 
                     if (!authKeyManager.IsValidAuthKey(providedKey))
                     {
+                        logger.Information("Received hashed auth key: {Key}", providedKey);
+
                         logger.Warning("[NET] peer authentication failed for client {ClientId}: Invalid auth key", ID);
                         Context.WebSocket.Close(CloseStatusCode.PolicyViolation, "Invalid auth key.");
                         return;
