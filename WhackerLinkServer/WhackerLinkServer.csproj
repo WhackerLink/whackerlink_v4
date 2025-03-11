@@ -48,15 +48,7 @@
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
-    <ProjectReference Include="..\MBEVocoderManaged\MBEVocoderManaged.vcxproj">
-      <Private>true</Private>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MBEVocoderManaged\MBEVocoderManaged.vcxproj" />
-    <ProjectReference Include="..\MBEVocoder\MBEVocoder.vcxproj" />
     <ProjectReference Include="..\WhackerLinkLib\WhackerLinkLib.csproj" />
   </ItemGroup>
   <ItemGroup>

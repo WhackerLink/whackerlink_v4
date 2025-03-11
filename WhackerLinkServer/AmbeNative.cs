@@ -13,8 +13,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-using vocoder;
-
 #if AMBEVOCODE
 namespace WhackerLinkServer
 {
@@ -102,14 +100,14 @@ namespace WhackerLinkServer
             if (fullRate)
             {
                 this.mode = AmbeMode.FULL_RATE;
-                this.interleaver = new MBEInterleaver(MBEMode.IMBE);
+                this.interleaver = new MBEInterleaver(MBE_MODE.IMBE_88BIT);
                 this.frameLengthInBits = 88;
                 this.frameLengthInBytes = 11;
             }
             else
             {
                 this.mode = AmbeMode.HALF_RATE;
-                this.interleaver = new MBEInterleaver(MBEMode.DMRAMBE);
+                this.interleaver = new MBEInterleaver(MBE_MODE.DMR_AMBE);
                 this.frameLengthInBits = 49;
                 this.frameLengthInBytes = 7;
             }
@@ -210,7 +208,7 @@ namespace WhackerLinkServer
             {
                 // use the managed vocoder to retrieve the un-ECC'ed and uninterleaved AMBE bits
                 byte[] bits = new byte[49];
-                interleaver.decode(codeword, out bits);
+                interleaver.Decode(codeword, bits);
 
                 // repack bits into 7-byte array
                 packBitsToBytes(bits, out codeword, frameLengthInBytes, frameLengthInBits);
@@ -410,7 +408,7 @@ namespace WhackerLinkServer
                     bits[i] = (byte)codewordBits[i];
 
                 // use the managed vocoder to create the ECC'ed and interleaved AMBE bits
-                interleaver.encode(bits, out codeword);
+                interleaver.Encode(bits, codeword);
             }
             else
             {

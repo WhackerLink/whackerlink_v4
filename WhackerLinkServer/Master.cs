@@ -28,13 +28,6 @@ using System.Reflection;
 using WhackerLinkLib.Models.IOSP;
 
 using WhackerLinkLib.Utils;
-using WhackerLinkLib.Managers;
-
-
-
-#if !NOVOCODE
-using vocoder;
-#endif
 
 namespace WhackerLinkServer
 {
@@ -55,8 +48,7 @@ namespace WhackerLinkServer
         private ILogger logger;
 
 #if !NOVOCODE && !AMBEVOCODE
-        private Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances = 
-            new Dictionary<string, (MBEDecoderManaged, MBEEncoderManaged)>();
+        private VocoderManager vocoderManager;
 #endif
 #if AMBEVOCODE && !NOVOCODE
         private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
@@ -232,12 +224,16 @@ namespace WhackerLinkServer
                 else
                     authKeyManager = new AuthKeyFileManager(string.Empty, config.Name, false, logger, 0);
 
+#if !NOVOCODE && !AMBEVOCODE
+                this.vocoderManager = new VocoderManager(logger);
+#endif
+
                 var masterInstance = this;
 
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
 #if !NOVOCODE && !AMBEVOCODE
-                        vocoderInstances,
+                        vocoderManager,
 #endif
 #if AMBEVOCODE && !NOVOCODE
                         ambeVocoderInstances,

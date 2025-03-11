@@ -40,11 +40,8 @@ using NAudio.Wave;
 using WhackerLinkLib.Interfaces;
 using NWaves.Signals;
 using WhackerLinkLib.Managers;
-
-
-#if !NOVOCODE && !AMBEVOCODE
-using vocoder;
-#endif
+using NWaves.Filters.Butterworth;
+using System.Diagnostics;
 
 namespace WhackerLinkServer
 {
@@ -64,15 +61,13 @@ namespace WhackerLinkServer
         private Reporter reporter;
         private IMasterService master;
         private AuthKeyFileManager authKeyManager;
+        private readonly VocoderManager vocoderManager;
         private ILogger logger;
 
         private ToneDetector toneDetecor = new ToneDetector();
 
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
 
-#if !NOVOCODE && !AMBEVOCODE
-        private readonly Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances;
-#endif
 #if AMBEVOCODE && !NOVOCODE
         private readonly Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances;
 #endif
@@ -91,7 +86,7 @@ namespace WhackerLinkServer
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
             VoiceChannelManager voiceChannelManager, SiteManager siteManager, Reporter reporter,
 #if !NOVOCODE && !AMBEVOCODE
-            Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances,
+            VocoderManager vocoderManager,
 #endif
 #if AMBEVOCODE && !NOVOCODE
             Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
@@ -111,7 +106,7 @@ namespace WhackerLinkServer
             this.logger = logger;
 
 #if !NOVOCODE && !AMBEVOCODE
-            this.vocoderInstances = vocoderInstances;
+            this.vocoderManager = vocoderManager;
 #endif
 #if AMBEVOCODE && !NOVOCODE
             this.ambeVocoderInstances = ambeVocoderInstances;
@@ -662,10 +657,7 @@ namespace WhackerLinkServer
                 master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
 #if !NOVOCODE && !AMBEVOCODE
-                if (vocoderInstances.ContainsKey(request.DstId))
-                {
-                    vocoderInstances.Remove(request.DstId);
-                }
+                vocoderManager.RemoveVocoder(request.DstId);
 #endif
 #if AMBEVOCODE
                 if (ambeVocoderInstances.ContainsKey(request.DstId))
@@ -682,10 +674,7 @@ namespace WhackerLinkServer
                     master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
 #if !NOVOCODE && !AMBEVOCODE
-                if (vocoderInstances.ContainsKey(request.DstId))
-                {
-                    vocoderInstances.Remove(request.DstId);
-                }
+                    vocoderManager.RemoveVocoder(request.DstId);
 #endif
 #if AMBEVOCODE
                     if (ambeVocoderInstances.ContainsKey(request.DstId))
@@ -902,13 +891,7 @@ namespace WhackerLinkServer
 
                 // Ensure a vocoder instance exists for the channel
 #if !NOVOCODE && !AMBEVOCODE
-                if (!vocoderInstances.ContainsKey(dstId))
-                {
-                    vocoderInstances[dstId] = CreateInternalVocoderInstance();
-                    logger.Information("Created new vocoder instance for channel {ChannelId}", dstId);
-                }
-
-                var (decoder, encoder) = vocoderInstances[dstId];
+                var (decoder, encoder, filter) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
 #endif
 #if AMBEVOCODE && !NOVOCODE
                 if (!ambeVocoderInstances.ContainsKey(dstId))
@@ -991,7 +974,8 @@ namespace WhackerLinkServer
                     {
 
 #if !AMBEVOCODE
-                        encoder.encode(samples, out imbe);
+                        imbe = new byte[11];
+                        encoder.encode(samples, imbe);
 #else
 
                         if (masterConfig.VocoderMode == VocoderModes.IMBE)
@@ -1005,13 +989,13 @@ namespace WhackerLinkServer
 #endif
                     }
 
-                    short[] decodedSamples = null;
+                    short[] decodedSamples = new short[320];
 
                     if (imbe == null)
                         return;
 
 #if !AMBEVOCODE
-                        int errors = decoder.decode(imbe, out decodedSamples);
+                    int errors = decoder.decode(imbe, decodedSamples);
 #else
                     if (masterConfig.VocoderMode == VocoderModes.IMBE)
                     {
@@ -1025,16 +1009,32 @@ namespace WhackerLinkServer
 
                     if (decodedSamples != null)
                     {
-                        int pcmIdx = 0;
-                        byte[] pcmData = new byte[decodedSamples.Length * 2];
-                        for (int i = 0; i < decodedSamples.Length; i++)
+                        try
                         {
-                            pcmData[pcmIdx] = (byte)(decodedSamples[i] & 0xFF);
-                            pcmData[pcmIdx + 1] = (byte)((decodedSamples[i] >> 8) & 0xFF);
-                            pcmIdx += 2;
-                        }
+                            float[] fSamples = AudioConverter.PcmToFloat(decodedSamples);
 
-                        processedChunks.Add(pcmData);
+                            // Apply filter
+                            DiscreteSignal signal = new DiscreteSignal(8000, fSamples, true);
+                            DiscreteSignal filtered = filter.ApplyTo(signal);
+
+                            short[] filtered16 = AudioConverter.FloatToPcm(filtered.Samples);
+
+                            int pcmIdx = 0;
+                            byte[] pcmData = new byte[filtered16.Length * 2];
+                            for (int i = 0; i < filtered16.Length; i++)
+                            {
+                                pcmData[pcmIdx] = (byte)(filtered16[i] & 0xFF);
+                                pcmData[pcmIdx + 1] = (byte)((filtered16[i] >> 8) & 0xFF);
+                                pcmIdx += 2;
+                            }
+
+                            //Console.WriteLine(BitConverter.ToString(pcmData));
+
+                            processedChunks.Add(pcmData);
+                        } catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
                     }
                 }
 
@@ -1066,10 +1066,10 @@ namespace WhackerLinkServer
         }
 
 #if !NOVOCODE && !AMBEVOCODE
-        private (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder) CreateInternalVocoderInstance()
+        private (MBEDecoder Decoder, MBEEncoder Encoder) CreateInternalVocoderInstance()
         {
-            var decoder = new MBEDecoderManaged(masterConfig.VocoderMode == VocoderModes.IMBE ? MBEMode.IMBE : MBEMode.DMRAMBE);
-            var encoder = new MBEEncoderManaged(masterConfig.VocoderMode == VocoderModes.IMBE ? MBEMode.IMBE : MBEMode.DMRAMBE);
+            var decoder = new MBEDecoder(masterConfig.VocoderMode == VocoderModes.IMBE ? MBE_MODE.IMBE_88BIT : MBE_MODE.DMR_AMBE);
+            var encoder = new MBEEncoder(masterConfig.VocoderMode == VocoderModes.IMBE ? MBE_MODE.IMBE_88BIT : MBE_MODE.DMR_AMBE);
             return (decoder, encoder);
         }
 #endif
@@ -1084,11 +1084,7 @@ namespace WhackerLinkServer
         private void CleanupVocoderInstance(string channelId)
         {
 #if !NOVOCODE && !AMBEVOCODE
-            if (vocoderInstances.ContainsKey(channelId))
-            {
-                vocoderInstances.Remove(channelId);
-                logger.Information("Removed vocoder instance for channel {ChannelId}", channelId);
-            }
+            vocoderManager.RemoveVocoder(channelId);
 #endif
 #if AMBEVOCODE && !NOVOCODE
             if (ambeVocoderInstances.ContainsKey(channelId))

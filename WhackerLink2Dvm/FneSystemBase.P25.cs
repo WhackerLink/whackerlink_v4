@@ -26,9 +26,6 @@ using fnecore.P25.LC.TSBK;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Models.IOSP;
-#if !NOVODODE
-using vocoder;
-#endif
 
 namespace WhackerLink2Dvm
 {
