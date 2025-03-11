@@ -42,6 +42,7 @@ using NWaves.Signals;
 using WhackerLinkLib.Managers;
 using NWaves.Filters.Butterworth;
 using System.Diagnostics;
+using NWaves.Filters.Base;
 
 namespace WhackerLinkServer
 {
@@ -134,6 +135,9 @@ namespace WhackerLinkServer
                         break;
                     case (int)PacketType.GRP_AFF_REQ:
                         HandleGroupAffiliationRequest(data["data"].ToObject<GRP_AFF_REQ>());
+                        break;
+                    case (int)PacketType.GRP_AFF_RMV:
+                        HandleGroupAffiliationRemoval(data["data"].ToObject<GRP_AFF_RMV>());
                         break;
                     case (int)PacketType.GRP_VCH_REQ:
                         HandleVoiceChannelRequest(data["data"].ToObject<GRP_VCH_REQ>());
@@ -484,6 +488,21 @@ namespace WhackerLinkServer
             master.BroadcastPacket(response.GetStrData());
             logger.Information(response.ToString());
             reporter.Send(PacketType.GRP_AFF_RSP, request.SrcId, request.DstId, request.Site, null, (ResponseType)response.Status);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="removal"></param>
+        private void HandleGroupAffiliationRemoval(GRP_AFF_RMV removal)
+        {
+            logger.Information(removal.ToString());
+            reporter.Send(PacketType.GRP_AFF_RMV, removal.SrcId, removal.DstId, removal.Site, null);
+
+            if (affiliationsManager.isSrcIdAffiliated(removal.SrcId, removal.DstId))
+                affiliationsManager.RemoveAffiliation(removal.SrcId, removal.DstId);
+
+            master.BroadcastPacket(removal.GetStrData());
         }
 
         /// <summary>
@@ -891,7 +910,7 @@ namespace WhackerLinkServer
 
                 // Ensure a vocoder instance exists for the channel
 #if !NOVOCODE && !AMBEVOCODE
-                var (decoder, encoder, filter) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
+                var (decoder, encoder, filters) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
 #endif
 #if AMBEVOCODE && !NOVOCODE
                 if (!ambeVocoderInstances.ContainsKey(dstId))
@@ -918,7 +937,7 @@ namespace WhackerLinkServer
                     buffer.AddSamples(chunk, 0, chunk.Length);
 
                     VolumeWaveProvider16 gainControl = new VolumeWaveProvider16(buffer);
-                    gainControl.Volume = masterConfig.PreEncodeGain;
+                    gainControl.Volume = masterConfig.PreEncodeGain + 6;
                     gainControl.Read(chunk, 0, chunk.Length);
 
                     int smpIdx = 0;
@@ -974,7 +993,11 @@ namespace WhackerLinkServer
                     {
 
 #if !AMBEVOCODE
-                        imbe = new byte[11];
+                        if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                            imbe = new byte[11];
+                        else
+                            imbe = new byte[9];
+                        
                         encoder.encode(samples, imbe);
 #else
 
@@ -1011,20 +1034,28 @@ namespace WhackerLinkServer
                     {
                         try
                         {
-                            float[] fSamples = AudioConverter.PcmToFloat(decodedSamples);
+                            //float[] fSamples = AudioConverter.PcmToFloat(decodedSamples);
 
-                            // Apply filter
-                            DiscreteSignal signal = new DiscreteSignal(8000, fSamples, true);
-                            DiscreteSignal filtered = filter.ApplyTo(signal);
+                            //// Convert PCM samples into a DiscreteSignal
+                            //DiscreteSignal signal = new DiscreteSignal(8000, fSamples, true);
 
-                            short[] filtered16 = AudioConverter.FloatToPcm(filtered.Samples);
+                            ////// Apply all filters sequentially
+                            ////foreach (var filter in filters)
+                            ////{
+                            ////    signal = filter.ApplyTo(signal);
+                            ////}
+
+                            ////fSamples = AudioConverter.ApplyNoiseGate(fSamples, -50f);
+
+                            //// Convert back to PCM
+                            //short[] filtered16 = AudioConverter.FloatToPcm(signal.Samples);
 
                             int pcmIdx = 0;
-                            byte[] pcmData = new byte[filtered16.Length * 2];
-                            for (int i = 0; i < filtered16.Length; i++)
+                            byte[] pcmData = new byte[decodedSamples.Length * 2];
+                            for (int i = 0; i < decodedSamples.Length; i++)
                             {
-                                pcmData[pcmIdx] = (byte)(filtered16[i] & 0xFF);
-                                pcmData[pcmIdx + 1] = (byte)((filtered16[i] >> 8) & 0xFF);
+                                pcmData[pcmIdx] = (byte)(decodedSamples[i] & 0xFF);
+                                pcmData[pcmIdx + 1] = (byte)((decodedSamples[i] >> 8) & 0xFF);
                                 pcmIdx += 2;
                             }
 

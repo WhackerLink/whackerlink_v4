@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using NWaves.Filters;
+using NWaves.Filters.Base;
 using NWaves.Filters.BiQuad;
 using NWaves.Filters.Butterworth;
 using NWaves.Signals;
@@ -15,7 +16,7 @@ namespace WhackerLinkServer
     /// </summary>
     public class VocoderManager : IDisposable
     {
-        private readonly ConcurrentDictionary<string, (MBEDecoder Decoder, MBEEncoder Encoder, NotchFilter filter)> vocoderInstances;
+        private readonly ConcurrentDictionary<string, (MBEDecoder Decoder, MBEEncoder Encoder, IFilter[] filter)> vocoderInstances;
         private readonly object lockObj = new object();
         private bool disposed = false;
         private readonly ILogger logger;
@@ -27,13 +28,13 @@ namespace WhackerLinkServer
         public VocoderManager(ILogger logger)
         {
             this.logger = logger;
-            vocoderInstances = new ConcurrentDictionary<string, (MBEDecoder, MBEEncoder, NotchFilter filter)>();
+            vocoderInstances = new ConcurrentDictionary<string, (MBEDecoder, MBEEncoder, IFilter[] filter)>();
         }
 
         /// <summary>
         /// Retrieves or creates a vocoder instance for a given channel.
         /// </summary>
-        public (MBEDecoder Decoder, MBEEncoder Encoder, NotchFilter filter) GetOrCreateVocoder(string channelId, VocoderModes mode)
+        public (MBEDecoder Decoder, MBEEncoder Encoder, IFilter[] Filters) GetOrCreateVocoder(string channelId, VocoderModes mode)
         {
             if (disposed) throw new ObjectDisposedException(nameof(VocoderManager));
 
@@ -60,13 +61,24 @@ namespace WhackerLinkServer
             }
         }
 
-        private (MBEDecoder, MBEEncoder, NotchFilter) CreateVocoderInstance(VocoderModes mode)
+        private (MBEDecoder, MBEEncoder, IFilter[]) CreateVocoderInstance(VocoderModes mode)
         {
             try
             {
                 MBE_MODE mbeMode = (mode == VocoderModes.IMBE) ? MBE_MODE.IMBE_88BIT : MBE_MODE.DMR_AMBE;
-                return (new MBEDecoder(mbeMode), new MBEEncoder(mbeMode), new NotchFilter(2500));
-            } catch(Exception ex)
+
+                var decoder = new MBEDecoder(mbeMode);
+                var encoder = new MBEEncoder(mbeMode);
+
+                // Define Filters
+                //var notchFilter = new NotchFilter(2500);
+                //var lowPassFilter = new NWaves.Filters.Butterworth.LowPassFilter(3400 / 8000.0, 8); // Removes high-frequency noise
+                //var highPassFilter = new NWaves.Filters.Butterworth.HighPassFilter(300 / 8000.0, 8); // Removes low-frequency hum
+               // var bandPassFilter = new NWaves.Filters.Butterworth.BandPassFilter(250 / 8000.0, 3000 / 8000.0, 8); // Restricts to human speech range
+
+                return (decoder, encoder, new IFilter[] {  });
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
                 return (null, null, null);
