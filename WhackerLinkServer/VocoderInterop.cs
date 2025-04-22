@@ -1,6 +1,5 @@
-﻿/*
- * From https://github.com/W3AXL/rc2-dvm/
- * No license info was present, but trying to give credit where credit is due
+/*
+ * From https://github.com/W3AXL/rc2-dvm
  */
 
 using System;
@@ -405,3 +404,4 @@ namespace WhackerLinkServer
         }
     }
 }
+

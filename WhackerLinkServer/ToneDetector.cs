@@ -1,4 +1,4 @@
-﻿using NAudio.Dsp;
+using NAudio.Dsp;
 using NAudio.Wave;
 using NWaves.Filters.OnePole;
 using NWaves.Operations;
@@ -133,3 +133,5 @@ namespace WhackerLinkServer
         }
     }
 }
+
+

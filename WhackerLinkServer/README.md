@@ -23,4 +23,5 @@ The solution will NOT build on linux unless the configuration of "NoVocoder" is 
 
 ## License
 
-GPL-3.0
+AGPL-3.0
+
