@@ -29,6 +29,7 @@ using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Network;
 using Nancy;
+using fnecore.P25;
 
 namespace WhackerLink2Dvm
 {
@@ -149,6 +150,23 @@ namespace WhackerLink2Dvm
             webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
             webSocketHandler.OnCallAlert += WhackerLinkCallAlert;
 
+            webSocketHandler.OnAckResponse += (ACK_RSP response) =>
+            {
+                IOSP_ACK_RSP ackResponse = new IOSP_ACK_RSP(uint.Parse(response.DstId), uint.Parse(response.SrcId), false, P25Defines.TSBK_IOSP_CALL_ALRT);
+                RemoteCallData callData = new RemoteCallData
+                {
+                    SrcId = uint.Parse(response.SrcId),
+                    DstId = uint.Parse(response.DstId)
+                };
+
+                byte[] tsbk = new byte[P25Defines.P25_TSBK_LENGTH_BYTES];
+                ackResponse.Encode(ref tsbk);
+
+                SendP25TSBK(callData, tsbk);
+
+                Log.Logger.Information($"({SystemName}) P25D: TSBK *ACK Response   * SRC_ID {response.DstId} DST_ID {response.SrcId} SERVICE {ackResponse.Service}");
+            };
+
             webSocketHandler.OnOpen += () =>
             {
                 WhackerLink2Dvm.logger.Information($"({SystemName}) Connection to WLINK Master complete");
@@ -222,7 +240,7 @@ namespace WhackerLink2Dvm
 
         internal void SendWhackerLinkCallAlert(uint dstId, uint srcId)
         {
-            webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+            webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT_REQ, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
         }
 
         internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
