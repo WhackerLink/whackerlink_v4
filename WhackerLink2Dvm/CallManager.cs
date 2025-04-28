@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using WhackerLinkLib.Models;
+using WhackerLinkLib.Vocoder;
 
 namespace WhackerLink2Dvm
 {
@@ -23,6 +26,12 @@ namespace WhackerLink2Dvm
         public uint p25SeqNo = 0;
         public byte p25N = 0;
 
+#if WINDOWS
+        public bool ExternalVocoderEnabled = false;
+        public AmbeVocoder ExtFullRateVocoder = null;
+        public AmbeVocoder ExtHalfRateVocoder = null;
+#endif
+
         public List<byte[]> accumulatedChunks = new List<byte[]>();
 
         public CallInfo(uint srcId, uint dstId)
@@ -33,6 +42,17 @@ namespace WhackerLink2Dvm
             Status[2] = new SlotStatus();  // P25
             StartTime = DateTime.UtcNow;
             VoiceChannel = null;
+
+            string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+            UriBuilder uri = new UriBuilder(codeBase);
+            string path = Uri.UnescapeDataString(uri.Path);
+
+            if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
+            {
+                ExternalVocoderEnabled = true;
+                ExtFullRateVocoder = new AmbeVocoder();
+                ExtHalfRateVocoder = new AmbeVocoder(false);
+            }
         }
     }
 
