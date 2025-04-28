@@ -140,6 +140,57 @@ namespace WhackerLinkServer
             }
         }
 
+
+        /// <summary>
+        /// Helper to save config file
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="config"></param>
+        private static void SaveConfig(string path, Config config)
+        {
+            try
+            {
+                var serializer = new SerializerBuilder()
+                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .Build();
+
+                var yaml = serializer.Serialize(config);
+                File.WriteAllText(path, yaml);
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error saving config: {Message}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Adds a new Master instance and starts it.
+        /// </summary>
+        /// <param name="masterConfig">The configuration for the new Master</param>
+        public static void AddNewMaster(Config.MasterConfig masterConfig)
+        {
+            if (masterConfig == null)
+            {
+                logger.Error("MasterConfig is null.");
+                return;
+            }
+
+            Master master = new Master(masterConfig);
+            var masterTask = Task.Run(() => master.Start(cancellationTokenSource.Token));
+            masterTasks.Add(masterTask);
+            try
+            {
+                // Add the new master to the config and save it
+                config.Masters.Add(masterConfig);
+                SaveConfig(configPath, config);
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error in AddNewMaster: {Message}", ex.Message);
+            }
+
+        }
+
         /// <summary>
         /// Gracefully kill all masters then die
         /// </summary>
