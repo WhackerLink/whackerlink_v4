@@ -166,6 +166,17 @@ namespace WhackerLink2Dvm
 
             callManager = new CallManager(WhackerLink2Dvm.config.AllowedGroups);
 
+            foreach (uint group in WhackerLink2Dvm.config.AllowedGroups) {
+                GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                {
+                    SrcId = "1",
+                    DstId = group.ToString(),
+                    Site = WhackerLink2Dvm.config.WhackerLink.Site
+                };
+
+                webSocketHandler.SendMessage(affReq.GetData());
+            }
+
             // initialize slot statuses
             //this.status = new SlotStatus[3];
             //this.status[0] = new SlotStatus();  // DMR Slot 1
@@ -295,7 +306,7 @@ namespace WhackerLink2Dvm
             var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
             foreach (var chunk in chunks)
             {
-                P25EncodeAudioFrame(chunk, Convert.ToUInt32(currentCall.VoiceChannel.SrcId), Convert.ToUInt32(currentCall.VoiceChannel.DstId));
+                P25EncodeAudioFrame(chunk, srcId, dstId);
             }
         }
 
@@ -305,7 +316,14 @@ namespace WhackerLink2Dvm
 
             WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
 
-            SendP25TDU(false);
+            accumulatedChunks.Clear();
+            FneUtils.Memset(netLDU1, 0x00, netLDU1.Length);
+            FneUtils.Memset(netLDU2, 0x00, netLDU1.Length);
+
+            p25SeqNo = 0;
+            p25N = 0;
+
+            SendP25TDU(false, srcId, dstId);
 
             currentCall.txStreamId = 0;
         }
@@ -341,6 +359,16 @@ namespace WhackerLink2Dvm
         /// <param name="sender"></param>
         /// <param name="e"></param>
         protected override void PeerConnected(object sender, PeerConnectedEvent e)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void KeyResponse(object sender, KeyResponseEvent e)
         {
             return;
         }

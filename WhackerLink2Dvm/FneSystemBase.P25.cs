@@ -688,6 +688,8 @@ namespace WhackerLink2Dvm
                     short[] samples = new short[160];
                     int errs = 0;
 
+                    Console.WriteLine(FneUtils.HexDump(imbe));
+
 #if !NOVODODE
                     errs = p25Decoder.decode(imbe, samples);
 #endif
@@ -788,13 +790,6 @@ namespace WhackerLink2Dvm
                 if (e.SrcId == 0)
                     return;
 
-                if ((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC))
-                {
-                    // ignore TDU's that are grant demands
-                    if ((control & 0x80U) == 0x80U)
-                        return;
-                }
-
                 CallInfo currentCall = callManager.GetOrCreateCall(e.SrcId, e.DstId);
 
                 if (currentCall == null)
@@ -852,6 +847,15 @@ namespace WhackerLink2Dvm
 
                 if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (currentCall.Status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR))
                 {
+                    GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
+                    {
+                        SrcId = e.SrcId.ToString(),
+                        DstId = e.DstId.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affRmv.GetData());
+
                     callManager.EndCall(e.SrcId);
 
                     if (currentCall.VoiceChannel != null && currentCall.VoiceChannel.Frequency != null)
@@ -870,6 +874,14 @@ namespace WhackerLink2Dvm
                     ignoreCall = false;
                     callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
                     TimeSpan callDuration = pktTime - currentCall.Status[P25_FIXED_SLOT].RxStart;
+
+                    accumulatedChunks.Clear();
+                    FneUtils.Memset(netLDU1, 0x00, netLDU1.Length);
+                    FneUtils.Memset(netLDU2, 0x00, netLDU1.Length);
+
+                    p25SeqNo = 0;
+                    p25N = 0;
+
                     WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *CALL END       * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} DUR {callDuration} [STREAM ID {e.StreamId}]");
                     return;
                 }
