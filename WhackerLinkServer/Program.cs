@@ -37,6 +37,7 @@ namespace WhackerLinkServer
         private static List<Task> masterTasks = new List<Task>();
         private static List<IMasterService> masters = new List<IMasterService>();
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private static string configPath = "config.yml";
 
         public static RestApiServer restServer { get; private set; }
 
@@ -51,7 +52,7 @@ namespace WhackerLinkServer
 
             try
             {
-                string configPath = "config.yml";
+                //string configPath = "config.yml";
                 if (args.Length > 0 && args[0] == "-c" && args.Length > 1)
                 {
                     configPath = args[1];
