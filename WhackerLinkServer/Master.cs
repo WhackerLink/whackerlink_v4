@@ -41,7 +41,6 @@ namespace WhackerLinkServer
         private Config.MasterConfig config;
         private WebSocketServer server;
         private RidAclManager aclManager;
-        private RestApiServer restServer;
         private Reporter reporter;
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
@@ -104,6 +103,11 @@ namespace WhackerLinkServer
         /// Instance of Logger
         /// </summary>
         public ILogger Logger { get { return logger; } }
+
+        /// <summary>
+        /// Returns the name of this Master
+        /// </summary>
+        public string Name => config.Name;
 
         /// <summary>
         /// Gets current affiliations list
@@ -178,12 +182,6 @@ namespace WhackerLinkServer
                 else
                 {
                     logger.Information("ACL Auto reload disabled");
-                }
-
-                if (config.Rest.Enabled)
-                {
-                    restServer = new RestApiServer(this, config.Rest.Address, config.Rest.Port);
-                    restServer.Start();
                 }
 
                 reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled);
@@ -378,10 +376,8 @@ namespace WhackerLinkServer
                 logger.Information("Stopping Master {Name}", config.Name);
 
                 server?.Stop();
-                restServer?.Stop();
 
                 server = null;
-                restServer = null;
                 reporter = null;
                 authKeyManager = null;
 

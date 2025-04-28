@@ -25,21 +25,23 @@ using WhackerLinkLib.Interfaces;
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/rid")]
+    [Route("api/{masterName}/rid")]
     public class RidAclController : ControllerBase
     {
-        private readonly IMasterService _svc;
-        public RidAclController(IMasterService svc) => _svc = svc;
+        readonly IMasterServiceRegistry _registry;
+        public RidAclController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
         [HttpGet("query")]
-        public IActionResult Query()
+        public IActionResult Query([FromRoute] string masterName)
         {
-            var rids = _svc.GetRidAcl();
-            var aclEnabled = _svc.GetRidAclEnabled();
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
             return Ok(new
             {
-                Enabled = aclEnabled,
-                RidAcl = rids
+                Enabled = master.GetRidAclEnabled(),
+                RidAcl = master.GetRidAcl()
             });
         }
     }

@@ -25,13 +25,21 @@ using WhackerLinkLib.Interfaces;
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/affiliations")]
+    [Route("api/{masterName}/affiliations")]
     public class AffiliationsController : ControllerBase
     {
-        readonly IMasterService _svc;
-        public AffiliationsController(IMasterService svc) => _svc = svc;
+        readonly IMasterServiceRegistry _registry;
+        public AffiliationsController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
         [HttpGet]
-        public IActionResult Get() => Ok(_svc.GetAffiliations());
+        public IActionResult Get([FromRoute] string masterName)
+        {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            var data = master.GetAffiliations();
+            return Ok(data);
+        }
     }
 }

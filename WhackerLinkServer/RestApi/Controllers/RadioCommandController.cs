@@ -27,18 +27,26 @@ using WhackerLinkLib.Models.IOSP;
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/command")]
+    [Route("api/{masterName}/command")]
     public class RadioCommandController : ControllerBase
     {
-        readonly IMasterService _svc;
-        public RadioCommandController(IMasterService svc) => _svc = svc;
+        private readonly IMasterServiceRegistry _registry;
+        public RadioCommandController(IMasterServiceRegistry registry)
+        {
+            _registry = registry;
+        }
 
         public class InhibitRequest { public string DstId { get; set; } }
         public class NetFailRequest { public byte Status { get; set; } = 0xFF; }
 
         [HttpPost("inhibit")]
-        public IActionResult Inhibit([FromBody] InhibitRequest req)
+        public IActionResult Inhibit(
+            [FromRoute] string masterName,
+            [FromBody] InhibitRequest req)
         {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
             if (string.IsNullOrWhiteSpace(req?.DstId))
                 return BadRequest(new { error = "DstId is required" });
 
@@ -48,14 +56,19 @@ namespace WhackerLinkServer.RestApi.Modules
                 SrcId = Defines.FNE_LID.ToString(),
                 DstId = req.DstId
             };
-            _svc.Logger.Information(packet.ToString());
-            _svc.BroadcastPacket(packet.GetStrData());
+            master.Logger.Information(packet.ToString());
+            master.BroadcastPacket(packet.GetStrData());
             return Ok(new { success = true });
         }
 
         [HttpPost("uninhibit")]
-        public IActionResult Uninhibit([FromBody] InhibitRequest req)
+        public IActionResult Uninhibit(
+            [FromRoute] string masterName,
+            [FromBody] InhibitRequest req)
         {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
             if (string.IsNullOrWhiteSpace(req?.DstId))
                 return BadRequest(new { error = "DstId is required" });
 
@@ -65,17 +78,22 @@ namespace WhackerLinkServer.RestApi.Modules
                 SrcId = Defines.FNE_LID.ToString(),
                 DstId = req.DstId
             };
-            _svc.Logger.Information(packet.ToString());
-            _svc.BroadcastPacket(packet.GetStrData());
+            master.Logger.Information(packet.ToString());
+            master.BroadcastPacket(packet.GetStrData());
             return Ok(new { success = true });
         }
 
         [HttpPost("netfail")]
-        public IActionResult NetFail([FromBody] NetFailRequest req)
+        public IActionResult NetFail(
+            [FromRoute] string masterName,
+            [FromBody] NetFailRequest req)
         {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
             var packet = new NET_FAIL { Status = req.Status };
-            _svc.Logger.Information(packet.ToString());
-            _svc.BroadcastPacket(packet.GetStrData());
+            master.Logger.Information(packet.ToString());
+            master.BroadcastPacket(packet.GetStrData());
             return Ok(new { success = true });
         }
     }

@@ -25,21 +25,23 @@ using WhackerLinkLib.Interfaces;
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/voiceChannel")]
+    [Route("api/{masterName}/voiceChannel")]
     public class VoiceChannelController : ControllerBase
     {
-        private readonly IMasterService _svc;
-        public VoiceChannelController(IMasterService svc) => _svc = svc;
+        readonly IMasterServiceRegistry _registry;
+        public VoiceChannelController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
         [HttpGet("query")]
-        public IActionResult Query()
+        public IActionResult Query([FromRoute] string masterName)
         {
-            var sites = _svc.GetSites();
-            var activeVoiceChannels = _svc.GetVoiceChannels();
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
             return Ok(new
             {
-                Sites = sites,
-                ActiveVoiceChannels = activeVoiceChannels
+                Sites = master.GetSites(),
+                ActiveVoiceChannels = master.GetVoiceChannels()
             });
         }
     }

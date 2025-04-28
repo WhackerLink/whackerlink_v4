@@ -25,17 +25,58 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IMasterServiceRegistry
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="master"></param>
+        /// <returns></returns>
+        bool TryGet(string name, out IMasterService master);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class MasterServiceRegistry : IMasterServiceRegistry
+    {
+        readonly Dictionary<string, IMasterService> _map;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="masters"></param>
+        public MasterServiceRegistry(IEnumerable<IMasterService> masters)
+        {
+            _map = masters.ToDictionary(m => m.Name, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="master"></param>
+        /// <returns></returns>
+        public bool TryGet(string name, out IMasterService master)
+            => _map.TryGetValue(name, out master);
+    }
+
     /// <summary>
     /// REST API Server
     /// </summary>
     public class RestApiServer
     {
         private readonly WebApplication _app;
-        private readonly IMasterService _masterService;
+        private readonly IMasterServiceRegistry _registry;
         private readonly string _url;
 
         /// <summary>
@@ -44,25 +85,26 @@ namespace WhackerLinkServer
         /// <param name="masterService"></param>
         /// <param name="address"></param>
         /// <param name="port"></param>
-        public RestApiServer(IMasterService masterService, string address, int port)
+        public RestApiServer(
+            IEnumerable<IMasterService> masters,
+            string address,
+            int port)
         {
-            _masterService = masterService;
+            _registry = new MasterServiceRegistry(masters);
             _url = $"http://{address}:{port}";
 
             var builder = WebApplication.CreateBuilder();
-
             builder.WebHost.UseUrls(_url);
 
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
             builder.Logging.SetMinimumLevel(LogLevel.Error);
 
-            builder.Services.AddSingleton(_masterService);
+            builder.Services.AddSingleton<IMasterServiceRegistry>(_registry);
 
             builder.Services.AddControllers();
 
             _app = builder.Build();
-
             _app.MapControllers();
         }
 
@@ -71,7 +113,6 @@ namespace WhackerLinkServer
         /// </summary>
         public void Start()
         {
-            _masterService.Logger.Information($"REST server starting at {_url}");
             _app.Start();
         }
 
@@ -81,7 +122,6 @@ namespace WhackerLinkServer
         public void Stop()
         {
             _app.StopAsync().GetAwaiter().GetResult();
-            _masterService.Logger.Information($"REST server at {_url} stopped");
         }
     }
 }

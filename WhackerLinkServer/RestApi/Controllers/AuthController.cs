@@ -20,26 +20,27 @@
  */
 
 using Microsoft.AspNetCore.Mvc;
-using Nancy;
 using WhackerLinkLib.Interfaces;
 using WhackerLinkServer.Managers;
 
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("api/{masterName}/auth")]
     public class AuthController : ControllerBase
     {
-        readonly IMasterService _svc;
-        public AuthController(IMasterService svc) => _svc = svc;
+        private readonly IMasterServiceRegistry _registry;
+        public AuthController(IMasterServiceRegistry registry) => _registry = registry;
 
         [HttpPost("reload")]
-        public IActionResult Reload()
+        public IActionResult Reload([FromRoute] string masterName)
         {
-            var authManager = _svc.GetAuthManager();
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            AuthKeyFileManager authManager = master.GetAuthManager();
             authManager.ReloadAuthFile();
             return Ok(new { success = true });
         }
     }
 }
-

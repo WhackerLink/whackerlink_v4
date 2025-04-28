@@ -37,6 +37,7 @@ namespace WhackerLinkServer.Models
         public class SystemConfig
         {
             public bool Debug;
+            public RestConfig Rest { get; set; }
         }
 
         /// <summary>
@@ -58,7 +59,6 @@ namespace WhackerLinkServer.Models
             public bool DisableLocBcastLogs { get; set; }
             public AuthConfig Auth { get; set; }
             public SslConfig Ssl { get; set; }
-            public RestConfig Rest { get; set; }
             public ReporterConfiguration Reporter { get; set; }
             public VocoderModes VocoderMode { get; set; }
             public RidAclConfiguration RidAcl { get; set; }

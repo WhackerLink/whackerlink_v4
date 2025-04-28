@@ -20,6 +20,7 @@
  */
 
 using Serilog;
+using WhackerLinkLib.Interfaces;
 using WhackerLinkServer.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -34,7 +35,10 @@ namespace WhackerLinkServer
         internal static Config config;
         public static ILogger logger;
         private static List<Task> masterTasks = new List<Task>();
+        private static List<IMasterService> masters = new List<IMasterService>();
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        public static RestApiServer restServer { get; private set; }
 
         /// <summary>
         /// App entry point
@@ -70,12 +74,23 @@ namespace WhackerLinkServer
                 logger.Information($"Server Version {System.Reflection.ThisAssembly.Git.Commit} Dirty: {System.Reflection.ThisAssembly.Git.IsDirtyString} {debug}");
                 logger.Information("Copyright (C) 2024-2025 Caleb H., K4PHP (_php_)");
 
+                logger.Information("Starting REST server");
+
                 logger.Information("Initializing Master instances");
 
                 foreach (Config.MasterConfig masterConfig in config.Masters)
                 {
-                    Master master = new Master(masterConfig);
+                    IMasterService master = new Master(masterConfig);
+                    masters.Add(master);
                     masterTasks.Add(Task.Run(() => master.Start(cancellationTokenSource.Token)));
+                }
+
+
+                if (config.System.Rest.Enabled)
+                {
+                    logger.Information("Starting REST server");
+                    restServer = new RestApiServer(masters, config.System.Rest.Address, config.System.Rest.Port);
+                    restServer.Start();
                 }
 
                 Console.CancelKeyPress += (sender, e) =>

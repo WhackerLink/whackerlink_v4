@@ -27,17 +27,20 @@ using WhackerLinkLib.Models;
 namespace WhackerLinkServer.RestApi.Modules
 {
     [ApiController]
-    [Route("api/sites")]
+    [Route("api/{masterName}/sites")]
     public class SitesController : ControllerBase
     {
-        private readonly IMasterService _svc;
-        public SitesController(IMasterService svc) => _svc = svc;
+        readonly IMasterServiceRegistry _registry;
+        public SitesController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
         [HttpGet("query")]
-        public IActionResult Query()
+        public IActionResult Query([FromRoute] string masterName)
         {
-            List<Site> sites = _svc.GetSites();
-            return Ok(new { sites });
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            return Ok(new { sites = master.GetSites() });
         }
     }
 }
