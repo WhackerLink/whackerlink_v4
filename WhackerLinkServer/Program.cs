@@ -74,7 +74,7 @@ namespace WhackerLinkServer
                 logger.Information($"Server Version {System.Reflection.ThisAssembly.Git.Commit} Dirty: {System.Reflection.ThisAssembly.Git.IsDirtyString} {debug}");
                 logger.Information("Copyright (C) 2024-2025 Caleb H., K4PHP (_php_)");
 
-                logger.Information("Starting REST server");
+                //logger.Information("Starting REST server");
 
                 logger.Information("Initializing Master instances");
 
