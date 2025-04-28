@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using fnecore.P25;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Vocoder;
 
@@ -21,10 +22,18 @@ namespace WhackerLink2Dvm
         public SlotStatus[] Status { get; set; } = new SlotStatus[3];
         public DateTime StartTime { get; }
 
-        public byte[] netLDU1;
-        public byte[] netLDU2;
+        public byte[] netLDU1 = new byte[9 * 25];
+        public byte[] netLDU2 = new byte[9 * 25];
         public uint p25SeqNo = 0;
         public byte p25N = 0;
+        public bool ignoreCall = false;
+
+#if !NOVODODE
+        public MBEDecoder p25Decoder;
+        public MBEEncoder p25Encoder;
+#endif
+
+        public byte callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
 
 #if WINDOWS
         public bool ExternalVocoderEnabled = false;
@@ -42,6 +51,15 @@ namespace WhackerLink2Dvm
             Status[2] = new SlotStatus();  // P25
             StartTime = DateTime.UtcNow;
             VoiceChannel = null;
+
+#if !NOVODODE
+            // initialize P25 vocoders
+            p25Decoder = new MBEDecoder(MBE_MODE.IMBE_88BIT);
+            //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
+            //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
+            p25Encoder = new MBEEncoder(MBE_MODE.IMBE_88BIT);
+            //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
+#endif
 
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
             UriBuilder uri = new UriBuilder(codeBase);

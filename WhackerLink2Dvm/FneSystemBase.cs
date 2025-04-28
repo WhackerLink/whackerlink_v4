@@ -224,18 +224,6 @@ namespace WhackerLink2Dvm
                         break;
                 }
             };
-
-#if !NOVODODE
-            // initialize P25 vocoders
-            p25Decoder = new MBEDecoder(MBE_MODE.IMBE_88BIT);
-            //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
-            //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
-            p25Encoder = new MBEEncoder(MBE_MODE.IMBE_88BIT);
-            //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
-#endif
-
-            netLDU1 = new byte[9 * 25];
-            netLDU2 = new byte[9 * 25];
         }
 
         internal void SendWhackerLinkCallAlert(uint dstId, uint srcId)
@@ -334,12 +322,12 @@ namespace WhackerLink2Dvm
 
             WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
 
-            accumulatedChunks.Clear();
-            FneUtils.Memset(netLDU1, 0x00, netLDU1.Length);
-            FneUtils.Memset(netLDU2, 0x00, netLDU1.Length);
+            currentCall.accumulatedChunks.Clear();
+            FneUtils.Memset(currentCall.netLDU1, 0x00, currentCall.netLDU1.Length);
+            FneUtils.Memset(currentCall.netLDU2, 0x00, currentCall.netLDU1.Length);
 
-            p25SeqNo = 0;
-            p25N = 0;
+            currentCall.p25SeqNo = 0;
+            currentCall.p25N = 0;
 
             SendP25TDU(false, srcId, dstId);
 
