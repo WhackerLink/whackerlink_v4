@@ -44,6 +44,7 @@ using WhackerLinkLib.Managers;
 using NWaves.Filters.Butterworth;
 using System.Diagnostics;
 using NWaves.Filters.Base;
+using WhackerLinkServer.Vocoder;
 
 namespace WhackerLinkServer
 {
@@ -922,7 +923,11 @@ namespace WhackerLinkServer
 
                 // Ensure a vocoder instance exists for the channel
 #if !NOVOCODE && !AMBEVOCODE
-                var (decoder, encoder, filters) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
+                MBEDecoder decoder = null;
+                MBEEncoder encoder = null;
+                IFilter[] filters = null;
+
+                (decoder, encoder, filters) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
 #endif
 #if AMBEVOCODE && !NOVOCODE
                 if (!ambeVocoderInstances.ContainsKey(dstId))
@@ -949,7 +954,7 @@ namespace WhackerLinkServer
                     buffer.AddSamples(chunk, 0, chunk.Length);
 
                     VolumeWaveProvider16 gainControl = new VolumeWaveProvider16(buffer);
-                    gainControl.Volume = masterConfig.PreEncodeGain + 6;
+                    gainControl.Volume = masterConfig.PreEncodeGain;
                     gainControl.Read(chunk, 0, chunk.Length);
 
                     int smpIdx = 0;
@@ -987,12 +992,12 @@ namespace WhackerLinkServer
                             if (masterConfig.VocoderMode == VocoderModes.IMBE)
                             {
                                 imbe = new byte[11];
-                                MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
+                                Vocoder.MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
                             }
                             else
                             {
                                 imbe = new byte[9];
-                                MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)120, imbe);
+                                Vocoder.MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)120, imbe);
                             }
                         }
                         catch (Exception ex)
@@ -1001,16 +1006,19 @@ namespace WhackerLinkServer
                         }
                     }
 
-                    if (tone == 0)
-                    {
+                    bool isSilent = IsSilence(samples);
 
+                    if (tone == 0 && !isSilent)
+                    {
 #if !AMBEVOCODE
                         if (masterConfig.VocoderMode == VocoderModes.IMBE)
                             imbe = new byte[11];
                         else
                             imbe = new byte[9];
-                        
-                        encoder.encode(samples, imbe);
+
+                        try
+                        {
+                            encoder.encode(samples, imbe);
 #else
 
                         if (masterConfig.VocoderMode == VocoderModes.IMBE)
@@ -1022,6 +1030,16 @@ namespace WhackerLinkServer
                             halfRateVocoder.Encode(samples, out imbe);
                         }
 #endif
+                        } catch(Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
+                    } else if (isSilent)
+                    {
+                        if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                            imbe = new byte[] { 0xF8, 0x01, 0xa9, 0x9f, 0x8c, 0xe0, 0x80 };
+                        else
+                            imbe = new byte[] { 0x04, 0x0c, 0xfd, 0x7b, 0xfb, 0x7d, 0xf2, 0x3d, 0x9e, 0x45 };
                     }
 
                     short[] decodedSamples = new short[320];
@@ -1029,18 +1047,25 @@ namespace WhackerLinkServer
                     if (imbe == null)
                         return;
 
+                    if (!isSilent)
+                    {
 #if !AMBEVOCODE
-                    int errors = decoder.decode(imbe, decodedSamples);
+                        int errors = decoder.decode(imbe, decodedSamples);
 #else
-                    if (masterConfig.VocoderMode == VocoderModes.IMBE)
-                    {
-                        int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
-                    }
-                    else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
-                    {
-                        int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
-                    }
+                        if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                        {
+                            int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
+                        }
+                        else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                        {
+                            int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
+                        }
 #endif
+                    }
+                    else
+                    {
+                        decodedSamples = samples;
+                    }
 
                     if (decodedSamples != null)
                     {
@@ -1074,7 +1099,8 @@ namespace WhackerLinkServer
                             //Console.WriteLine(BitConverter.ToString(pcmData));
 
                             processedChunks.Add(pcmData);
-                        } catch (Exception ex)
+                        }
+                        catch (Exception ex)
                         {
                             Console.WriteLine(ex);
                         }
@@ -1106,6 +1132,18 @@ namespace WhackerLinkServer
                 else
                     master.BroadcastPacket(audioPacket.GetStrData(), affiliatedClients, client);
             }
+        }
+
+        bool IsSilence(short[] samples)
+        {
+            foreach (var sample in samples)
+            {
+                if (Math.Abs(sample) > 6)
+                {
+                    return false;
+                }
+            }
+            return true; 
         }
 
 #if !NOVOCODE && !AMBEVOCODE

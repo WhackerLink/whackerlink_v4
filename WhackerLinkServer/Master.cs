@@ -29,6 +29,7 @@ using System.Reflection;
 using WhackerLinkLib.Models.IOSP;
 
 using WhackerLinkLib.Utils;
+using WhackerLinkServer.Vocoder;
 
 namespace WhackerLinkServer
 {
@@ -365,6 +366,46 @@ namespace WhackerLinkServer
             {
                 logger.Error(ex, "Failed to broadcast message to specific clients from master");
             }
+        }
+
+        /// <summary>
+        /// Stops the master server and all components
+        /// </summary>
+        public void Stop()
+        {
+            try
+            {
+                logger.Information("Stopping Master {Name}", config.Name);
+
+                server?.Stop();
+                restServer?.Stop();
+
+                server = null;
+                restServer = null;
+                reporter = null;
+                authKeyManager = null;
+
+                this.aclManager = new RidAclManager(config.RidAcl.Enabled);
+                this.affiliationsManager = new AffiliationsManager();
+                this.voiceChannelManager = new VoiceChannelManager(config.DisableVchUpdates);
+                this.siteManager = new SiteManager();
+
+                logger.Information("Master stopped successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Error while stopping the master server");
+            }
+        }
+
+        /// <summary>
+        /// Restarts the master server
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        public void Restart(CancellationToken cancellationToken)
+        {
+            Stop();
+            Start(cancellationToken);
         }
     }
 }

@@ -1,5 +1,6 @@
-/*
- * From https://github.com/W3AXL/rc2-dvm
+﻿/*
+ * From https://github.com/W3AXL/rc2-dvm/
+ * No license info was present, but trying to give credit where credit is due
  */
 
 using System;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 using Serilog;
 using WhackerLinkLib;
 
-namespace WhackerLinkServer
+namespace WhackerLinkServer.Vocoder
 {
 
     public enum MBE_MODE
@@ -32,7 +33,7 @@ namespace WhackerLinkServer
         /// </summary>
         /// <returns></returns>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr MBEEncoder_Create(MBE_MODE mode);
+        public static extern nint MBEEncoder_Create(MBE_MODE mode);
 
         /// <summary>
         /// Encode PCM16 samples to MBE codeword
@@ -40,7 +41,7 @@ namespace WhackerLinkServer
         /// <param name="samples">Input PCM samples</param>
         /// <param name="codeword">Output MBE codeword</param>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MBEEncoder_Encode(IntPtr pEncoder, [In] Int16[] samples, [Out] byte[] codeword);
+        public static extern void MBEEncoder_Encode(nint pEncoder, [In] short[] samples, [Out] byte[] codeword);
 
         /// <summary>
         /// Encode MBE to bits
@@ -49,19 +50,19 @@ namespace WhackerLinkServer
         /// <param name="bits"></param>
         /// <param name="codeword"></param>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MBEEncoder_EncodeBits(IntPtr pEncoder, [In] char[] bits, [Out] byte[] codeword);
+        public static extern void MBEEncoder_EncodeBits(nint pEncoder, [In] char[] bits, [Out] byte[] codeword);
 
         /// <summary>
         /// Delete a created MBEEncoder
         /// </summary>
         /// <param name="pEncoder"></param>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MBEEncoder_Delete(IntPtr pEncoder);
+        public static extern void MBEEncoder_Delete(nint pEncoder);
 
         /// <summary>
         /// Pointer to the encoder instance
         /// </summary>
-        private IntPtr encoder { get; set; }
+        private nint encoder { get; set; }
 
         /// <summary>
         /// Create a new MBEEncoder instance
@@ -70,7 +71,7 @@ namespace WhackerLinkServer
         public MBEEncoder(MBE_MODE mode)
         {
             encoder = MBEEncoder_Create(mode);
-            if (encoder == IntPtr.Zero)
+            if (encoder == nint.Zero)
             {
                 throw new Exception("Failed to create MBEEncoder instance.");
             }
@@ -89,7 +90,7 @@ namespace WhackerLinkServer
         /// </summary>
         /// <param name="samples"></param>
         /// <param name="codeword"></param>
-        public void encode([In] Int16[] samples, [Out] byte[] codeword)
+        public void encode([In] short[] samples, [Out] byte[] codeword)
         {
             MBEEncoder_Encode(encoder, samples, codeword);
         }
@@ -110,7 +111,7 @@ namespace WhackerLinkServer
         /// </summary>
         /// <returns></returns>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr MBEDecoder_Create(MBE_MODE mode);
+        public static extern nint MBEDecoder_Create(MBE_MODE mode);
 
         /// <summary>
         /// Decode MBE codeword to samples
@@ -119,7 +120,7 @@ namespace WhackerLinkServer
         /// <param name="codeword">Output MBE codeword</param>
         /// <returns>Number of decode errors</returns>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Int32 MBEDecoder_Decode(IntPtr pDecoder, [In] byte[] codeword, [Out] Int16[] samples);
+        public static extern int MBEDecoder_Decode(nint pDecoder, [In] byte[] codeword, [Out] short[] samples);
 
         /// <summary>
         /// Decode MBE to bits
@@ -129,19 +130,19 @@ namespace WhackerLinkServer
         /// <param name="mbeBits"></param>
         /// <returns></returns>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Int32 MBEDecoder_DecodeBits(IntPtr pDecoder, [In] byte[] codeword, [Out] char[] bits);
+        public static extern int MBEDecoder_DecodeBits(nint pDecoder, [In] byte[] codeword, [Out] char[] bits);
 
         /// <summary>
         /// Delete a created MBEDecoder
         /// </summary>
         /// <param name="pDecoder"></param>
         [DllImport("libvocoder", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MBEDecoder_Delete(IntPtr pDecoder);
+        public static extern void MBEDecoder_Delete(nint pDecoder);
 
         /// <summary>
         /// Pointer to the decoder instance
         /// </summary>
-        private IntPtr decoder { get; set; }
+        private nint decoder { get; set; }
 
         /// <summary>
         /// Create a new MBEDecoder instance
@@ -150,7 +151,7 @@ namespace WhackerLinkServer
         public MBEDecoder(MBE_MODE mode)
         {
             decoder = MBEDecoder_Create(mode);
-            if (decoder == IntPtr.Zero)
+            if (decoder == nint.Zero)
             {
                 throw new Exception("Failed to create MBEDecoder instance.");
             }
@@ -169,7 +170,7 @@ namespace WhackerLinkServer
         /// </summary>
         /// <param name="samples"></param>
         /// <param name="codeword"></param>
-        public Int32 decode([In] byte[] codeword, [Out] Int16[] samples)
+        public int decode([In] byte[] codeword, [Out] short[] samples)
         {
             return MBEDecoder_Decode(decoder, codeword, samples);
         }
@@ -180,7 +181,7 @@ namespace WhackerLinkServer
         /// <param name="codeword"></param>
         /// <param name="bits"></param>
         /// <returns></returns>
-        public Int32 decodeBits([In] byte[] codeword, [Out] char[] bits)
+        public int decodeBits([In] byte[] codeword, [Out] char[] bits)
         {
             return MBEDecoder_DecodeBits(decoder, codeword, bits);
         }
@@ -205,7 +206,7 @@ namespace WhackerLinkServer
             ushort[] u = new ushort[4];
 
             // Convert the tone frequency to the nearest tone index
-            uint tone_idx = (uint)((float)tone_freq_hz / 31.25f);
+            uint tone_idx = (uint)(tone_freq_hz / 31.25f);
 
             // Validate tone index
             if (tone_idx < 5 || tone_idx > 122)
@@ -225,7 +226,7 @@ namespace WhackerLinkServer
             // Encode u vectors per TIA-102.BABA-1 section 7.2
 
             // u0[11-6] are always 1 to indicate a tone, so we left-shift 63u (0x00111111) a full byte (8 bits)
-            u[0] |= (ushort)(63 << 8);
+            u[0] |= 63 << 8;
 
             // u0[5-0] are AD (tone amplitude byte) bits 6-1
             u[0] |= (ushort)(tone_amplitude >> 1);
@@ -292,7 +293,7 @@ namespace WhackerLinkServer
             decoder = new MBEDecoder(this.mode);
         }
 
-        public Int32 Decode([In] byte[] codeword, [Out] byte[] mbeBits)
+        public int Decode([In] byte[] codeword, [Out] byte[] mbeBits)
         {
             // Input validation
             if (codeword == null)
@@ -404,4 +405,3 @@ namespace WhackerLinkServer
         }
     }
 }
-
