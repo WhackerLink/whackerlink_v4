@@ -206,8 +206,8 @@ Global
 		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|Win32.Build.0 = Release|x86
 		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x64.ActiveCfg = Release|Any CPU
 		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x64.Build.0 = Release|Any CPU
-		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x86.ActiveCfg = Release|Any CPU
-		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x86.Build.0 = Release|Any CPU
+		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x86.ActiveCfg = Release|x86
+		{E2565674-D781-47DE-926D-0F8F3DC28D79}.Release|x86.Build.0 = Release|x86
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.AmbeVocode|Any CPU.ActiveCfg = AmbeVocode|Any CPU
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.AmbeVocode|Any CPU.Build.0 = AmbeVocode|Any CPU
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.AmbeVocode|Win32.ActiveCfg = Debug|x86
@@ -237,8 +237,8 @@ Global
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|Win32.Build.0 = Release|x86
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x64.ActiveCfg = Release|Any CPU
 		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x64.Build.0 = Release|Any CPU
-		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x86.ActiveCfg = Release|Any CPU
-		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x86.Build.0 = Release|Any CPU
+		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x86.ActiveCfg = Release|x86
+		{4FD4C3D1-234F-45DC-BB8B-12EE24F20204}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
