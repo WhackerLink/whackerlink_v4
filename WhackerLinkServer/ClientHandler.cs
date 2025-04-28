@@ -67,6 +67,9 @@ namespace WhackerLinkServer
         private readonly VocoderManager vocoderManager;
         private ILogger logger;
 
+        private readonly TimeSpan inactivityTimeout;
+        private Dictionary<string, Timer> inactivityTimers;
+
         private ToneDetector toneDetecor = new ToneDetector();
 
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
@@ -88,6 +91,8 @@ namespace WhackerLinkServer
         /// <param name="logger"></param>
         public ClientHandler(Config.MasterConfig config, RidAclManager aclManager, AffiliationsManager affiliationsManager,
             VoiceChannelManager voiceChannelManager, SiteManager siteManager, Reporter reporter,
+            TimeSpan inactivityTimeout,
+            Dictionary<string, Timer> inactivityTimers,
 #if !NOVOCODE && !AMBEVOCODE
             VocoderManager vocoderManager,
 #endif
@@ -107,6 +112,9 @@ namespace WhackerLinkServer
             this.master = master;
             this.authKeyManager = authManager;
             this.logger = logger;
+
+            this.inactivityTimeout = inactivityTimeout;
+            this.inactivityTimers = inactivityTimers;
 
 #if !NOVOCODE && !AMBEVOCODE
             this.vocoderManager = vocoderManager;
@@ -835,13 +843,65 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="talkgroupId"></param>
+        /// <param name="srcId"></param>
+        /// <param name="site"></param>
+        private void ResetInactivityTimer(string talkgroupId, string srcId, Site site)
+        {
+            if (inactivityTimers.TryGetValue(talkgroupId, out var timer))
+            {
+                timer.Change(inactivityTimeout, Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                var newTimer = new Timer(_ => OnInactivityElapsed(talkgroupId, srcId, site),
+                                         null,
+                                         inactivityTimeout,
+                                         Timeout.InfiniteTimeSpan);
+                inactivityTimers[talkgroupId] = newTimer;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="talkgroupId"></param>
+        /// <param name="srcId"></param>
+        /// <param name="site"></param>
+        private void OnInactivityElapsed(string talkgroupId, string srcId, Site site)
+        {
+            if (!voiceChannelManager.IsDestinationActive(talkgroupId))
+                return;
+
+            if (inactivityTimers.Remove(talkgroupId, out var timer))
+                timer.Dispose();
+
+            GRP_VCH_RLS response = new GRP_VCH_RLS
+            {
+                SrcId = srcId,
+                DstId = talkgroupId,
+                Site = site
+            };
+
+            master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
+            voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
+            logger.Information($"Inactivity timeout elapsed, releasing voice channel for talkgroup {talkgroupId}");
+            reporter.Send(PacketType.GRP_VCH_RLS, srcId, talkgroupId, site, null);
+        }
+
+        /// <summary>
         /// Helper to broadcast audio. Also handles vocoding
         /// </summary>
-        /// <param name="audioData"></param>
-        /// <param name="voiceChannel"></param>
+        /// <param name="audioPacket"></param>
         private void BroadcastAudio(AudioPacket audioPacket)
         {
             bool affRestrict = masterConfig.AffilationRestricted;
+            bool isFullAmbe = audioPacket.AudioMode == AudioMode.FULL_RATE_AMBE && audioPacket.Data.Length == 11;
+            bool isHalfAmbe = audioPacket.AudioMode == AudioMode.HALF_RATE_AMBE && audioPacket.Data.Length == 7;
+
+            byte[] imbe = null;
 
             string client = ID;
 
@@ -880,6 +940,8 @@ namespace WhackerLinkServer
                 return;
             }
 
+            ResetInactivityTimer(dstId, audioPacket.VoiceChannel.SrcId, audioPacket.Site);
+
             if (audioPacket.LopServerVocode)
             {
                 // This is mainly for the console sending tones.
@@ -894,11 +956,25 @@ namespace WhackerLinkServer
                 return;
             }
 
+            if (isFullAmbe)
+            {
+                imbe = audioPacket.Data;
+                logger.Warning("Ignoring call; FULL AMBE not supported srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                // TODO: Decode and repeat as PCM
+                return;
+            }
+
+            if (isHalfAmbe)
+            {
+                imbe = audioPacket.Data;
+                logger.Warning("Ignoring call; HALF AMBE not supported srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                // TODO: Decode and repeat as PCM
+                return;
+            }
+
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
 #if !NOVOCODE || AMBEVOCODE
-                byte[] imbe = null;
-
                 // Ensure a vocoder instance exists for the channel
 #if !NOVOCODE && !AMBEVOCODE
                 MBEDecoder decoder = null;

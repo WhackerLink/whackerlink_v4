@@ -48,6 +48,9 @@ namespace WhackerLinkServer
         private AuthKeyFileManager authKeyManager;
         private ILogger logger;
 
+        private readonly TimeSpan inactivityTimeout = TimeSpan.FromSeconds(3);
+        private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
+
 #if !NOVOCODE && !AMBEVOCODE
         private VocoderManager vocoderManager;
 #endif
@@ -232,6 +235,8 @@ namespace WhackerLinkServer
 
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
+                    inactivityTimeout,
+                    inactivityTimers,
 #if !NOVOCODE && !AMBEVOCODE
                         vocoderManager,
 #endif
