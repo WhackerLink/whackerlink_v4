@@ -29,7 +29,7 @@ using System.Reflection;
 using WhackerLinkLib.Models.IOSP;
 
 using WhackerLinkLib.Utils;
-using WhackerLinkServer.Vocoder;
+using WhackerLinkLib.Vocoder;
 
 namespace WhackerLinkServer
 {

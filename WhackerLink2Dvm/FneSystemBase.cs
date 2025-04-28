@@ -19,7 +19,7 @@ using fnecore;
 using fnecore.DMR;
 
 #if !NOVODODE
-using vocoder;
+using WhackerLinkLib.Vocoder;
 #endif
 
 using fnecore.P25.LC.TSBK;
@@ -216,10 +216,10 @@ namespace WhackerLink2Dvm
 
 #if !NOVODODE
             // initialize P25 vocoders
-            p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
+            p25Decoder = new MBEDecoder(MBE_MODE.IMBE_88BIT);
             //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
             //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
-            p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
+            p25Encoder = new MBEEncoder(MBE_MODE.IMBE_88BIT);
             //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
 #endif
 

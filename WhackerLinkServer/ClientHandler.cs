@@ -44,7 +44,7 @@ using WhackerLinkLib.Managers;
 using NWaves.Filters.Butterworth;
 using System.Diagnostics;
 using NWaves.Filters.Base;
-using WhackerLinkServer.Vocoder;
+using WhackerLinkLib.Vocoder;
 
 namespace WhackerLinkServer
 {
@@ -925,9 +925,8 @@ namespace WhackerLinkServer
 #if !NOVOCODE && !AMBEVOCODE
                 MBEDecoder decoder = null;
                 MBEEncoder encoder = null;
-                IFilter[] filters = null;
 
-                (decoder, encoder, filters) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
+                (decoder, encoder) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
 #endif
 #if AMBEVOCODE && !NOVOCODE
                 if (!ambeVocoderInstances.ContainsKey(dstId))
@@ -992,12 +991,12 @@ namespace WhackerLinkServer
                             if (masterConfig.VocoderMode == VocoderModes.IMBE)
                             {
                                 imbe = new byte[11];
-                                Vocoder.MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
+                                WhackerLinkLib.Vocoder.MBEToneGenerator.IMBEEncodeSingleTone((ushort)tone, imbe);
                             }
                             else
                             {
                                 imbe = new byte[9];
-                                Vocoder.MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)120, imbe);
+                                WhackerLinkLib.Vocoder.MBEToneGenerator.AmbeEncodeSingleTone((ushort)tone, (char)120, imbe);
                             }
                         }
                         catch (Exception ex)
