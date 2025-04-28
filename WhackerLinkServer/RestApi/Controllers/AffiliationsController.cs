@@ -19,35 +19,19 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using Nancy;
+using Microsoft.AspNetCore.Mvc;
 using WhackerLinkLib.Interfaces;
-using WhackerLinkLib.Models;
 
 namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class SitesModule : NancyModule
+    [ApiController]
+    [Route("api/affiliations")]
+    public class AffiliationsController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="masterService"></param>
-        public SitesModule(IMasterService masterService) : base("/api/sites")
-        {
-            Get("/query", _ =>
-            {
-                List<Site> sites = masterService.GetSites();
+        readonly IMasterService _svc;
+        public AffiliationsController(IMasterService svc) => _svc = svc;
 
-                var response = new
-                {
-                    sites
-                };
-
-                return Response.AsJson(response);
-            });
-        }
+        [HttpGet]
+        public IActionResult Get() => Ok(_svc.GetAffiliations());
     }
 }
-

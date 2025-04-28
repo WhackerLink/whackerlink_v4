@@ -28,7 +28,6 @@ using WhackerLinkLib.Interfaces;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Network;
-using Nancy;
 using fnecore.P25;
 
 namespace WhackerLink2Dvm

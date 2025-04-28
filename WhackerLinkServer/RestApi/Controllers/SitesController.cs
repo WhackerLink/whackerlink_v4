@@ -19,36 +19,25 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using Nancy;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using WhackerLinkLib.Interfaces;
+using WhackerLinkLib.Models;
 
 namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class RidAclModule : NancyModule
+    [ApiController]
+    [Route("api/sites")]
+    public class SitesController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="masterService"></param>
-        public RidAclModule(IMasterService masterService) : base("/api/rid")
+        private readonly IMasterService _svc;
+        public SitesController(IMasterService svc) => _svc = svc;
+
+        [HttpGet("query")]
+        public IActionResult Query()
         {
-            Get("/query", _ =>
-            {
-                var rids = masterService.GetRidAcl();
-                bool aclEnabled = masterService.GetRidAclEnabled();
-
-                var response = new
-                {
-                    Enabled = aclEnabled,
-                    RidAcl = rids
-                };
-
-                return Response.AsJson(response);
-            });
+            List<Site> sites = _svc.GetSites();
+            return Ok(new { sites });
         }
     }
 }
-

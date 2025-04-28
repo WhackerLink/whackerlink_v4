@@ -19,26 +19,27 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using Nancy;
+using Microsoft.AspNetCore.Mvc;
 using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class AffiliationsModule : NancyModule
+    [ApiController]
+    [Route("api/rid")]
+    public class RidAclController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="masterService"></param>
-        public AffiliationsModule(IMasterService masterService)
+        private readonly IMasterService _svc;
+        public RidAclController(IMasterService svc) => _svc = svc;
+
+        [HttpGet("query")]
+        public IActionResult Query()
         {
-            Get("/api/affiliations", _ =>
+            var rids = _svc.GetRidAcl();
+            var aclEnabled = _svc.GetRidAclEnabled();
+            return Ok(new
             {
-                var affiliations = masterService.GetAffiliations();
-                return Response.AsJson(affiliations);
+                Enabled = aclEnabled,
+                RidAcl = rids
             });
         }
     }

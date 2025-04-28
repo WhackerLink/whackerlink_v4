@@ -19,39 +19,28 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using Nancy;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using WhackerLinkLib.Interfaces;
 
 namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class VoiceChannelModule : NancyModule
+    [ApiController]
+    [Route("api/voiceChannel")]
+    public class VoiceChannelController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="masterService"></param>
-        public VoiceChannelModule(IMasterService masterService)
+        private readonly IMasterService _svc;
+        public VoiceChannelController(IMasterService svc) => _svc = svc;
+
+        [HttpGet("query")]
+        public IActionResult Query()
         {
-            Get("/api/voiceChannel/query", _ =>
+            var sites = _svc.GetSites();
+            var activeVoiceChannels = _svc.GetVoiceChannels();
+            return Ok(new
             {
-
-                var response = new
-                {
-                    Sites = masterService.GetSites(),
-                    ActiveVoiceChannels = masterService.GetVoiceChannels()
-                };
-
-                return Response.AsJson(response);
+                Sites = sites,
+                ActiveVoiceChannels = activeVoiceChannels
             });
         }
     }
 }
-

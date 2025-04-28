@@ -26,8 +26,6 @@ using fnecore.P25.LC.TSBK;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Models.IOSP;
-using WhackerLinkLib.Vocoder;
-using Nancy;
 
 namespace WhackerLink2Dvm
 {
@@ -785,7 +783,7 @@ namespace WhackerLink2Dvm
 
                 if (currentCall == null)
                 {
-                    //WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *IGNORE CALL    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
+                    WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *IGNORE CALL    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
                     return;
                 }
 
