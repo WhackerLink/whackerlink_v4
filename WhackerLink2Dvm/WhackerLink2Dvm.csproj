@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <Configurations>Debug;Release;NoVodode;AmbeVocode;Linux</Configurations>
+	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
