@@ -1214,20 +1214,6 @@ namespace WhackerLinkServer
             return (new AmbeVocoderManager(), new AmbeVocoderManager(false));
         }
 #endif
-
-        private void CleanupVocoderInstance(string channelId)
-        {
-#if !NOVOCODE && !AMBEVOCODE
-            vocoderManager.RemoveVocoder(channelId);
-#endif
-#if AMBEVOCODE && !NOVOCODE
-            if (ambeVocoderInstances.ContainsKey(channelId))
-            {
-                ambeVocoderInstances.Remove(channelId);
-                logger.Information("Removed external vocoder instance for channel {ChannelId}", channelId);
-            }
-#endif
-        }
     }
 }
 
