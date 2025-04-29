@@ -11,6 +11,15 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
+    <PropertyGroup>
+	    <EnableDefaultItems>false</EnableDefaultItems>
+	    <IsWindowsTargetCondition>$(OS) == 'Windows_NT'</IsWindowsTargetCondition>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(IsWindowsTargetCondition)' != 'true'">
+	    <SkipBuild>true</SkipBuild>
+    </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="bin\**" />
     <EmbeddedResource Remove="bin\**" />
