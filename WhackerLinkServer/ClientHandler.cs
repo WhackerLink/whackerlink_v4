@@ -158,6 +158,7 @@ namespace WhackerLinkServer
                     case (int)PacketType.EMRG_ALRM_REQ:
                         HandleEmergencyAlarmRequest(data["data"].ToObject<EMRG_ALRM_REQ>());
                         break;
+                    case (int)PacketType.CALL_ALRT:
                     case (int)PacketType.CALL_ALRT_REQ:
                         HandleCallAlertRequest(data["data"].ToObject<CALL_ALRT_REQ>());
                         break;
