@@ -10,19 +10,20 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<EnableDefaultItems>false</EnableDefaultItems>
 		<IsWindowsTargetCondition>$(OS) == 'Windows_NT'</IsWindowsTargetCondition>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsWindows)' == 'true'">
-		<TargetFramework>net8.0-windows7.0</TargetFramework>
-		<UseWPF>true</UseWPF>
+		<BuildingForReal Condition="'$(BuildingForReal)' == ''">true</BuildingForReal>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(IsWindowsTargetCondition)' != 'true'">
-		<TargetFramework>net8.0</TargetFramework>
-		<SkipBuild>true</SkipBuild>
+		<BuildingForReal>false</BuildingForReal>
 	</PropertyGroup>
+
+	<Target Name="BlockBuild" BeforeTargets="Build" Condition="'$(BuildingForReal)' == 'false'">
+		<Message Importance="high" Text="Skipping WhackerLinkMobileRadio build because not on Windows." />
+		<PropertyGroup>
+			<BuildProject>false</BuildProject>
+		</PropertyGroup>
+	</Target>
 
 	<ItemGroup>
 		<Compile Remove="bin\**" />
