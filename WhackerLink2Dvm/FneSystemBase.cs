@@ -230,6 +230,16 @@ namespace WhackerLink2Dvm
             webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT_REQ, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
         }
 
+        internal void SendWhackerLinkAckResponse(uint dstId, uint srcId)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.ACK_RSP, data = new ACK_RSP { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+        }
+
+        internal void SendWhackerLinkExtendedFunction(uint dstId, uint srcId, SpecFuncType specType)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.SPEC_FUNC, data = new SPEC_FUNC { SrcId = srcId.ToString(), DstId = dstId.ToString(), Function = specType } });
+        }
+
         internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
         {
             foreach (Affiliation affiliation in response.Affiliations)

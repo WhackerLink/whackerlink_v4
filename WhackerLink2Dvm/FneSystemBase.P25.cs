@@ -758,7 +758,25 @@ namespace WhackerLink2Dvm
                         IOSP_ACK_RSP ackRsp = new IOSP_ACK_RSP();
                         ackRsp.Decode(tsbk, true);
                         Log.Logger.Information($"({SystemName}) P25D: TSBK *Ack Response   * PEER {e.PeerId} SRC_ID {ackRsp.SrcId} DST_ID {ackRsp.DstId} SERVICE {ackRsp.Service}");
-                        //SendWhackerLinkAck(ackRsp.SrcId, ackRsp.DstId);
+                        SendWhackerLinkAckResponse(ackRsp.DstId, ackRsp.SrcId);
+                        break;
+                    case P25Defines.TSBK_IOSP_EXT_FNCT:
+                        IOSP_EXT_FNCT extFunc = new IOSP_EXT_FNCT();
+                        extFunc.Decode(tsbk, true);
+                        Log.Logger.Information($"({SystemName}) P25D: TSBK *Extended Func  * PEER {e.PeerId} SRC_ID {extFunc.SrcId} DST_ID {extFunc.DstId} FUNCTION {(ExtendedFunction)extFunc.ExtendedFunction}");
+
+                        switch ((ExtendedFunction)extFunc.ExtendedFunction)
+                        {
+                            case ExtendedFunction.INHIBIT:
+                                SendWhackerLinkExtendedFunction(extFunc.DstId, extFunc.SrcId, SpecFuncType.RID_INHIBIT);
+                                break;
+                            case ExtendedFunction.UNINHIBIT:
+                                SendWhackerLinkExtendedFunction(extFunc.DstId, extFunc.SrcId, SpecFuncType.RID_UNINHIBIT);
+                                break;
+                            default:
+                                Log.Logger.Information($"({SystemName}) P25D: TSBK Unkown Extended Function for WLNK FUNCTION={extFunc.ExtendedFunction}");
+                                break;
+                        };
                         break;
                 }
             }

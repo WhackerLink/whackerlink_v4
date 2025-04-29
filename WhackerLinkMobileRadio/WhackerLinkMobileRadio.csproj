@@ -6,34 +6,11 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<Configurations>Debug;Release;NoVocode;AmbeVocode;Linux</Configurations>
-		<Platforms>AnyCPU;x86;x64</Platforms>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<IsWindowsTargetCondition>$(OS) == 'Windows_NT'</IsWindowsTargetCondition>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsWindowsTargetCondition)' == 'true'">
 		<TargetFramework>net8.0-windows7.0</TargetFramework>
 		<UseWPF>true</UseWPF>
+		<Platforms>AnyCPU;x86;x64</Platforms>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsWindowsTargetCondition)' != 'true'">
-		<TargetFramework>net8.0</TargetFramework>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<BuildingForReal Condition="'$(IsWindowsTargetCondition)' == 'true'">true</BuildingForReal>
-		<BuildingForReal Condition="'$(IsWindowsTargetCondition)' != 'true'">false</BuildingForReal>
-	</PropertyGroup>
-
-	<Target Name="BlockBuild" BeforeTargets="Build" Condition="'$(BuildingForReal)' == 'false'">
-		<Message Importance="high" Text="Skipping WhackerLinkMobileRadio build because not on Windows." />
-		<PropertyGroup>
-			<BuildProject>false</BuildProject>
-		</PropertyGroup>
-	</Target>
-
+	
 	<ItemGroup>
 		<Compile Remove="bin\**" />
 		<EmbeddedResource Remove="bin\**" />
