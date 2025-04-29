@@ -498,7 +498,7 @@ namespace WhackerLink2Dvm
             // encode PCM samples into IMBE codewords
             byte[] imbe = new byte[11];
 
-#if !NOVODODE
+#if !NOVODODE && WINDOWS
             if (currentCall.ExternalVocoderEnabled)
                 currentCall.ExtFullRateVocoder.encode(samples, out imbe);
             else
@@ -676,7 +676,7 @@ namespace WhackerLink2Dvm
                     short[] samples = new short[160];
                     int errs = 0;
 
-#if !NOVODODE
+#if !NOVODODE && WINDOWS
                     if (currentCall.ExternalVocoderEnabled)
                         currentCall.ExtFullRateVocoder.decode(imbe, out samples);
                     else
