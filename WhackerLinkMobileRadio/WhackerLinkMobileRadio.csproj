@@ -2,10 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Configurations>Debug;Release;NoVocode;AmbeVocode;Linux</Configurations>
     <Platforms>AnyCPU;x86;x64</Platforms>
@@ -15,6 +13,11 @@
 	    <EnableDefaultItems>false</EnableDefaultItems>
 	    <IsWindowsTargetCondition>$(OS) == 'Windows_NT'</IsWindowsTargetCondition>
     </PropertyGroup>
+
+	<PropertyGroup Condition="'$(IsWindows)' == 'true'">
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
 
     <PropertyGroup Condition="'$(IsWindowsTargetCondition)' != 'true'">
 	    <SkipBuild>true</SkipBuild>
