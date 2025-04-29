@@ -11,11 +11,20 @@
 
 	<PropertyGroup>
 		<IsWindowsTargetCondition>$(OS) == 'Windows_NT'</IsWindowsTargetCondition>
-		<BuildingForReal Condition="'$(BuildingForReal)' == ''">true</BuildingForReal>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(IsWindowsTargetCondition)' == 'true'">
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
+		<UseWPF>true</UseWPF>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(IsWindowsTargetCondition)' != 'true'">
-		<BuildingForReal>false</BuildingForReal>
+		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<BuildingForReal Condition="'$(IsWindowsTargetCondition)' == 'true'">true</BuildingForReal>
+		<BuildingForReal Condition="'$(IsWindowsTargetCondition)' != 'true'">false</BuildingForReal>
 	</PropertyGroup>
 
 	<Target Name="BlockBuild" BeforeTargets="Build" Condition="'$(BuildingForReal)' == 'false'">
