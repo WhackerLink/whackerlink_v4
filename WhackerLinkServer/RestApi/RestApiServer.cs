@@ -75,7 +75,7 @@ namespace WhackerLinkServer
         public void AddMaster(IMasterService master)
         {
             _map[master.Name] = master;
-    }
+        }
     }
 
     /// <summary>
