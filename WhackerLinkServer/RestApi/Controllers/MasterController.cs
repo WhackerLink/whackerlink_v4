@@ -220,31 +220,31 @@ namespace WhackerLinkServer.RestApi.Controllers
                     Port = masterConfigJson.GetProperty("Port").GetInt32(),
                     Auth = new Config.AuthConfig
                     {
-                        Enabled = authEnabledProp.GetBoolean(),
-                        Path = authPathProp.GetString(),
-                        ReloadInterval = authReloadIntervalProp.GetInt32()
+                        Enabled = masterConfigJson.GetProperty("Auth").GetProperty("Enabled").GetBoolean(),
+                        Path = masterConfigJson.GetProperty("Auth").GetProperty("Path").GetString(),
+                        ReloadInterval = masterConfigJson.GetProperty("Auth").GetProperty("ReloadInterval").GetInt32()
                     },
                     Ssl = new Config.SslConfig
                     {
-                        Enabled = sslEnabledProp.GetBoolean(),
-                        CertificatePath = certPathProp.GetString(),
-                        CertificatePassword = certPasswordProp.GetString()
+                        Enabled = masterConfigJson.GetProperty("Ssl").GetProperty("Enabled").GetBoolean(),
+                        CertificatePath = masterConfigJson.GetProperty("Ssl").GetProperty("CertificatePath").GetString(),
+                        CertificatePassword = masterConfigJson.GetProperty("Ssl").GetProperty("CertificatePassword").GetString()
                     },
-                    AffilationRestricted = affilationRestrictedProp.GetBoolean(),
-                    NoSelfRepeat = noSelfRepeatProp.GetBoolean(),
-                    DisableSiteBcast = disableSiteBcastProp.GetBoolean(),
-                    DisableVchUpdates = disableVchUpdatesProp.GetBoolean(),
-                    DisableLocationBroadcasts = disableLocationBroadcastsProp.GetBoolean(),
-                    DisableLocBcastLogs = disableLocBcastLogsProp.GetBoolean(),
-                    VocoderMode = Enum.Parse<VocoderModes>(vocoderModeProp.GetString()),
-                    PreEncodeGain = preEncodeGainProp.GetSingle(),
+                    AffilationRestricted = masterConfigJson.GetProperty("AffilationRestricted").GetBoolean(),
+                    NoSelfRepeat = masterConfigJson.GetProperty("NoSelfRepeat").GetBoolean(),
+                    DisableSiteBcast = masterConfigJson.GetProperty("DisableSiteBcast").GetBoolean(),
+                    DisableVchUpdates = masterConfigJson.GetProperty("DisableVchUpdates").GetBoolean(),
+                    DisableLocationBroadcasts = masterConfigJson.GetProperty("DisableLocationBroadcasts").GetBoolean(),
+                    DisableLocBcastLogs = masterConfigJson.GetProperty("DisableLocBcastLogs").GetBoolean(),
+                    VocoderMode = Enum.Parse<VocoderModes>(masterConfigJson.GetProperty("VocoderMode").GetString()),
+                    PreEncodeGain = masterConfigJson.GetProperty("PreEncodeGain").GetSingle(),
                     Reporter = new Config.ReporterConfiguration
                     {
-                        Enabled = reporterEnabledProp.GetBoolean(),
-                        Address = reporterAddressProp.GetString(),
-                        Port = reporterPortProp.GetInt32()
+                        Enabled = masterConfigJson.GetProperty("Reporter").GetProperty("Enabled").GetBoolean(),
+                        Address = masterConfigJson.GetProperty("Reporter").GetProperty("Address").GetString(),
+                        Port = masterConfigJson.GetProperty("Reporter").GetProperty("Port").GetInt32()
                     },
-                    Sites = sitesProp.EnumerateArray().Select(site => new Site
+                    Sites = masterConfigJson.GetProperty("Sites").EnumerateArray().Select(site => new Site
                     {
                         Name = site.GetProperty("Name").GetString(),
                         ControlChannel = site.GetProperty("ControlChannel").GetString(),
@@ -261,9 +261,9 @@ namespace WhackerLinkServer.RestApi.Controllers
                     }).ToList(),
                     RidAcl = new Config.RidAclConfiguration
                     {
-                        Enabled = ridAclEnabledProp.GetBoolean(),
-                        Path = ridAclPathProp.GetString(),
-                        ReloadInterval = ridAclReloadIntervalProp.GetInt32()
+                        Enabled = masterConfigJson.GetProperty("RidAcl").GetProperty("Enabled").GetBoolean(),
+                        Path = masterConfigJson.GetProperty("RidAcl").GetProperty("Path").GetString(),
+                        ReloadInterval = masterConfigJson.GetProperty("RidAcl").GetProperty("ReloadInterval").GetInt32()
                     }
                 };
 
