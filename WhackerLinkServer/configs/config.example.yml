@@ -7,10 +7,12 @@ system:
         # Enable the REST server
         enabled: false
         # Address to bind REST to
-        # ***WANRING***: It is HIGHLY recommended to leave this on localhost as there is NO authentication. 
+        # ***WANRING***: It is HIGHLY recommended to leave this on localhost even though there is authentication. 
         address: localhost
         # Port to bind REST to
         port: 3002
+        # Password of this REST server
+        password: "PASSWORD"
 
 # List of WhackerLink masters (servers)
 masters:

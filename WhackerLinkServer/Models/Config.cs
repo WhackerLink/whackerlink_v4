@@ -93,6 +93,7 @@ namespace WhackerLinkServer.Models
             public bool Enabled { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public string Password { get; set; } = "PASSWORD";
         }
 
         /// <summary>

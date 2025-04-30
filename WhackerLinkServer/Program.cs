@@ -88,7 +88,7 @@ namespace WhackerLinkServer
                 if (config.System.Rest.Enabled)
                 {
                     logger.Information("Starting REST server");
-                    restServer = new RestApiServer(masters, config.System.Rest.Address, config.System.Rest.Port);
+                    restServer = new RestApiServer(masters, config.System.Rest.Address, config.System.Rest.Port, config.System.Rest.Password);
                     restServer.Start();
                 }
 

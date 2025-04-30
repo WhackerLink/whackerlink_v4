@@ -22,11 +22,13 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using WhackerLinkLib.Interfaces;
+using WhackerLinkLib.Utils;
 
 namespace WhackerLinkServer
 {
@@ -86,6 +88,9 @@ namespace WhackerLinkServer
         private readonly WebApplication _app;
         private readonly IMasterServiceRegistry _registry;
         private readonly string _url;
+        private readonly string _password;
+
+        private static string WL_REST_AUTH_HEADER = "WLINK-AUTH-HDR";
 
         /// <summary>
         /// Creates an instance of <see cref="RestApiServer"/>
@@ -96,10 +101,12 @@ namespace WhackerLinkServer
         public RestApiServer(
             IEnumerable<IMasterService> masters,
             string address,
-            int port)
+            int port,
+            string password)
         {
             _registry = new MasterServiceRegistry(masters);
             _url = $"http://{address}:{port}";
+            _password = Util.ComputeSha256(password);
 
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls(_url);
@@ -113,6 +120,26 @@ namespace WhackerLinkServer
             builder.Services.AddControllers();
 
             _app = builder.Build();
+
+            _app.Use(async (context, next) =>
+            {
+                if (!context.Request.Headers.TryGetValue(WL_REST_AUTH_HEADER, out var receivedHash))
+                {
+                    context.Response.StatusCode = 401;
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+
+                if (!string.Equals(receivedHash, _password, StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = 401;
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+
+                await next.Invoke();
+            });
+
             _app.MapControllers();
         }
 
