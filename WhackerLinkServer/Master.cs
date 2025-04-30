@@ -392,7 +392,6 @@ namespace WhackerLinkServer
 
                 server = null;
                 reporter = null;
-                authKeyManager = null;
 
                 this.aclManager = new RidAclManager(config.RidAcl.Enabled);
                 this.affiliationsManager = new AffiliationsManager();
