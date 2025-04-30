@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2025 Firav (firavdev@gmail.com)
  *
  * This file is part of the WhackerLinkServer project.
  *
@@ -47,6 +48,7 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private AuthKeyFileManager authKeyManager;
         private ILogger logger;
+        private IntervalRunner siteBcastInterval;
 
         private readonly TimeSpan inactivityTimeout = TimeSpan.FromSeconds(3);
         private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
@@ -254,7 +256,7 @@ namespace WhackerLinkServer
                 {
                     if (!config.DisableSiteBcast)
                     {
-                        IntervalRunner siteBcastInterval = new IntervalRunner();
+                        siteBcastInterval = new IntervalRunner();
                         SITE_BCAST siteBcast = new SITE_BCAST();
 
                         siteBcast.Sites = config.Sites;
@@ -380,9 +382,20 @@ namespace WhackerLinkServer
 
                 server?.Stop();
 
+                if (siteBcastInterval != null)
+                {
+                    siteBcastInterval.Stop();
+                    siteBcastInterval = null;
+                }
+
+                if (authKeyManager != null)
+                {
+                    authKeyManager.StopReloading();
+                    authKeyManager = null;
+                }
+
                 server = null;
                 reporter = null;
-                authKeyManager = null;
 
                 this.aclManager = new RidAclManager(config.RidAcl.Enabled);
                 this.affiliationsManager = new AffiliationsManager();

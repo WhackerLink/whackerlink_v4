@@ -68,6 +68,14 @@ namespace WhackerLinkServer
         /// <returns></returns>
         public bool TryGet(string name, out IMasterService master)
             => _map.TryGetValue(name, out master);
+        /// <summary>
+        /// Adds a new master to the registry.
+        /// </summary>
+        /// <param name="master">The master to add.</param>
+        public void AddMaster(IMasterService master)
+        {
+            _map[master.Name] = master;
+        }
     }
 
     /// <summary>
@@ -106,6 +114,46 @@ namespace WhackerLinkServer
 
             _app = builder.Build();
             _app.MapControllers();
+        }
+
+        /// <summary>
+        /// Adds additional masters to the MasterServiceRegistry.
+        /// </summary>
+        /// <param name="master">The additional masters to add.</param>
+        public void AddMaster(IMasterService master)
+        {
+            var registry = _registry as MasterServiceRegistry;
+            if (registry != null)
+            {
+                if (!registry.TryGet(master.Name, out _))
+                {
+                    // Add the new master to the registry
+                    registry.AddMaster(master);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes a master from the MasterServiceRegistry.
+        /// </summary>
+        /// <param name="masterName">The name of the master to remove.</param>
+        public void RemoveMaster(string masterName)
+        {
+            var registry = _registry as MasterServiceRegistry;
+            if (registry != null)
+            {
+                if (registry.TryGet(masterName, out _))
+                {
+                    // Use a public method to remove the master instead of directly accessing the private field
+                    var mapField = typeof(MasterServiceRegistry)
+                        .GetField("_map", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (mapField != null)
+                    {
+                        var map = mapField.GetValue(registry) as Dictionary<string, IMasterService>;
+                        map.Remove(masterName);
+                    }
+                }
+            }
         }
 
         /// <summary>
