@@ -168,28 +168,233 @@ namespace WhackerLinkServer
         /// Adds a new Master instance and starts it.
         /// </summary>
         /// <param name="masterConfig">The configuration for the new Master</param>
-        public static void AddNewMaster(Config.MasterConfig masterConfig)
+        /// <returns>True if the operation succeeded, otherwise false</returns>
+        public static bool AddNewMaster(Config.MasterConfig masterConfig)
         {
             if (masterConfig == null)
             {
                 logger.Error("MasterConfig is null.");
-                return;
+                return false;
             }
 
-            Master master = new Master(masterConfig);
-            var masterTask = Task.Run(() => master.Start(cancellationTokenSource.Token));
-            masterTasks.Add(masterTask);
             try
             {
+                IMasterService master = new Master(masterConfig);
+                masters.Add(master);
+                masterTasks.Add(Task.Run(() => master.Start(cancellationTokenSource.Token)));
+
                 // Add the new master to the config and save it
                 config.Masters.Add(masterConfig);
                 SaveConfig(configPath, config);
+                restServer?.AddMaster(master);
+
+
+                return true;
             }
             catch (Exception ex)
             {
                 logger.Error("Error in AddNewMaster: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Adds a new Master instance and starts it.
+        /// </summary>
+        /// <param name="masterConfig">The configuration for the updated Master</param>
+        /// <param name="masterName">The name of the Master to update</param>
+        /// <returns>True if the operation succeeded, otherwise false</returns>
+        public static bool UpdateMaster(string masterName, Config.MasterConfig masterConfig)
+        {
+            if (masterConfig == null)
+            {
+                logger.Error("MasterConfig is null.");
+                return false;
             }
 
+            if (string.IsNullOrEmpty(masterName))
+            {
+                logger.Error("Master name is null or empty.");
+                return false;
+            }
+
+            var master = masters.FirstOrDefault(m => m.Name == masterName);
+            if (master == null)
+            {
+                logger.Warning($"No Master found with the name: {masterName}");
+                return false;
+            }
+
+            try
+            {
+                // Remove the master from the list
+                master.Stop();
+                masters.Remove(master);
+                restServer?.RemoveMaster(masterName);
+
+                // Remove the task associated with the master
+                var masterTask = masterTasks.FirstOrDefault(t => t.IsCompleted || t.IsFaulted || t.IsCanceled);
+                if (masterTask != null)
+                {
+                    masterTasks.Remove(masterTask);
+                }
+
+                master = new Master(masterConfig);
+                masters.Add(master);
+                masterTasks.Add(Task.Run(() => master.Start(cancellationTokenSource.Token)));
+
+                // Add the new master to the config and save it
+                var oldMasterConfig = config.Masters.FirstOrDefault(m => m.Name == masterName);
+                config.Masters.Remove(oldMasterConfig);
+                config.Masters.Add(masterConfig);
+                SaveConfig(configPath, config);
+
+                logger.Information($"Master {masterName} has been updated.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error in AddNewMaster: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Stops a Master instance by its name and removes it from the active list.
+        /// </summary>
+        /// <param name="masterName">The name of the Master to stop</param>
+        public static bool StopMaster(string masterName)
+        {
+            if (string.IsNullOrEmpty(masterName))
+            {
+                logger.Error("Master name is null or empty.");
+                return false;
+            }
+
+            var master = masters.FirstOrDefault(m => m.Name == masterName);
+            if (master == null)
+            {
+                logger.Warning($"No Master found with the name: {masterName}");
+                return false;
+            }
+
+            try
+            {
+                // Remove the master from the list
+                master.Stop();
+                masters.Remove(master);
+
+                // Remove the task associated with the master
+                var masterTask = masterTasks.FirstOrDefault(t => t.IsCompleted || t.IsFaulted || t.IsCanceled);
+                if (masterTask != null)
+                {
+                    masterTasks.Remove(masterTask);
+                }
+
+                logger.Information($"Master {masterName} has been stopped.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error stopping Master: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Starts a Master instance by its name and adds it to the active list.
+        /// </summary>
+        /// <param name="masterName">The name of the Master to start</param>
+        public static bool StartMaster(string masterName)
+        {
+            if (string.IsNullOrEmpty(masterName))
+            {
+                logger.Error("Master name is null or empty.");
+                return false;
+            }
+
+            // Check if the master is already running
+            IMasterService master = masters.FirstOrDefault(m => m.Name == masterName);
+            if (master != null)
+            {
+                logger.Warning($"Master with the name {masterName} is already running.");
+                return false;
+            }
+
+            // Search for the master configuration in the config file
+            var masterConfig = config.Masters.FirstOrDefault(m => m.Name == masterName);
+            if (masterConfig == null)
+            {
+                logger.Warning($"No Master configuration found with the name: {masterName}");
+                return false;
+            }
+
+            try
+            {
+                // Create and start the master instance
+                master = new Master(masterConfig);
+                masters.Add(master);
+                masterTasks.Add(Task.Run(() => master.Start(cancellationTokenSource.Token)));
+
+                logger.Information($"Master {masterName} has been started.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error starting Master: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Removes a Master instance by its name and removes it from the active list, and config.
+        /// </summary>
+        /// <param name="masterName">The name of the Master to stop</param>
+        public static bool RemoveMaster(string masterName)
+        {
+            if (string.IsNullOrEmpty(masterName))
+            {
+                logger.Error("Master name is null or empty.");
+                return false;
+            }
+
+            var master = masters.FirstOrDefault(m => m.Name == masterName);
+            if (master == null)
+            {
+                logger.Warning($"No Master found with the name: {masterName}");
+                return false;
+            }
+
+            try
+            {
+                // Remove the master from the list
+                master.Stop();
+                masters.Remove(master);
+                restServer?.RemoveMaster(masterName);
+
+                // Remove the task associated with the master
+                var masterTask = masterTasks.FirstOrDefault(t => t.IsCompleted || t.IsFaulted || t.IsCanceled);
+                if (masterTask != null)
+                {
+                    masterTasks.Remove(masterTask);
+                }
+
+                // Update the config and save it
+                var masterConfig = config.Masters.FirstOrDefault(m => m.Name == masterName);
+                if (masterConfig != null)
+                {
+                    config.Masters.Remove(masterConfig);
+                    SaveConfig(configPath, config);
+                }
+
+                logger.Information($"Master {masterName} has been stopped and removed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Error stopping Master: {Message}", ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
