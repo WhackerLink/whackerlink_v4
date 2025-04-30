@@ -1020,7 +1020,7 @@ namespace WhackerLinkServer
                     VolumeWaveProvider16 gainControl = new VolumeWaveProvider16(buffer);
                     float gain = masterConfig.PreEncodeGain;
                     if (ExternalVocoderEnabled)
-                        gain += 3.0f;
+                        gain += 1.5f;
                     gainControl.Volume = gain;
                     gainControl.Read(chunk, 0, chunk.Length);
 
