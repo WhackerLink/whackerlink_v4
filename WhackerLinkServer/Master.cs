@@ -47,6 +47,7 @@ namespace WhackerLinkServer
         private SiteManager siteManager;
         private AuthKeyFileManager authKeyManager;
         private ILogger logger;
+        private IntervalRunner siteBcastInterval;
 
 #if !NOVOCODE && !AMBEVOCODE
         private VocoderManager vocoderManager;
