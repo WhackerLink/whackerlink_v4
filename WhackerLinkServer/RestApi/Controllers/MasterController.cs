@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com, Firav (firavv@gmail.com)
+ * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2025 Firav (firavdev@gmail.com)
  *
  * This file is part of the WhackerLinkServer project.
  *
