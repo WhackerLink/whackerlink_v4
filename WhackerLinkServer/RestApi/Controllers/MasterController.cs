@@ -135,7 +135,7 @@ namespace WhackerLinkServer.RestApi.Controllers
                     return BadRequest(new { error = "The 'PreEncodeGain' field is required and must be a valid float." });
                 }
 
-                if (!masterConfigJson.TryGetProperty("Reporter", out var reporterProp) || !reporterProp.TryGetProperty("Enabled", out var reporterEnabledProp) || reporterEnabledProp.ValueKind != JsonValueKind.True && reporterEnabledProp.ValueKind != JsonValueKind.False   )
+                if (!masterConfigJson.TryGetProperty("Reporter", out var reporterProp) || !reporterProp.TryGetProperty("Enabled", out var reporterEnabledProp) || reporterEnabledProp.ValueKind != JsonValueKind.True && reporterEnabledProp.ValueKind != JsonValueKind.False)
                 {
                     return BadRequest(new { error = "The 'Reporter.Enabled' field is required and must be a boolean." });
                 }
