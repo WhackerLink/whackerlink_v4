@@ -788,10 +788,13 @@ namespace WhackerLink2Dvm
             uint netId = FneUtils.Bytes3ToUInt32(e.Data, 16);
             byte control = e.Data[14U];
 
+            //Console.WriteLine(sysId.ToString("X") + " " + netId.ToString("X"));
+
             byte len = e.Data[23];
             byte[] data = new byte[len];
             for (int i = 24; i < len; i++)
                 data[i - 24] = e.Data[i];
+
             if (e.CallType == CallType.GROUP)
             {
                 if (e.SrcId == 0)
@@ -854,15 +857,6 @@ namespace WhackerLink2Dvm
 
                 if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (currentCall.Status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR))
                 {
-                    GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
-                    {
-                        SrcId = e.SrcId.ToString(),
-                        DstId = e.DstId.ToString(),
-                        Site = WhackerLink2Dvm.config.WhackerLink.Site
-                    };
-
-                    webSocketHandler.SendMessage(affRmv.GetData());
-
                     callManager.EndCall(e.SrcId);
 
                     if (currentCall.VoiceChannel != null && currentCall.VoiceChannel.Frequency != null)
@@ -876,7 +870,17 @@ namespace WhackerLink2Dvm
                     } else
                     {
                         Console.WriteLine("Not sending whackerlink call release because it has no channel");
+                        return;
                     }
+
+                    GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
+                    {
+                        SrcId = e.SrcId.ToString(),
+                        DstId = e.DstId.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affRmv.GetData());
 
                     currentCall.ignoreCall = false;
                     currentCall.callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
@@ -906,22 +910,6 @@ namespace WhackerLink2Dvm
 
                 if (e.DUID == P25DUID.LDU2 && !currentCall.ignoreCall)
                     currentCall.callAlgoId = data[88];
-
-                if (currentCall.ignoreCall)
-                    return;
-
-                if (currentCall.callAlgoId != P25Defines.P25_ALGO_UNENCRYPT)
-                {
-                    if (currentCall.Status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR)
-                    {
-                        TimeSpan callDuration = pktTime - currentCall.Status[P25_FIXED_SLOT].RxStart;
-                        WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *CALL END (T)    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} DUR {callDuration} [STREAM ID {e.StreamId}]");
-                        callManager.EndCall(e.SrcId);
-                    }
-
-                    currentCall.ignoreCall = true;
-                    return;
-                }
 
                 int count = 0;
                 switch (e.DUID)

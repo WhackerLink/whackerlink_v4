@@ -51,13 +51,14 @@ namespace WhackerLinkServer
         private readonly TimeSpan inactivityTimeout = TimeSpan.FromSeconds(3);
         private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
 
-#if !NOVOCODE && !AMBEVOCODE
+#if !NOVOCODE
         private VocoderManager vocoderManager;
-#endif
-#if AMBEVOCODE && !NOVOCODE
+
         private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
             new Dictionary<string, (AmbeVocoderManager, AmbeVocoderManager)>();
 #endif
+
+        bool ExternalVocoderEnabled = false;
 
         /// <summary>
         /// Creates an instance of the Master class
@@ -74,17 +75,7 @@ namespace WhackerLinkServer
 
             voiceChannelManager.VoiceChannelUpdated += VoiceChannelUpdate;
 
-#if !NOVOCODE && !AMBEVOCODE
-            if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
-            {
-                logger.Information($"{config.VocoderMode} Vocoder mode enabled");
-            }
-            else
-            {
-                logger.Information("Vocoding disabled");
-            }
-#endif
-#if AMBEVOCODE
+#if !NOVOCODE
 #pragma warning disable SYSLIB0012 // Type or member is obsolete
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
 #pragma warning restore SYSLIB0012 // Type or member is obsolete
@@ -94,10 +85,18 @@ namespace WhackerLinkServer
             if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
             {
                 logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder");
+                ExternalVocoderEnabled = true;
             }
             else
             {
-                logger.Error("ERROR: AMBE.DLL DOES NOT EXIST!");
+                if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
+                {
+                    logger.Information($"{config.VocoderMode} Vocoder mode enabled");
+                }
+                else
+                {
+                    logger.Information("Vocoding disabled");
+                }
             }
 #endif
         }
@@ -237,12 +236,11 @@ namespace WhackerLinkServer
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
                     inactivityTimeout,
                     inactivityTimers,
-#if !NOVOCODE && !AMBEVOCODE
+#if !NOVOCODE
                         vocoderManager,
-#endif
-#if AMBEVOCODE && !NOVOCODE
                         ambeVocoderInstances,
 #endif
+                        ExternalVocoderEnabled,
                         masterInstance,
                         authKeyManager,
                     logger));
