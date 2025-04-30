@@ -176,6 +176,9 @@ namespace WhackerLinkServer
                     case (int)PacketType.ACK_RSP:
                         HandleAckResponse(data["data"].ToObject<ACK_RSP>());
                         break;
+                    case (int)PacketType.RAD_PROG_FUNC:
+                        HandleAckResponse(data["data"].ToObject<RAD_PROG_FUNC>());
+                        break;
                     case (int)PacketType.AUDIO_DATA:
                         Task.Run(() => BroadcastAudio(data["data"].ToObject<AudioPacket>()));
                         break;
@@ -429,6 +432,17 @@ namespace WhackerLinkServer
                     logger.Warning($"Unhandled SPEC_FUNC function: {request.Function}");
                     break;
             }
+        }
+
+        /// <summary>
+        /// Handle Radio Program Function
+        /// </summary>
+        /// <param name="response"></param>
+        private void HandleAckResponse(RAD_PROG_FUNC response)
+        {
+            // for now we will only log and repeat
+            logger.Information(response.ToString());
+            master.BroadcastPacket(response.GetStrData());
         }
 
         /// <summary>
