@@ -252,7 +252,7 @@ namespace WhackerLinkServer
                 {
                     if (!config.DisableSiteBcast)
                     {
-                        IntervalRunner siteBcastInterval = new IntervalRunner();
+                        siteBcastInterval = new IntervalRunner();
                         SITE_BCAST siteBcast = new SITE_BCAST();
 
                         siteBcast.Sites = config.Sites;
@@ -377,6 +377,18 @@ namespace WhackerLinkServer
                 logger.Information("Stopping Master {Name}", config.Name);
 
                 server?.Stop();
+
+                if (siteBcastInterval != null)
+                {
+                    siteBcastInterval.Stop();
+                    siteBcastInterval = null;
+                }
+
+                if (authKeyManager != null)
+                {
+                    authKeyManager.StopReloading();
+                    authKeyManager = null;
+                }
 
                 server = null;
                 reporter = null;
