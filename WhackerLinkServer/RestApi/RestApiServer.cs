@@ -28,6 +28,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using WhackerLinkLib.Interfaces;
+using WhackerLinkLib.Models;
 using WhackerLinkLib.Utils;
 
 namespace WhackerLinkServer
@@ -90,8 +91,6 @@ namespace WhackerLinkServer
         private readonly string _url;
         private readonly string _password;
 
-        private static string WL_REST_AUTH_HEADER = "WLINK-AUTH-HDR";
-
         /// <summary>
         /// Creates an instance of <see cref="RestApiServer"/>
         /// </summary>
@@ -123,7 +122,7 @@ namespace WhackerLinkServer
 
             _app.Use(async (context, next) =>
             {
-                if (!context.Request.Headers.TryGetValue(WL_REST_AUTH_HEADER, out var receivedHash))
+                if (!context.Request.Headers.TryGetValue(Defines.WL_REST_AUTH_HEADER, out var receivedHash))
                 {
                     context.Response.StatusCode = 401;
                     await context.Response.WriteAsync("Unauthorized");
