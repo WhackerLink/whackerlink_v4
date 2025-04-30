@@ -228,7 +228,7 @@ namespace WhackerLinkServer
                 else
                     authKeyManager = new AuthKeyFileManager(string.Empty, config.Name, false, logger, 0);
 
-#if !NOVOCODE && !AMBEVOCODE
+#if !NOVOCODE
                 this.vocoderManager = new VocoderManager(logger);
 #endif
 
@@ -353,14 +353,20 @@ namespace WhackerLinkServer
                 foreach (var path in server.WebSocketServices.Paths)
                 {
                     var serviceHost = server.WebSocketServices[path];
-                    foreach (var clientId in clientIds)
+                    foreach (var sessionId in serviceHost.Sessions.IDs)
                     {
-                        if (skipClientId != null && clientId == skipClientId)
+                        if (skipClientId != null && sessionId == skipClientId)
                             continue;
 
-                        if (serviceHost.Sessions.TryGetSession(clientId, out var session))
+                        if (serviceHost.Sessions.TryGetSession(sessionId, out var session))
                         {
-                            serviceHost.Sessions.SendTo(message, clientId);
+                            if (session is ClientHandler handler)
+                            {
+                                if (clientIds.Contains(sessionId) || handler.ConventionalPeer)
+                                {
+                                    serviceHost.Sessions.SendTo(message, sessionId);
+                                }
+                            }
                         }
                     }
                 }

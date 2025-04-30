@@ -75,6 +75,8 @@ namespace WhackerLinkServer
         private bool ExternalVocoderEnabled = false;
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
 
+        public bool ConventionalPeer { get; private set; }
+
 #if !NOVOCODE
         private readonly Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances;
 #endif
@@ -131,6 +133,13 @@ namespace WhackerLinkServer
         {
             try
             {
+                if (e.Data == "CONVENTIONAL_PEER_ENABLE")
+                {
+                    logger.Debug("CONV PEER REGISTRATION");
+                    ConventionalPeer = true;
+                    return;
+                }
+
                 var data = JObject.Parse(e.Data);
                 var type = Convert.ToInt32(data["type"]);
 
@@ -366,8 +375,9 @@ namespace WhackerLinkServer
         /// <param name="request"></param>
         private void HandleReleaseDemand(REL_DEMND request)
         {
+            // for now, we just log and repeat
             logger.Information(request.ToString());
-            // TODO: Actually handle?
+            master.BroadcastPacket(request.GetStrData());
         }
 
         /// <summary>
