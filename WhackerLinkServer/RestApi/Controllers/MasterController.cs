@@ -267,7 +267,13 @@ namespace WhackerLinkServer.RestApi.Controllers
                     }
                 };
 
-                Program.AddNewMaster(masterConfig);
+                // Reflect success or failure in the status code
+                bool success = Program.AddNewMaster(masterConfig);
+                if (!success)
+                {
+                    return StatusCode(500, new { error = "Failed to add the master configuration." });
+                }
+
                 return Ok(new { message = "Master added successfully." });
             }
             catch (Exception ex)
