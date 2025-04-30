@@ -61,6 +61,7 @@ namespace WhackerLink2Dvm
             //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
 #endif
 
+#if !NOVODODE && WINDOWS
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
@@ -71,6 +72,7 @@ namespace WhackerLink2Dvm
                 ExtFullRateVocoder = new AmbeVocoder();
                 ExtHalfRateVocoder = new AmbeVocoder(false);
             }
+#endif
         }
     }
 

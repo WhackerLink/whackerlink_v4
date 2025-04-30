@@ -83,6 +83,27 @@ namespace WhackerLinkServer.RestApi.Modules
             return Ok(new { success = true });
         }
 
+        [HttpPost("page")]
+        public IActionResult Page(
+            [FromRoute] string masterName,
+            [FromBody] InhibitRequest req)
+        {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            if (string.IsNullOrWhiteSpace(req?.DstId))
+                return BadRequest(new { error = "DstId is required" });
+
+            var packet = new CALL_ALRT
+            {
+                SrcId = Defines.FNE_LID.ToString(),
+                DstId = req.DstId
+            };
+            master.Logger.Information(packet.ToString());
+            master.BroadcastPacket(packet.GetStrData());
+            return Ok(new { success = true });
+        }
+
         [HttpPost("netfail")]
         public IActionResult NetFail(
             [FromRoute] string masterName,

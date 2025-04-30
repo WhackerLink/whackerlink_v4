@@ -131,16 +131,7 @@ namespace WhackerLink2Dvm
 
             WhackerLink2Dvm.logger.Information($"({SystemName}) Connecting to WLINK Master");
 
-            try
-            {
-                webSocketHandler = new Peer();
-                webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
-            } catch (Exception ex)
-            {
-                WhackerLink2Dvm.logger.Fatal($"({SystemName}) Connection to WLINK Master FAILED");
-                Console.WriteLine(ex);
-                return;
-            }
+            webSocketHandler = new Peer();
 
             webSocketHandler.OnAffiliationUpdate += WhackerLinkAffiliationUpdate;
             webSocketHandler.OnUnitDeRegistrationResponse += WhackerLinkUniteDeRegistration;
@@ -148,6 +139,37 @@ namespace WhackerLink2Dvm
             webSocketHandler.OnVoiceChannelResponse += WhackerLinkVoiceChannelResponse;
             webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
             webSocketHandler.OnCallAlert += WhackerLinkCallAlert;
+
+            webSocketHandler.OnSpecialFunction += (SPEC_FUNC response) =>
+            {
+                ushort extFuncType = (ushort)ExtendedFunction.INHIBIT;
+
+                switch (response.Function)
+                {
+                    case SpecFuncType.RID_INHIBIT:
+                        extFuncType = (ushort)ExtendedFunction.INHIBIT;
+                        break;
+                    case SpecFuncType.RID_UNINHIBIT:
+                        extFuncType = (ushort)ExtendedFunction.UNINHIBIT;
+                        break;
+                    default:
+                        return;
+                };
+
+                IOSP_EXT_FNCT extFunc = new IOSP_EXT_FNCT(extFuncType, P25Defines.WUID_FNE, uint.Parse(response.DstId));
+                RemoteCallData callData = new RemoteCallData
+                {
+                    SrcId = uint.Parse(response.SrcId),
+                    DstId = uint.Parse(response.DstId)
+                };
+
+                byte[] tsbk = new byte[P25Defines.P25_TSBK_LENGTH_BYTES];
+                extFunc.Encode(ref tsbk);
+
+                SendP25TSBK(callData, tsbk);
+
+                Log.Logger.Information($"WhackerLink SPEC FUNC; SrcId: {response.SrcId}, DstId: {response.DstId}, Function: {response.Function}");
+            };
 
             webSocketHandler.OnAckResponse += (ACK_RSP response) =>
             {
@@ -163,7 +185,9 @@ namespace WhackerLink2Dvm
 
                 SendP25TSBK(callData, tsbk);
 
-                Log.Logger.Information($"({SystemName}) P25D: TSBK *ACK Response   * SRC_ID {response.DstId} DST_ID {response.SrcId} SERVICE {ackResponse.Service}");
+                Log.Logger.Information($"WhackerLink ACK RSP; SrcId: {response.SrcId}, DstId: {response.DstId}, Service: {response.Service}");
+
+                //Log.Logger.Information($"({SystemName}) P25D: TSBK *ACK Response   * SRC_ID {response.DstId} DST_ID {response.SrcId} SERVICE {ackResponse.Service}");
             };
 
             webSocketHandler.OnOpen += () =>
@@ -180,6 +204,17 @@ namespace WhackerLink2Dvm
             {
                 WhackerLink2Dvm.logger.Information($"({SystemName}) Reconnecting to WLINK Master");
             };
+
+            try
+            {
+                webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
+            }
+            catch (Exception ex)
+            {
+                WhackerLink2Dvm.logger.Fatal($"({SystemName}) Connection to WLINK Master FAILED");
+                Console.WriteLine(ex);
+                return;
+            }
 
             callManager = new CallManager(WhackerLink2Dvm.config.AllowedGroups);
 
@@ -228,6 +263,16 @@ namespace WhackerLink2Dvm
         internal void SendWhackerLinkCallAlert(uint dstId, uint srcId)
         {
             webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT_REQ, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+        }
+
+        internal void SendWhackerLinkAckResponse(uint dstId, uint srcId)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.ACK_RSP, data = new ACK_RSP { SrcId = srcId.ToString(), DstId = dstId.ToString(), Service = PacketType.CALL_ALRT } });
+        }
+
+        internal void SendWhackerLinkExtendedFunction(uint dstId, uint srcId, SpecFuncType specType)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.SPEC_FUNC, data = new SPEC_FUNC { SrcId = srcId.ToString(), DstId = dstId.ToString(), Function = specType } });
         }
 
         internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
