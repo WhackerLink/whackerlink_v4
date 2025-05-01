@@ -77,7 +77,7 @@ namespace WhackerLinkServer
 
         public bool ConventionalPeer { get; private set; }
 
-#if !NOVOCODE
+#if !NOVOCODE && WINDOWS
         private readonly Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances;
 #endif
 
@@ -98,7 +98,9 @@ namespace WhackerLinkServer
             Dictionary<string, Timer> inactivityTimers,
 #if !NOVOCODE
             VocoderManager vocoderManager,
+#if WINDOWS
             Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
+#endif
 #endif
             bool ExternalVocoderEnabled,
             IMasterService master,
@@ -118,7 +120,7 @@ namespace WhackerLinkServer
             this.inactivityTimeout = inactivityTimeout;
             this.inactivityTimers = inactivityTimers;
 
-#if !NOVOCODE
+#if !NOVOCODE && WINDOWS
             this.vocoderManager = vocoderManager;
             this.ambeVocoderInstances = ambeVocoderInstances;
 #endif
@@ -730,7 +732,7 @@ namespace WhackerLinkServer
                     logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
                     master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
-#if !NOVOCODE
+#if !NOVOCODE && WINDOWS
                     if (ExternalVocoderEnabled)
                     {
                         if (ambeVocoderInstances.ContainsKey(request.DstId))
@@ -1010,13 +1012,16 @@ namespace WhackerLinkServer
                 MBEDecoder decoder = null;
                 MBEEncoder encoder = null;
 
+#if WINDOWS
                 AmbeVocoderManager fullRateVocoder = null;
                 AmbeVocoderManager halfRateVocoder = null;
+#endif
 
                 if (!ExternalVocoderEnabled)
                     (decoder, encoder) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
                 else
                 {
+#if WINDOWS
                     if (!ambeVocoderInstances.ContainsKey(dstId))
                     {
                         ambeVocoderInstances[dstId] = CreateExternalVocoderInstance();
@@ -1024,6 +1029,7 @@ namespace WhackerLinkServer
                     }
 
                     (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
+#endif
                 }
 #endif
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
@@ -1112,6 +1118,7 @@ namespace WhackerLinkServer
                                 encoder.encode(samples, imbe);
                             else
                             {
+#if WINDOWS
                                 if (masterConfig.VocoderMode == VocoderModes.IMBE)
                                 {
                                     fullRateVocoder.Encode(samples, out imbe);
@@ -1120,6 +1127,7 @@ namespace WhackerLinkServer
                                 {
                                     halfRateVocoder.Encode(samples, out imbe);
                                 }
+#endif
                             }
 
                         } catch(Exception ex)
@@ -1147,6 +1155,7 @@ namespace WhackerLinkServer
                         }
                         else
                         {
+#if WINDOWS
                             if (masterConfig.VocoderMode == VocoderModes.IMBE)
                             {
                                 int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
@@ -1155,6 +1164,7 @@ namespace WhackerLinkServer
                             {
                                 int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
                             }
+#endif
                         }
 
                     }
@@ -1241,7 +1251,7 @@ namespace WhackerLinkServer
             return true; 
         }
 
-#if !NOVOCODE
+#if !NOVOCODE && WINDOWS
         private (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate) CreateExternalVocoderInstance()
         {
             return (new AmbeVocoderManager(), new AmbeVocoderManager(false));

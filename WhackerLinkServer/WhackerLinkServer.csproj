@@ -11,6 +11,10 @@
 	  <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
+	<PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+		<DefineConstants>WINDOWS;$(DefineConstants)</DefineConstants>
+	</PropertyGroup>
+
 	<PropertyGroup>
 		<GitInfoEnabled>true</GitInfoEnabled>
 	</PropertyGroup>

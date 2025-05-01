@@ -55,9 +55,10 @@ namespace WhackerLinkServer
 
 #if !NOVOCODE
         private VocoderManager vocoderManager;
-
+#if WINDOWS
         private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
             new Dictionary<string, (AmbeVocoderManager, AmbeVocoderManager)>();
+#endif
 #endif
 
         bool ExternalVocoderEnabled = false;
@@ -91,6 +92,7 @@ namespace WhackerLinkServer
             }
             else
             {
+#if WINDOWS
                 if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
                 {
                     logger.Information($"{config.VocoderMode} Vocoder mode enabled");
@@ -99,6 +101,7 @@ namespace WhackerLinkServer
                 {
                     logger.Information("Vocoding disabled");
                 }
+#endif
             }
 #endif
         }
@@ -240,7 +243,9 @@ namespace WhackerLinkServer
                     inactivityTimers,
 #if !NOVOCODE
                         vocoderManager,
+#if WINDOWS
                         ambeVocoderInstances,
+#endif
 #endif
                         ExternalVocoderEnabled,
                         masterInstance,
