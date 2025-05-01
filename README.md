@@ -6,6 +6,7 @@
 
 ### Quick Start Guide
 **WILL UPDATE SOON**
+
 If you encounter issues, seek assistance in the Discord community or refer to the manual compilation steps below.
 
 ---
@@ -17,6 +18,7 @@ If you encounter issues, seek assistance in the Discord community or refer to th
 
 ### Installing Build Tools
 **OUT OF DATE WILL UPDATE SOON**
+
 1. Download Visual Studio Build Tools from [here](https://aka.ms/vs/17/release/vs_BuildTools.exe).
 2. Execute `vs_BuildTools.exe` to start the setup.
 3. In the **Workloads** section, select:
