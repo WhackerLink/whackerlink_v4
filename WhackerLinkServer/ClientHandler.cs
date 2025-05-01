@@ -714,10 +714,12 @@ namespace WhackerLinkServer
 #if !NOVOCODE
                 if (ExternalVocoderEnabled)
                 {
+#if WINDOWS
                     if (ambeVocoderInstances.ContainsKey(request.DstId))
                     {
                         ambeVocoderInstances.Remove(request.DstId);
                     }
+#endif
                 }
                 else
                 {
