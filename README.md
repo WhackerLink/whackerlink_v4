@@ -5,32 +5,8 @@
 ## Windows Quick Setup
 
 ### Quick Start Guide
-1. **Install Dependencies**:
-   - [.NET 8.0 Runtime](https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x64&rid=win-x64&os=win10&apphost_version=8.0.11)
-   - [ASP.NET Core Framework](https://aka.ms/dotnet-core-applaunch?framework=Microsoft.AspNetCore.App&framework_version=8.0.0&arch=x64&rid=win-x64&os=win10)
-2. **Download the Server**:
-   - Obtain the latest **WhackerLinkServer** from the [Releases](https://github.com/WhackerLink/whackerlink_v4/releases) tab.
-   - Save it to a convenient location (e.g., `Downloads` or `Desktop`).
-3. **Prepare to Run the Server**:
-   - Open Command Prompt:
-     - Press `Win + R`, type `cmd`, and press Enter.
-   - Navigate to the server directory by running one of these commands:
-     - For `Downloads` replace `%USERPROFILE%` with Your PC's User Profile:
-       ```sh
-       cd %USERPROFILE%\Downloads\WhackerLinkServer
-       ```
-     - For `Desktop` replace `%USERPROFILE%` with Your PC's User Profile:
-       ```sh
-       cd %USERPROFILE%\Desktop\WhackerLinkServer
-       ```
-     - For other locations, replace `path\to\WhackerLinkServer` with the correct path:
-       ```sh
-       cd path\to\WhackerLinkServer
- 3. **Run the Server**:
-    - Execute the server with the default configuration by running this command:
-     ```sh
-     WhackerLinkServer.exe -c config.example.yml
-     ```
+**WILL UPDATE SOON**
+
 If you encounter issues, seek assistance in the Discord community or refer to the manual compilation steps below.
 
 ---
@@ -41,6 +17,8 @@ If you encounter issues, seek assistance in the Discord community or refer to th
 2. Run the downloaded installer. Follow the prompts, leaving all options at their default settings.
 
 ### Installing Build Tools
+**OUT OF DATE WILL UPDATE SOON**
+
 1. Download Visual Studio Build Tools from [here](https://aka.ms/vs/17/release/vs_BuildTools.exe).
 2. Execute `vs_BuildTools.exe` to start the setup.
 3. In the **Workloads** section, select:
