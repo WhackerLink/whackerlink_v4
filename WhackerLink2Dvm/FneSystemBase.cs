@@ -193,6 +193,18 @@ namespace WhackerLink2Dvm
             webSocketHandler.OnOpen += () =>
             {
                 WhackerLink2Dvm.logger.Information($"({SystemName}) Connection to WLINK Master complete");
+
+                foreach (uint group in WhackerLink2Dvm.config.AllowedGroups)
+                {
+                    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                    {
+                        SrcId = "1",
+                        DstId = group.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affReq.GetData());
+                }
             };
 
             webSocketHandler.OnClose += () =>
@@ -217,17 +229,6 @@ namespace WhackerLink2Dvm
             }
 
             callManager = new CallManager(WhackerLink2Dvm.config.AllowedGroups);
-
-            foreach (uint group in WhackerLink2Dvm.config.AllowedGroups) {
-                GRP_AFF_REQ affReq = new GRP_AFF_REQ()
-                {
-                    SrcId = "1",
-                    DstId = group.ToString(),
-                    Site = WhackerLink2Dvm.config.WhackerLink.Site
-                };
-
-                webSocketHandler.SendMessage(affReq.GetData());
-            }
 
             // initialize slot statuses
             //this.status = new SlotStatus[3];

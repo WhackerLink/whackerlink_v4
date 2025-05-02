@@ -30,7 +30,7 @@ masters:
     # Auth Key file configuration
     auth:
         # Enable Auth Keys
-        enabled: true
+        enabled: false
         # Path to ACL File
         path: "auth_keys.yml"
         # Reload interval
