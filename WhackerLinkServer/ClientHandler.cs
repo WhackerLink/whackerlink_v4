@@ -937,6 +937,7 @@ namespace WhackerLinkServer
         private void BroadcastAudio(AudioPacket audioPacket)
         {
             bool affRestrict = masterConfig.AffilationRestricted;
+            bool srcAffRestrict = masterConfig.AffiliatedSourceRestricted;
             bool isFullAmbe = audioPacket.AudioMode == AudioMode.FULL_RATE_AMBE && audioPacket.Data.Length == 11;
             bool isHalfAmbe = audioPacket.AudioMode == AudioMode.HALF_RATE_AMBE && audioPacket.Data.Length == 7;
 
@@ -962,7 +963,7 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict)
+            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict && srcAffRestrict)
             {
                 logger.Warning("Ignoring call; source not affiliated to destination srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 return;
