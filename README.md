@@ -1,11 +1,19 @@
-# WhackerLink V4 Installation and Setup Guide
+.# WhackerLink V4 Installation and Setup Guide
 
 [![License](https://img.shields.io/badge/License-AGPLv3-blue?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
 
 ## Windows Quick Setup
 
-### Quick Start Guide
-**WILL UPDATE SOON**
+### Quick Start Guide for WhackerLink Server
+1. Download and install [.NET runtime](https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x86&rid=win-x86&os=win10&apphost_version=8.0.13)
+2. Download and install [ASP](https://aka.ms/dotnet-core-applaunch?framework=Microsoft.AspNetCore.App&framework_version=8.0.0&arch=x86&rid=win-x86&os=win10)
+3. Download and install [MS VC redistributable](https://aka.ms/vs/17/release/vc_redist.x86.exe)
+4. Navigate to the latest release [found here](https://github.com/WhackerLink/whackerlink_v4/releases)
+5. Unzip then press WIN+R, type `cmd` then click ok
+6. Run `cd %USERPROFILE%\Downloads\NAME OF DOWNLOADED AND UNZIPED FOLDER` (this assumes your download folder)
+7. Make your config file based on `configs\config.example.yml` and name it `config.yml`
+8. Test it out with `.\WhackerLinkServer -c configs\config.yml`
+
 
 If you encounter issues, seek assistance in the Discord community or refer to the manual compilation steps below.
 
