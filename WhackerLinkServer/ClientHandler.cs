@@ -1109,7 +1109,10 @@ namespace WhackerLinkServer
                         }
                     }
 
-                    bool isSilent = IsSilence(samples);
+                    bool isSilent = false;
+
+                    if (!ExternalVocoderEnabled)
+                        isSilent = IsSilence(samples);
 
                     if (tone == 0 && !isSilent)
                     {
@@ -1265,4 +1268,3 @@ namespace WhackerLinkServer
 #endif
     }
 }
-
