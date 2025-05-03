@@ -52,7 +52,7 @@ namespace WhackerLinkServer.Models
             public bool AffilationRestricted { get; set; } = true;
             public bool AffiliatedSourceRestricted { get; set; } = true;
             public bool NoSelfRepeat { get; set; } = true;
-            public bool EnableMbeTones { get; set; } = false;
+            public bool EnableMbeTones { get; set; } = true;
             public bool DisableSiteBcast { get; set; } = false;
             public bool DisableVchUpdates { get; set; } = false;
             public bool DisableLocationBroadcasts { get; set; } = false;
