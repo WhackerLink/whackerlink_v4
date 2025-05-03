@@ -120,9 +120,11 @@ namespace WhackerLinkServer
             this.inactivityTimeout = inactivityTimeout;
             this.inactivityTimers = inactivityTimers;
 
-#if !NOVOCODE && WINDOWS
+#if !NOVOCODE
             this.vocoderManager = vocoderManager;
+#if WINDOWS
             this.ambeVocoderInstances = ambeVocoderInstances;
+#endif
 #endif
             this.ExternalVocoderEnabled = ExternalVocoderEnabled;
         }
@@ -734,13 +736,15 @@ namespace WhackerLinkServer
                     logger.Warning("Removing channel grant for {DstId} due to the voice channel being null", request.DstId); // TODO: Not 100% if this is a proper fix, but it seems to work
                     master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
-#if !NOVOCODE && WINDOWS
+#if !NOVOCODE
                     if (ExternalVocoderEnabled)
                     {
+#if WINDOWS
                         if (ambeVocoderInstances.ContainsKey(request.DstId))
                         {
                             ambeVocoderInstances.Remove(request.DstId);
                         }
+#endif
                     } else
                     {
                         vocoderManager.RemoveVocoder(request.DstId);
