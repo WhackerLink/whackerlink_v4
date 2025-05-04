@@ -574,6 +574,14 @@ namespace WhackerLinkServer
                 return;
             }
 
+            if (request.DstId == null || request.SrcId == null)
+            {
+                logger.Warning($"Deny VCH request due to null src or dst ID: dst: {request.DstId} src: {request.SrcId}");
+                response.Status = (int)ResponseType.DENY;
+                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
+                return;
+            }
+
             var availableChannel = GetAvailableVoiceChannel(site);
 
             if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))

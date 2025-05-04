@@ -181,7 +181,7 @@ namespace WhackerLinkServer
                 }
 
                 reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled);
-
+    
                 foreach (var site in config.Sites)
                 {
                     siteManager.AddSite(site);
