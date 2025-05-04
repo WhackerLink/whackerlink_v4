@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <Configurations>Debug;Release;NoVocode;AmbeVocode</Configurations>
+    <Configurations>Debug;Release;NoVocode;AmbeVocode;Linux</Configurations>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="YamlDotNet" Version="15.3.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
   <ItemGroup>

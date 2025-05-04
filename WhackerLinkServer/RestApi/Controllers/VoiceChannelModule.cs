@@ -19,25 +19,30 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WhackerLinkLib.Models;
+using Microsoft.AspNetCore.Mvc;
+using WhackerLinkLib.Interfaces;
 
-#nullable disable
-
-namespace WhackerLinkServer.Models
+namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// Defines the RID ACL
-    /// </summary>
-    public class RidAcl
+    [ApiController]
+    [Route("api/{masterName}/voiceChannel")]
+    public class VoiceChannelController : ControllerBase
     {
-        public List<RidAclEntry> entries;
+        readonly IMasterServiceRegistry _registry;
+        public VoiceChannelController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
-        public RidAcl() { /* stub */ }
+        [HttpGet("query")]
+        public IActionResult Query([FromRoute] string masterName)
+        {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            return Ok(new
+            {
+                Sites = master.GetSites(),
+                ActiveVoiceChannels = master.GetVoiceChannels()
+            });
+        }
     }
 }
-

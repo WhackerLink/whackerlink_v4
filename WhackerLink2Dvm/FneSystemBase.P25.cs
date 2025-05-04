@@ -26,9 +26,6 @@ using fnecore.P25.LC.TSBK;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Models.IOSP;
-#if !NOVODODE
-using vocoder;
-#endif
 
 namespace WhackerLink2Dvm
 {
@@ -38,22 +35,6 @@ namespace WhackerLink2Dvm
     public abstract partial class FneSystemBase : fnecore.FneSystemBase
     {
         private const int IMBE_BUF_LEN = 11;
-
-#if !NOVODODE
-        private MBEDecoderManaged p25Decoder;
-        private MBEEncoderManaged p25Encoder;
-#endif
-
-        private byte[] netLDU1;
-        private byte[] netLDU2;
-        private uint p25SeqNo = 0;
-        private byte p25N = 0;
-
-        private bool ignoreCall = false;
-        private byte callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
-
-        private List<byte[]> accumulatedChunks = new List<byte[]>();
-
 
         /*
         ** Methods
@@ -92,9 +73,10 @@ namespace WhackerLink2Dvm
         /// <param name="grantDemand"></param>
         private void SendP25TDU(bool grantDemand = false, string srcId = "1", string dstId = "1")
         {
-
             uint src = Convert.ToUInt32(srcId);
             uint dst = Convert.ToUInt32(dstId);
+
+            CallInfo currentCall = callManager.GetOrCreateCall(src, dst);
 
             if (src < 0)
                 src = 1;
@@ -111,8 +93,8 @@ namespace WhackerLink2Dvm
 
             SendP25TDU(callData, grantDemand);
 
-            p25SeqNo = 0;
-            p25N = 0;
+            currentCall.p25SeqNo = 0;
+            currentCall.p25N = 0;
         }
 
         /// <summary>
@@ -169,7 +151,7 @@ namespace WhackerLink2Dvm
 
             dfsiFrame[0U] = frameType;                                                      // Frame Type
 
-            uint dstId = (uint)WhackerLink2Dvm.config.DestinationId;
+            uint dstId = 1;
             uint srcId = (uint)WhackerLink2Dvm.config.SourceId;
             if (srcIdOverride > 0 && srcIdOverride != (uint)WhackerLink2Dvm.config.SourceId)
                 srcId = srcIdOverride;
@@ -255,45 +237,45 @@ namespace WhackerLink2Dvm
         /// </summary>
         /// <param name="data"></param>
         /// <param name="srcId"></param>
-        private void CreateP25LDU1Message(ref byte[] data, uint srcId = 0)
+        private void CreateP25LDU1Message(ref byte[] data, CallInfo currentCall, uint srcId = 0)
         {
             // pack DFSI data
             int count = P25_MSG_HDR_SIZE;
             byte[] imbe = new byte[IMBE_BUF_LEN];
 
-            Buffer.BlockCopy(netLDU1, 10, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 10, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 24, imbe, P25DFSI.P25_DFSI_LDU1_VOICE1, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE1_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 26, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 26, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 46, imbe, P25DFSI.P25_DFSI_LDU1_VOICE2, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE2_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 55, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 55, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 60, imbe, P25DFSI.P25_DFSI_LDU1_VOICE3, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE3_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 80, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 80, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 77, imbe, P25DFSI.P25_DFSI_LDU1_VOICE4, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE4_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 105, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 105, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 94, imbe, P25DFSI.P25_DFSI_LDU1_VOICE5, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE5_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 130, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 130, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 111, imbe, P25DFSI.P25_DFSI_LDU1_VOICE6, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE6_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 155, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 155, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 128, imbe, P25DFSI.P25_DFSI_LDU1_VOICE7, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE7_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 180, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 180, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 145, imbe, P25DFSI.P25_DFSI_LDU1_VOICE8, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE8_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU1, 204, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU1, 204, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU1(ref data, 162, imbe, P25DFSI.P25_DFSI_LDU1_VOICE9, srcId);
             count += (int)P25DFSI.P25_DFSI_LDU1_VOICE9_FRAME_LENGTH_BYTES;
 
@@ -433,45 +415,45 @@ namespace WhackerLink2Dvm
         /// Creates an P25 LDU2 frame message.
         /// </summary>
         /// <param name="data"></param>
-        private void CreateP25LDU2Message(ref byte[] data)
+        private void CreateP25LDU2Message(ref byte[] data, CallInfo currentCall)
         {
             // pack DFSI data
             int count = P25_MSG_HDR_SIZE;
             byte[] imbe = new byte[IMBE_BUF_LEN];
 
-            Buffer.BlockCopy(netLDU2, 10, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 10, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 24, imbe, P25DFSI.P25_DFSI_LDU2_VOICE10);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE10_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 26, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 26, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 46, imbe, P25DFSI.P25_DFSI_LDU2_VOICE11);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE11_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 55, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 55, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 60, imbe, P25DFSI.P25_DFSI_LDU2_VOICE12);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE12_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 80, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 80, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 77, imbe, P25DFSI.P25_DFSI_LDU2_VOICE13);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE13_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 105, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 105, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 94, imbe, P25DFSI.P25_DFSI_LDU2_VOICE14);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE14_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 130, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 130, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 111, imbe, P25DFSI.P25_DFSI_LDU2_VOICE15);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE15_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 155, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 155, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 128, imbe, P25DFSI.P25_DFSI_LDU2_VOICE16);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE16_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 180, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 180, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 145, imbe, P25DFSI.P25_DFSI_LDU2_VOICE17);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE17_FRAME_LENGTH_BYTES;
 
-            Buffer.BlockCopy(netLDU2, 204, imbe, 0, IMBE_BUF_LEN);
+            Buffer.BlockCopy(currentCall.netLDU2, 204, imbe, 0, IMBE_BUF_LEN);
             EncodeLDU2(ref data, 162, imbe, P25DFSI.P25_DFSI_LDU2_VOICE18);
             count += (int)P25DFSI.P25_DFSI_LDU2_VOICE18_FRAME_LENGTH_BYTES;
 
@@ -486,12 +468,14 @@ namespace WhackerLink2Dvm
         /// <param name="forcedDstId"></param>
         private void P25EncodeAudioFrame(byte[] pcm, uint forcedSrcId = 0, uint forcedDstId = 0)
         {
-            if (p25N > 17)
-                p25N = 0;
-            if (p25N == 0)
-                FneUtils.Memset(netLDU1, 0, 9 * 25);
-            if (p25N == 9)
-                FneUtils.Memset(netLDU2, 0, 9 * 25);
+            CallInfo currentCall = callManager.GetOrCreateCall(forcedSrcId, forcedDstId);
+
+            if (currentCall.p25N > 17)
+                currentCall.p25N = 0;
+            if (currentCall.p25N == 0)
+                FneUtils.Memset(currentCall.netLDU1, 0, 9 * 25);
+            if (currentCall.p25N == 9)
+                FneUtils.Memset(currentCall.netLDU2, 0, 9 * 25);
 
             // WhackerLink2Dvm.logger.Debug($"BYTE BUFFER {FneUtils.HexDump(pcm)}");
 
@@ -512,78 +496,81 @@ namespace WhackerLink2Dvm
             // WhackerLink2Dvm.logger.Debug($"SAMPLE BUFFER {FneUtils.HexDump(samples)}");
 
             // encode PCM samples into IMBE codewords
-            byte[] imbe = null;
+            byte[] imbe = new byte[11];
 
-#if !NOVODODE
-            p25Encoder.encode(samples, out imbe);
+#if !NOVODODE && WINDOWS
+            if (currentCall.ExternalVocoderEnabled)
+                currentCall.ExtFullRateVocoder.encode(samples, out imbe);
+            else
+                currentCall.p25Encoder.encode(samples, imbe);
 #endif
 
             // WhackerLink2Dvm.logger.Debug($"IMBE {FneUtils.HexDump(imbe)}");
 
             // fill the LDU buffers appropriately
-            switch (p25N)
+            switch (currentCall.p25N)
             {
                 // LDU1
                 case 0:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 10, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 10, IMBE_BUF_LEN);
                     break;
                 case 1:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 26, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 26, IMBE_BUF_LEN);
                     break;
                 case 2:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 55, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 55, IMBE_BUF_LEN);
                     break;
                 case 3:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 80, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 80, IMBE_BUF_LEN);
                     break;
                 case 4:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 105, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 105, IMBE_BUF_LEN);
                     break;
                 case 5:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 130, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 130, IMBE_BUF_LEN);
                     break;
                 case 6:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 155, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 155, IMBE_BUF_LEN);
                     break;
                 case 7:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 180, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 180, IMBE_BUF_LEN);
                     break;
                 case 8:
-                    Buffer.BlockCopy(imbe, 0, netLDU1, 204, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU1, 204, IMBE_BUF_LEN);
                     break;
 
                 // LDU2
                 case 9:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 10, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 10, IMBE_BUF_LEN);
                     break;
                 case 10:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 26, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 26, IMBE_BUF_LEN);
                     break;
                 case 11:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 55, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 55, IMBE_BUF_LEN);
                     break;
                 case 12:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 80, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 80, IMBE_BUF_LEN);
                     break;
                 case 13:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 105, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 105, IMBE_BUF_LEN);
                     break;
                 case 14:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 130, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 130, IMBE_BUF_LEN);
                     break;
                 case 15:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 155, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 155, IMBE_BUF_LEN);
                     break;
                 case 16:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 180, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 180, IMBE_BUF_LEN);
                     break;
                 case 17:
-                    Buffer.BlockCopy(imbe, 0, netLDU2, 204, IMBE_BUF_LEN);
+                    Buffer.BlockCopy(imbe, 0, currentCall.netLDU2, 204, IMBE_BUF_LEN);
                     break;
             }
 
             uint srcId = (uint)WhackerLink2Dvm.config.SourceId;
-            uint dstId = (uint)WhackerLink2Dvm.config.DestinationId;
+            uint dstId = 1;
 
             if (forcedSrcId > 0)
                 srcId = forcedSrcId;
@@ -600,43 +587,43 @@ namespace WhackerLink2Dvm
             };
 
             // send P25 LDU1
-            if (p25N == 8U)
+            if (currentCall.p25N == 8U)
             {
                 ushort pktSeq = 0;
-                if (p25SeqNo == 0U)
+                if (currentCall.p25SeqNo == 0U)
                     pktSeq = peer.pktSeq(true);
                 else
                     pktSeq = peer.pktSeq();
 
-                WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
+                WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
 
                 byte[] payload = new byte[200];
                 CreateP25MessageHdr((byte)P25DUID.LDU1, callData, ref payload);
-                CreateP25LDU1Message(ref payload, srcId);
+                CreateP25LDU1Message(ref payload, currentCall, srcId);
 
-                peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), payload, pktSeq, txStreamId);
+                peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), payload, pktSeq, currentCall.txStreamId);
             }
 
             // send P25 LDU2
-            if (p25N == 17U)
+            if (currentCall.p25N == 17U)
             {
                 ushort pktSeq = 0;
-                if (p25SeqNo == 0U)
+                if (currentCall.p25SeqNo == 0U)
                     pktSeq = peer.pktSeq(true);
                 else
                     pktSeq = peer.pktSeq();
 
-                WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
+                WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *VOICE FRAME    * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
 
                 byte[] payload = new byte[200];
                 CreateP25MessageHdr((byte)P25DUID.LDU2, callData, ref payload);
-                CreateP25LDU2Message(ref payload);
+                CreateP25LDU2Message(ref payload, currentCall);
 
-                peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), payload, pktSeq, txStreamId);
+                peer.SendMaster(new Tuple<byte, byte>(Constants.NET_FUNC_PROTOCOL, Constants.NET_PROTOCOL_SUBFUNC_P25), payload, pktSeq, currentCall.txStreamId);
             }
 
-            p25SeqNo++;
-            p25N++;
+            currentCall.p25SeqNo++;
+            currentCall.p25N++;
 
         }
 
@@ -649,6 +636,8 @@ namespace WhackerLink2Dvm
         {
             try
             {
+                CallInfo currentCall = callManager.GetOrCreateCall(e.SrcId, e.DstId);
+
                 // decode 9 IMBE codewords into PCM samples
                 for (int n = 0; n < 9; n++)
                 {
@@ -684,11 +673,14 @@ namespace WhackerLink2Dvm
                             break;
                     }
 
-                    short[] samples = null;
+                    short[] samples = new short[160];
                     int errs = 0;
 
-#if !NOVODODE
-                    errs = p25Decoder.decode(imbe, out samples);
+#if !NOVODODE && WINDOWS
+                    if (currentCall.ExternalVocoderEnabled)
+                        currentCall.ExtFullRateVocoder.decode(imbe, out samples);
+                    else
+                        errs = currentCall.p25Decoder.decode(imbe, samples);
 #endif
 
                     if (samples != null)
@@ -707,29 +699,29 @@ namespace WhackerLink2Dvm
                             pcmIdx += 2;
                         }
 
-                        accumulatedChunks.Add(pcm);
+                        currentCall.accumulatedChunks.Add(pcm);
 
-                        if (accumulatedChunks.Count == 5)
+                        if (currentCall.accumulatedChunks.Count == 5)
                         {
-                            byte[] combinedPcm = AudioConverter.CombineChunks(accumulatedChunks);
+                            byte[] combinedPcm = AudioConverter.CombineChunks(currentCall.accumulatedChunks);
 
-                            var message = new
+                            AudioPacket message = new AudioPacket
                             {
-                                type = PacketType.AUDIO_DATA,
-                                data = combinedPcm,
-                                voiceChannel
+                                Data = combinedPcm,
+                                VoiceChannel = currentCall.VoiceChannel,
+                                LopServerVocode = true
                             };
 
-                            if (voiceChannel != null)
+                            if (currentCall.VoiceChannel != null)
                             {
-                                webSocketHandler.SendMessage(message);
+                                webSocketHandler.SendMessage(message.GetData());
                             }
                             else
                             {
                                 Console.WriteLine("Skipping audio send to whackerlink; not granted");
                             }
 
-                            accumulatedChunks.Clear();
+                            currentCall.accumulatedChunks.Clear();
                         }
                     }
                 }
@@ -766,7 +758,25 @@ namespace WhackerLink2Dvm
                         IOSP_ACK_RSP ackRsp = new IOSP_ACK_RSP();
                         ackRsp.Decode(tsbk, true);
                         Log.Logger.Information($"({SystemName}) P25D: TSBK *Ack Response   * PEER {e.PeerId} SRC_ID {ackRsp.SrcId} DST_ID {ackRsp.DstId} SERVICE {ackRsp.Service}");
-                        //SendWhackerLinkAck(ackRsp.SrcId, ackRsp.DstId);
+                        SendWhackerLinkAckResponse(ackRsp.DstId, ackRsp.SrcId);
+                        break;
+                    case P25Defines.TSBK_IOSP_EXT_FNCT:
+                        IOSP_EXT_FNCT extFunc = new IOSP_EXT_FNCT();
+                        extFunc.Decode(tsbk, true);
+                        Log.Logger.Information($"({SystemName}) P25D: TSBK *Extended Func  * PEER {e.PeerId} SRC_ID {extFunc.SrcId} DST_ID {extFunc.DstId} FUNCTION {(ExtendedFunction)extFunc.ExtendedFunction}");
+
+                        switch ((ExtendedFunction)extFunc.ExtendedFunction)
+                        {
+                            case ExtendedFunction.INHIBIT:
+                                SendWhackerLinkExtendedFunction(extFunc.DstId, extFunc.SrcId, SpecFuncType.RID_INHIBIT);
+                                break;
+                            case ExtendedFunction.UNINHIBIT:
+                                SendWhackerLinkExtendedFunction(extFunc.DstId, extFunc.SrcId, SpecFuncType.RID_UNINHIBIT);
+                                break;
+                            default:
+                                Log.Logger.Information($"({SystemName}) P25D: TSBK Unkown Extended Function for WLNK FUNCTION={extFunc.ExtendedFunction}");
+                                break;
+                        };
                         break;
                 }
             }
@@ -778,14 +788,29 @@ namespace WhackerLink2Dvm
             uint netId = FneUtils.Bytes3ToUInt32(e.Data, 16);
             byte control = e.Data[14U];
 
+            //Console.WriteLine(sysId.ToString("X") + " " + netId.ToString("X"));
+
             byte len = e.Data[23];
             byte[] data = new byte[len];
             for (int i = 24; i < len; i++)
                 data[i - 24] = e.Data[i];
+
             if (e.CallType == CallType.GROUP)
             {
                 if (e.SrcId == 0)
                     return;
+
+                CallInfo currentCall = callManager.GetOrCreateCall(e.SrcId, e.DstId);
+
+                if (currentCall == null)
+                {
+                    WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *IGNORE CALL    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
+                    return;
+                }
+
+                // ensure destination ID matches
+                /*                if (e.DstId != WhackerLink2Dvm.config.DestinationId)
+                                    return;*/
 
                 if ((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC))
                 {
@@ -794,32 +819,50 @@ namespace WhackerLink2Dvm
                         return;
                 }
 
-                // ensure destination ID matches
-/*                if (e.DstId != WhackerLink2Dvm.config.DestinationId)
-                    return;*/
-
                 // is this a new call stream?
-                if (e.StreamId != status[P25_FIXED_SLOT].RxStreamId && (e.DUID != P25DUID.TDU) && (e.DUID != P25DUID.TDULC))
+                if (currentCall.Status[P25_FIXED_SLOT].RxStreamId != e.StreamId && ((e.DUID != P25DUID.TDU) && (e.DUID != P25DUID.TDULC)))
                 {
-                    voiceChannel = new VoiceChannel
+                    //currentCall.Status[P25_FIXED_SLOT].RxRFS = e.SrcId;
+                    //currentCall.Status[P25_FIXED_SLOT].RxType = e.FrameType;
+                    //currentCall.Status[P25_FIXED_SLOT].RxTGId = e.DstId;
+                    //currentCall.Status[P25_FIXED_SLOT].RxTime = pktTime;
+                    //currentCall.Status[P25_FIXED_SLOT].RxStreamId = e.StreamId;
+
+                    currentCall.VoiceChannel = new VoiceChannel
                     {
                         SrcId = e.SrcId.ToString(),
                         DstId = e.DstId.ToString()
                     };
 
-                    webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_REQ, data = new GRP_VCH_REQ { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString() } });
-                    callInProgress = true;
-                    callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
-                    status[P25_FIXED_SLOT].RxStart = pktTime;
+                    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                    {
+                        SrcId = e.SrcId.ToString(),
+                        DstId = e.DstId.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affReq.GetData());
+
+                    webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_REQ, data = new GRP_VCH_REQ { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString(), Site = WhackerLink2Dvm.config.WhackerLink.Site } });
+                    currentCall.callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
+                    currentCall.Status[P25_FIXED_SLOT].RxStart = pktTime;
                     WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *CALL START     * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
                 }
 
-                if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR))
+                if (currentCall == null)
                 {
-                    if (voiceChannel != null && voiceChannel.Frequency != null)
+                    WhackerLink2Dvm.logger.Warning($"({SystemName}) P25D: Traffic *CALL NOT FND    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} [STREAM ID {e.StreamId}]");
+                    return;
+                }
+
+                if (((e.DUID == P25DUID.TDU) || (e.DUID == P25DUID.TDULC)) && (currentCall.Status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR))
+                {
+                    callManager.EndCall(e.SrcId);
+
+                    if (currentCall.VoiceChannel != null && currentCall.VoiceChannel.Frequency != null)
                     {
-                        webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString(), Channel = voiceChannel.Frequency } });
-                        voiceChannel = new VoiceChannel 
+                        webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString(), Channel = currentCall.VoiceChannel.Frequency, Site = WhackerLink2Dvm.config.WhackerLink.Site } });
+                        currentCall.VoiceChannel = new VoiceChannel 
                         { 
                             SrcId = e.SrcId.ToString(),
                             DstId = e.DstId.ToString()
@@ -827,45 +870,46 @@ namespace WhackerLink2Dvm
                     } else
                     {
                         Console.WriteLine("Not sending whackerlink call release because it has no channel");
+                        return;
                     }
 
-                    ignoreCall = false;
-                    callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
-                    callInProgress = false;
-                    TimeSpan callDuration = pktTime - status[P25_FIXED_SLOT].RxStart;
+                    GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
+                    {
+                        SrcId = e.SrcId.ToString(),
+                        DstId = e.DstId.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affRmv.GetData());
+
+                    currentCall.ignoreCall = false;
+                    currentCall.callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
+                    TimeSpan callDuration = pktTime - currentCall.Status[P25_FIXED_SLOT].RxStart;
+
+                    currentCall.accumulatedChunks.Clear();
+                    FneUtils.Memset(currentCall.netLDU1, 0x00, currentCall.netLDU1.Length);
+                    FneUtils.Memset(currentCall.netLDU2, 0x00, currentCall.netLDU1.Length);
+
+                    currentCall.p25SeqNo = 0;
+                    currentCall.p25N = 0;
+
                     WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *CALL END       * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} DUR {callDuration} [STREAM ID {e.StreamId}]");
                     return;
                 }
 
-                if (ignoreCall && callAlgoId == P25Defines.P25_ALGO_UNENCRYPT)
-                    ignoreCall = false;
+                if (currentCall.ignoreCall && currentCall.callAlgoId == P25Defines.P25_ALGO_UNENCRYPT)
+                    currentCall.ignoreCall = false;
 
                 // if this is an LDU1 see if this is the first LDU with HDU encryption data
-                if (e.DUID == P25DUID.LDU1 && !ignoreCall)
+                if (e.DUID == P25DUID.LDU1 && !currentCall.ignoreCall)
                 {
                     byte frameType = e.Data[180];
                     if (frameType == P25Defines.P25_FT_HDU_VALID)
-                        callAlgoId = e.Data[181];
+                        currentCall.callAlgoId = e.Data[181];
                 }
 
-                if (e.DUID == P25DUID.LDU2 && !ignoreCall)
-                    callAlgoId = data[88];
-
-                if (ignoreCall)
-                    return;
-
-                if (callAlgoId != P25Defines.P25_ALGO_UNENCRYPT)
-                {
-                    if (status[P25_FIXED_SLOT].RxType != FrameType.TERMINATOR)
-                    {
-                        callInProgress = false;
-                        TimeSpan callDuration = pktTime - status[P25_FIXED_SLOT].RxStart;
-                        WhackerLink2Dvm.logger.Information($"({SystemName}) P25D: Traffic *CALL END (T)    * PEER {e.PeerId} SRC_ID {e.SrcId} TGID {e.DstId} DUR {callDuration} [STREAM ID {e.StreamId}]");
-                    }
-
-                    ignoreCall = true;
-                    return;
-                }
+                if (e.DUID == P25DUID.LDU2 && !currentCall.ignoreCall)
+                    currentCall.callAlgoId = data[88];
 
                 int count = 0;
                 switch (e.DUID)
@@ -880,43 +924,43 @@ namespace WhackerLink2Dvm
                                 (data[138U] == 0x6AU))
                             {
                                 // The '62' record - IMBE Voice 1
-                                Buffer.BlockCopy(data, count, netLDU1, 0, 22);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 0, 22);
                                 count += 22;
 
                                 // The '63' record - IMBE Voice 2
-                                Buffer.BlockCopy(data, count, netLDU1, 25, 14);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 25, 14);
                                 count += 14;
 
                                 // The '64' record - IMBE Voice 3 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 50, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 50, 17);
                                 count += 17;
 
                                 // The '65' record - IMBE Voice 4 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 75, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 75, 17);
                                 count += 17;
 
                                 // The '66' record - IMBE Voice 5 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 100, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 100, 17);
                                 count += 17;
 
                                 // The '67' record - IMBE Voice 6 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 125, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 125, 17);
                                 count += 17;
 
                                 // The '68' record - IMBE Voice 7 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 150, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 150, 17);
                                 count += 17;
 
                                 // The '69' record - IMBE Voice 8 + Link Control
-                                Buffer.BlockCopy(data, count, netLDU1, 175, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 175, 17);
                                 count += 17;
 
                                 // The '6A' record - IMBE Voice 9 + Low Speed Data
-                                Buffer.BlockCopy(data, count, netLDU1, 200, 16);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU1, 200, 16);
                                 count += 16;
 
                                 // decode 9 IMBE codewords into PCM samples
-                                P25DecodeAudioFrame(netLDU1, e);
+                                P25DecodeAudioFrame(currentCall.netLDU1, e);
                             }
                         }
                         break;
@@ -930,53 +974,53 @@ namespace WhackerLink2Dvm
                                 (data[138U] == 0x73U))
                             {
                                 // The '6B' record - IMBE Voice 10
-                                Buffer.BlockCopy(data, count, netLDU2, 0, 22);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 0, 22);
                                 count += 22;
 
                                 // The '6C' record - IMBE Voice 11
-                                Buffer.BlockCopy(data, count, netLDU2, 25, 14);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 25, 14);
                                 count += 14;
 
                                 // The '6D' record - IMBE Voice 12 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 50, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 50, 17);
                                 count += 17;
 
                                 // The '6E' record - IMBE Voice 13 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 75, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 75, 17);
                                 count += 17;
 
                                 // The '6F' record - IMBE Voice 14 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 100, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 100, 17);
                                 count += 17;
 
                                 // The '70' record - IMBE Voice 15 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 125, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 125, 17);
                                 count += 17;
 
                                 // The '71' record - IMBE Voice 16 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 150, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 150, 17);
                                 count += 17;
 
                                 // The '72' record - IMBE Voice 17 + Encryption Sync
-                                Buffer.BlockCopy(data, count, netLDU2, 175, 17);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 175, 17);
                                 count += 17;
 
                                 // The '73' record - IMBE Voice 18 + Low Speed Data
-                                Buffer.BlockCopy(data, count, netLDU2, 200, 16);
+                                Buffer.BlockCopy(data, count, currentCall.netLDU2, 200, 16);
                                 count += 16;
 
                                 // decode 9 IMBE codewords into PCM samples
-                                P25DecodeAudioFrame(netLDU2, e);
+                                P25DecodeAudioFrame(currentCall.netLDU2, e);
                             }
                         }
                         break;
                 }
 
-                status[P25_FIXED_SLOT].RxRFS = e.SrcId;
-                status[P25_FIXED_SLOT].RxType = e.FrameType;
-                status[P25_FIXED_SLOT].RxTGId = e.DstId;
-                status[P25_FIXED_SLOT].RxTime = pktTime;
-                status[P25_FIXED_SLOT].RxStreamId = e.StreamId;
+                currentCall.Status[P25_FIXED_SLOT].RxRFS = e.SrcId;
+                currentCall.Status[P25_FIXED_SLOT].RxType = e.FrameType;
+                currentCall.Status[P25_FIXED_SLOT].RxTGId = e.DstId;
+                currentCall.Status[P25_FIXED_SLOT].RxTime = pktTime;
+                currentCall.Status[P25_FIXED_SLOT].RxStreamId = e.StreamId;
             }
 
             return;

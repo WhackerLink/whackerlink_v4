@@ -1,6 +1,18 @@
 # Global Configuration
 system:
-  debug: false
+    debug: false
+
+    # RESTful interface for internal information such as the affiliation table.
+    rest:
+        # Enable the REST server
+        enabled: false
+        # Address to bind REST to
+        # ***WANRING***: It is HIGHLY recommended to leave this on localhost even though there is authentication. 
+        address: localhost
+        # Port to bind REST to
+        port: 3002
+        # Password of this REST server
+        password: "PASSWORD"
 
 # List of WhackerLink masters (servers)
 masters:
@@ -15,6 +27,15 @@ masters:
       # If hosted remotely on a VPS, bind to the Public IP of your VPS.
     address: 0.0.0.0
 
+    # Auth Key file configuration
+    auth:
+        # Enable Auth Keys
+        enabled: false
+        # Path to ACL File
+        path: "auth_keys.yml"
+        # Reload interval
+        reloadInterval: 3000
+
     # Secure network communications
     ssl:
         # Enables SSL
@@ -26,6 +47,8 @@ masters:
 
     # Only pass traffic to peers that have affiliations to that dstId (recommended to stay true!)
     affilationRestricted: true
+    # Only allow traffic to come from an affiliated source
+    affiliatedSourceRestricted: true
     # Do not repeat voice traffic back to one's self (recommended to stay true!)
     noSelfRepeat: true
 
@@ -42,16 +65,6 @@ masters:
     vocoderMode: 2
     # Pre Vocoder encode PCM gain
     preEncodeGain: 1.0
-
-    # RESTful interface for internal information such as the affiliation table.
-    rest:
-        # Enable the REST server
-        enabled: false
-        # Address to bind REST to
-        # ***WANRING***: It is HIGHLY recommended to leave this on localhost as there is NO authentication. 
-        address: localhost
-        # Port to bind REST to
-        port: 3002
 
     # Send reports via GET requests
     reporter:
@@ -174,3 +187,4 @@ masters:
         path: "rid_acl.yml"
         # Not finished yet
         reloadInterval: 0
+

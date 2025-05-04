@@ -1,22 +1,24 @@
-﻿/*
-* WhackerLink - WhackerLinkServer
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-* 
-* Copyright (C) 2024-2025 Caleb, K4PHP
-* 
-*/
+/*
+ * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2025 Firav (firavdev@gmail.com)
+ *
+ * This file is part of the WhackerLinkServer project.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ */
 
 using Serilog;
 using WebSocketSharp.Server;
@@ -28,11 +30,7 @@ using System.Reflection;
 using WhackerLinkLib.Models.IOSP;
 
 using WhackerLinkLib.Utils;
-
-
-#if !NOVOCODE
-using vocoder;
-#endif
+using WhackerLinkLib.Vocoder;
 
 namespace WhackerLinkServer
 {
@@ -44,21 +42,26 @@ namespace WhackerLinkServer
         private Config.MasterConfig config;
         private WebSocketServer server;
         private RidAclManager aclManager;
-        private RestApiServer restServer;
         private Reporter reporter;
         private AffiliationsManager affiliationsManager;
         private VoiceChannelManager voiceChannelManager;
         private SiteManager siteManager;
+        private AuthKeyFileManager authKeyManager;
         private ILogger logger;
+        private IntervalRunner siteBcastInterval;
 
-#if !NOVOCODE && !AMBEVOCODE
-        private Dictionary<string, (MBEDecoderManaged Decoder, MBEEncoderManaged Encoder)> vocoderInstances = 
-            new Dictionary<string, (MBEDecoderManaged, MBEEncoderManaged)>();
-#endif
-#if AMBEVOCODE && !NOVOCODE
+        private readonly TimeSpan inactivityTimeout = TimeSpan.FromSeconds(3);
+        private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
+
+#if !NOVOCODE
+        private VocoderManager vocoderManager;
+#if WINDOWS
         private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
             new Dictionary<string, (AmbeVocoderManager, AmbeVocoderManager)>();
 #endif
+#endif
+
+        bool ExternalVocoderEnabled = false;
 
         /// <summary>
         /// Creates an instance of the Master class
@@ -75,17 +78,7 @@ namespace WhackerLinkServer
 
             voiceChannelManager.VoiceChannelUpdated += VoiceChannelUpdate;
 
-#if !NOVOCODE && !AMBEVOCODE
-            if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
-            {
-                logger.Information($"{config.VocoderMode} Vocoder mode enabled");
-            }
-            else
-            {
-                logger.Information("Vocoding disabled");
-            }
-#endif
-#if AMBEVOCODE
+#if !NOVOCODE
 #pragma warning disable SYSLIB0012 // Type or member is obsolete
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
 #pragma warning restore SYSLIB0012 // Type or member is obsolete
@@ -95,10 +88,20 @@ namespace WhackerLinkServer
             if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
             {
                 logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder");
+                ExternalVocoderEnabled = true;
             }
             else
             {
-                logger.Error("ERROR: AMBE.DLL DOES NOT EXIST!");
+#if WINDOWS
+                if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
+                {
+                    logger.Information($"{config.VocoderMode} Vocoder mode enabled");
+                }
+                else
+                {
+                    logger.Information("Vocoding disabled");
+                }
+#endif
             }
 #endif
         }
@@ -107,6 +110,11 @@ namespace WhackerLinkServer
         /// Instance of Logger
         /// </summary>
         public ILogger Logger { get { return logger; } }
+
+        /// <summary>
+        /// Returns the name of this Master
+        /// </summary>
+        public string Name => config.Name;
 
         /// <summary>
         /// Gets current affiliations list
@@ -145,6 +153,15 @@ namespace WhackerLinkServer
         }
 
         /// <summary>
+        /// Gets the current auth key manager instance
+        /// </summary>
+        /// <returns>the insance of <see cref="AuthKeyFileManager"/></returns>
+        public AuthKeyFileManager GetAuthManager()
+        {
+            return authKeyManager;
+        }
+
+        /// <summary>
         /// Gets if the RID ACL is enabled
         /// </summary>
         /// <returns></returns>
@@ -172,12 +189,6 @@ namespace WhackerLinkServer
                 else
                 {
                     logger.Information("ACL Auto reload disabled");
-                }
-
-                if (config.Rest.Enabled)
-                {
-                    restServer = new RestApiServer(this, config.Rest.Address, config.Rest.Port);
-                    restServer.Start();
                 }
 
                 reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled);
@@ -215,28 +226,42 @@ namespace WhackerLinkServer
                     }
                 }
 
+                if (config.Auth != null) 
+                    authKeyManager = new AuthKeyFileManager(config.Auth.Path, config.Name, config.Auth.Enabled, logger, config.Auth.ReloadInterval);
+                else
+                    authKeyManager = new AuthKeyFileManager(string.Empty, config.Name, false, logger, 0);
+
+#if !NOVOCODE
+                this.vocoderManager = new VocoderManager(logger);
+#endif
+
                 var masterInstance = this;
 
 #pragma warning disable CS0618 // Type or member is obsolete
                 server.AddWebSocketService<ClientHandler>("/client", () => new ClientHandler(config, aclManager, affiliationsManager, voiceChannelManager, siteManager, reporter,
-#if !NOVOCODE && !AMBEVOCODE
-                        vocoderInstances,
-#endif
-#if AMBEVOCODE && !NOVOCODE
+                    inactivityTimeout,
+                    inactivityTimers,
+#if !NOVOCODE
+                        vocoderManager,
+#if WINDOWS
                         ambeVocoderInstances,
 #endif
+#endif
+                        ExternalVocoderEnabled,
                         masterInstance,
+                        authKeyManager,
                     logger));
 #pragma warning restore CS0618 // Type or member is obsolete
+
                 server.Start();
 
-                logger.Information("Master {Name} Listening on port {Port}", config.Name, config.Port);
+                logger.Information("Master {Name} Listening on port {Port}; address: {Address}", config.Name, config.Port, config.Address);
 
                 if (config.Sites.Count > 0)
                 {
                     if (!config.DisableSiteBcast)
                     {
-                        IntervalRunner siteBcastInterval = new IntervalRunner();
+                        siteBcastInterval = new IntervalRunner();
                         SITE_BCAST siteBcast = new SITE_BCAST();
 
                         siteBcast.Sites = config.Sites;
@@ -333,14 +358,20 @@ namespace WhackerLinkServer
                 foreach (var path in server.WebSocketServices.Paths)
                 {
                     var serviceHost = server.WebSocketServices[path];
-                    foreach (var clientId in clientIds)
+                    foreach (var sessionId in serviceHost.Sessions.IDs)
                     {
-                        if (skipClientId != null && clientId == skipClientId)
+                        if (skipClientId != null && sessionId == skipClientId)
                             continue;
 
-                        if (serviceHost.Sessions.TryGetSession(clientId, out var session))
+                        if (serviceHost.Sessions.TryGetSession(sessionId, out var session))
                         {
-                            serviceHost.Sessions.SendTo(message, clientId);
+                            if (session is ClientHandler handler)
+                            {
+                                if (clientIds.Contains(sessionId) || handler.ConventionalPeer)
+                                {
+                                    serviceHost.Sessions.SendTo(message, sessionId);
+                                }
+                            }
                         }
                     }
                 }
@@ -350,5 +381,55 @@ namespace WhackerLinkServer
                 logger.Error(ex, "Failed to broadcast message to specific clients from master");
             }
         }
+
+        /// <summary>
+        /// Stops the master server and all components
+        /// </summary>
+        public void Stop()
+        {
+            try
+            {
+                logger.Information("Stopping Master {Name}", config.Name);
+
+                server?.Stop();
+
+                if (siteBcastInterval != null)
+                {
+                    siteBcastInterval.Stop();
+                    siteBcastInterval = null;
+                }
+
+                if (authKeyManager != null)
+                {
+                    authKeyManager.StopReloading();
+                    authKeyManager = null;
+                }
+
+                server = null;
+                reporter = null;
+
+                this.aclManager = new RidAclManager(config.RidAcl.Enabled);
+                this.affiliationsManager = new AffiliationsManager();
+                this.voiceChannelManager = new VoiceChannelManager(config.DisableVchUpdates);
+                this.siteManager = new SiteManager();
+
+                logger.Information("Master stopped successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Error while stopping the master server");
+            }
+        }
+
+        /// <summary>
+        /// Restarts the master server
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        public void Restart(CancellationToken cancellationToken)
+        {
+            Stop();
+            Start(cancellationToken);
+        }
     }
 }
+

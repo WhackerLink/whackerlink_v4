@@ -19,7 +19,7 @@ using fnecore;
 using fnecore.DMR;
 
 #if !NOVODODE
-using vocoder;
+using WhackerLinkLib.Vocoder;
 #endif
 
 using fnecore.P25.LC.TSBK;
@@ -28,6 +28,7 @@ using WhackerLinkLib.Interfaces;
 using WhackerLinkLib.Utils;
 using WhackerLinkLib.Models.IOSP;
 using WhackerLinkLib.Network;
+using fnecore.P25;
 
 namespace WhackerLink2Dvm
 {
@@ -108,21 +109,11 @@ namespace WhackerLink2Dvm
 
         private const int MBE_SAMPLES_LENGTH = 160;
 
-        private bool callInProgress = false;
-
-        private SlotStatus[] status;
-
-        private Stopwatch dropAudio;
-        private int dropTimeMs;
-        bool audioDetect;
-        bool trafficFromUdp;
-
         private Random rand;
-        private uint txStreamId;
 
         private IPeer webSocketHandler;
 
-        private VoiceChannel voiceChannel;
+        private CallManager callManager;
 
         /*
         ** Methods
@@ -138,8 +129,10 @@ namespace WhackerLink2Dvm
 
             this.rand = new Random(Guid.NewGuid().GetHashCode());
 
+            WhackerLink2Dvm.logger.Information($"({SystemName}) Connecting to WLINK Master");
+
             webSocketHandler = new Peer();
-            webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
+
             webSocketHandler.OnAffiliationUpdate += WhackerLinkAffiliationUpdate;
             webSocketHandler.OnUnitDeRegistrationResponse += WhackerLinkUniteDeRegistration;
             webSocketHandler.OnAudioData += WhackerLinkDataReceived;
@@ -147,11 +140,101 @@ namespace WhackerLink2Dvm
             webSocketHandler.OnVoiceChannelRelease += WhackerLinkVoiceChannelRelease;
             webSocketHandler.OnCallAlert += WhackerLinkCallAlert;
 
+            webSocketHandler.OnSpecialFunction += (SPEC_FUNC response) =>
+            {
+                ushort extFuncType = (ushort)ExtendedFunction.INHIBIT;
+
+                switch (response.Function)
+                {
+                    case SpecFuncType.RID_INHIBIT:
+                        extFuncType = (ushort)ExtendedFunction.INHIBIT;
+                        break;
+                    case SpecFuncType.RID_UNINHIBIT:
+                        extFuncType = (ushort)ExtendedFunction.UNINHIBIT;
+                        break;
+                    default:
+                        return;
+                };
+
+                IOSP_EXT_FNCT extFunc = new IOSP_EXT_FNCT(extFuncType, P25Defines.WUID_FNE, uint.Parse(response.DstId));
+                RemoteCallData callData = new RemoteCallData
+                {
+                    SrcId = uint.Parse(response.SrcId),
+                    DstId = uint.Parse(response.DstId)
+                };
+
+                byte[] tsbk = new byte[P25Defines.P25_TSBK_LENGTH_BYTES];
+                extFunc.Encode(ref tsbk);
+
+                SendP25TSBK(callData, tsbk);
+
+                Log.Logger.Information($"WhackerLink SPEC FUNC; SrcId: {response.SrcId}, DstId: {response.DstId}, Function: {response.Function}");
+            };
+
+            webSocketHandler.OnAckResponse += (ACK_RSP response) =>
+            {
+                IOSP_ACK_RSP ackResponse = new IOSP_ACK_RSP(uint.Parse(response.DstId), uint.Parse(response.SrcId), false, P25Defines.TSBK_IOSP_CALL_ALRT);
+                RemoteCallData callData = new RemoteCallData
+                {
+                    SrcId = uint.Parse(response.SrcId),
+                    DstId = uint.Parse(response.DstId)
+                };
+
+                byte[] tsbk = new byte[P25Defines.P25_TSBK_LENGTH_BYTES];
+                ackResponse.Encode(ref tsbk);
+
+                SendP25TSBK(callData, tsbk);
+
+                Log.Logger.Information($"WhackerLink ACK RSP; SrcId: {response.SrcId}, DstId: {response.DstId}, Service: {response.Service}");
+
+                //Log.Logger.Information($"({SystemName}) P25D: TSBK *ACK Response   * SRC_ID {response.DstId} DST_ID {response.SrcId} SERVICE {ackResponse.Service}");
+            };
+
+            webSocketHandler.OnOpen += () =>
+            {
+                WhackerLink2Dvm.logger.Information($"({SystemName}) Connection to WLINK Master complete");
+
+                foreach (uint group in WhackerLink2Dvm.config.AllowedGroups)
+                {
+                    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                    {
+                        SrcId = "1",
+                        DstId = group.ToString(),
+                        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    };
+
+                    webSocketHandler.SendMessage(affReq.GetData());
+                }
+            };
+
+            webSocketHandler.OnClose += () =>
+            {
+                WhackerLink2Dvm.logger.Information($"({SystemName}) Connection to WLINK Master lost");
+            };
+
+            webSocketHandler.OnReconnecting += () =>
+            {
+                WhackerLink2Dvm.logger.Information($"({SystemName}) Reconnecting to WLINK Master");
+            };
+
+            try
+            {
+                webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
+            }
+            catch (Exception ex)
+            {
+                WhackerLink2Dvm.logger.Fatal($"({SystemName}) Connection to WLINK Master FAILED");
+                Console.WriteLine(ex);
+                return;
+            }
+
+            callManager = new CallManager(WhackerLink2Dvm.config.AllowedGroups);
+
             // initialize slot statuses
-            this.status = new SlotStatus[3];
-            this.status[0] = new SlotStatus();  // DMR Slot 1
-            this.status[1] = new SlotStatus();  // DMR Slot 2
-            this.status[2] = new SlotStatus();  // P25
+            //this.status = new SlotStatus[3];
+            //this.status[0] = new SlotStatus();  // DMR Slot 1
+            //this.status[1] = new SlotStatus();  // DMR Slot 2
+            //this.status[2] = new SlotStatus();  // P25
 
             // hook logger callback
             this.fne.Logger = (LogLevel level, string message) =>
@@ -176,60 +259,21 @@ namespace WhackerLink2Dvm
                         break;
                 }
             };
-
-            this.dropAudio = new Stopwatch();
-            this.dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
-
-            // "stuck" call (improperly ended call) checker thread
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    // if we've exceeded the audio drop timeout, then really drop the audio
-                    if ((dropAudio.IsRunning && (dropAudio.ElapsedMilliseconds > dropTimeMs * 2)) ||
-                        (!dropAudio.IsRunning && !audioDetect && callInProgress))
-                    {
-                        if (audioDetect)
-                        {
-                            WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END (S)   * PEER {fne.PeerId} [STREAM ID {txStreamId}]");
-
-                            audioDetect = false;
-                            dropAudio.Reset();
-
-                            if (!callInProgress)
-                            {
-                                SendP25TDU(false, voiceChannel.SrcId, voiceChannel.DstId);
-                                break;
-                            }
-
-                            txStreamId = 0;
-                            EndCall("", "");
-                            dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
-                        }
-                    }
-
-                    Thread.Sleep(5);
-                }
-            });
-
-            this.audioDetect = false;
-
-#if !NOVODODE
-            // initialize P25 vocoders
-            p25Decoder = new MBEDecoderManaged(MBEMode.IMBE);
-            //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
-            //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
-            p25Encoder = new MBEEncoderManaged(MBEMode.IMBE);
-            //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
-#endif
-
-            netLDU1 = new byte[9 * 25];
-            netLDU2 = new byte[9 * 25];
         }
 
         internal void SendWhackerLinkCallAlert(uint dstId, uint srcId)
         {
-            webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+            webSocketHandler.SendMessage(new { type = PacketType.CALL_ALRT_REQ, data = new CALL_ALRT { SrcId = srcId.ToString(), DstId = dstId.ToString() } });
+        }
+
+        internal void SendWhackerLinkAckResponse(uint dstId, uint srcId)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.ACK_RSP, data = new ACK_RSP { SrcId = srcId.ToString(), DstId = dstId.ToString(), Service = PacketType.CALL_ALRT } });
+        }
+
+        internal void SendWhackerLinkExtendedFunction(uint dstId, uint srcId, SpecFuncType specType)
+        {
+            webSocketHandler.SendMessage(new { type = PacketType.SPEC_FUNC, data = new SPEC_FUNC { SrcId = srcId.ToString(), DstId = dstId.ToString(), Function = specType } });
         }
 
         internal void WhackerLinkAffiliationUpdate(AFF_UPDATE response)
@@ -248,21 +292,22 @@ namespace WhackerLink2Dvm
 
         internal void WhackerLinkVoiceChannelResponse(GRP_VCH_RSP response)
         {
-            if (voiceChannel != null && response.SrcId == voiceChannel.SrcId)
+            CallInfo currentCall = callManager.GetOrCreateCall(uint.Parse(response.SrcId), uint.Parse(response.DstId));
+
+            currentCall.VoiceChannel = new VoiceChannel
             {
-                voiceChannel = new VoiceChannel
-                {
-                    DstId = response.DstId,
-                    SrcId = response.SrcId,
-                    Frequency = response.Channel
-                };
-            }
+                DstId = response.DstId,
+                SrcId = response.SrcId,
+                Frequency = response.Channel
+            };
         }
 
         internal void WhackerLinkVoiceChannelRelease(GRP_VCH_RLS response)
         {
+            CallInfo currentCall = callManager.GetOrCreateCall(uint.Parse(response.SrcId), uint.Parse(response.DstId));
+
             EndCall(response.SrcId, response.DstId);
-            voiceChannel = null;
+            currentCall.VoiceChannel = null;
         }
 
         internal void WhackerLinkCallAlert(CALL_ALRT response)
@@ -278,68 +323,60 @@ namespace WhackerLink2Dvm
                 };
 
                 byte[] tsbk = new byte[fnecore.P25.P25Defines.P25_TSBK_LENGTH_BYTES];
-                byte[] payload = new byte[fnecore.P25.P25Defines.P25_TSBK_LENGTH_BYTES];
 
                 IOSP_CALL_ALRT callAlert = new IOSP_CALL_ALRT(UInt32.Parse(response.DstId), UInt32.Parse(response.SrcId));
-                callAlert.Encode(ref tsbk, ref payload, true, true);
+                callAlert.Encode(ref tsbk, true, true);
                 SendP25TSBK(callData, tsbk);
             } catch (Exception) { /* stub */ }
         }
 
         internal void WhackerLinkDataReceived(AudioPacket audioPacket)
         {
+            CallInfo currentCall = callManager.GetOrCreateCall(uint.Parse(audioPacket.VoiceChannel.SrcId), uint.Parse(audioPacket.VoiceChannel.DstId));
             FnePeer peer = (FnePeer)fne;
 
-            uint srcId = Convert.ToUInt32(voiceChannel.SrcId);
+            uint srcId = Convert.ToUInt32(currentCall.VoiceChannel.SrcId);
 
-            uint dstId = Convert.ToUInt32(voiceChannel.DstId);
+            uint dstId = Convert.ToUInt32(currentCall.VoiceChannel.DstId);
 
-            if (voiceChannel != null && voiceChannel.Frequency != null)
+            if (currentCall.VoiceChannel != null && currentCall.VoiceChannel.Frequency != null)
             {
-                audioDetect = true;
-                if (txStreamId == 0)
+                if (currentCall.txStreamId == 0)
                 {
-                    txStreamId = (uint)rand.Next(int.MinValue, int.MaxValue);
-                    WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL START     * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
+                    currentCall.txStreamId = (uint)rand.Next(int.MinValue, int.MaxValue);
+                    WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL START     * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
                     
-                    SendP25TDU(true, voiceChannel.SrcId, voiceChannel.DstId);
+                    SendP25TDU(true, currentCall.VoiceChannel.SrcId, currentCall.VoiceChannel.DstId);
                 }
-                dropAudio.Reset();
             }
             else
             {
                 EndCall(srcId.ToString(), dstId.ToString());
             }
 
-            if (!dropAudio.IsRunning)
-                dropAudio.Start();
-
-            if (audioDetect && !callInProgress)
+            var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
+            foreach (var chunk in chunks)
             {
-                var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
-                foreach (var chunk in chunks)
-                {
-                    P25EncodeAudioFrame(chunk, Convert.ToUInt32(voiceChannel.SrcId), Convert.ToUInt32(voiceChannel.DstId));
-                }
+                P25EncodeAudioFrame(chunk, srcId, dstId);
             }
         }
 
         private void EndCall(string srcId, string dstId)
         {
+            CallInfo currentCall = callManager.GetOrCreateCall(uint.Parse(srcId), uint.Parse(dstId));
 
-            WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {txStreamId}]");
+            WhackerLink2Dvm.logger.Information($"({SystemName}) WL *CALL END       * PEER {fne.PeerId} SRC_ID {srcId} TGID {dstId} [STREAM ID {currentCall.txStreamId}]");
 
-            audioDetect = false;
-            dropAudio.Reset();
+            currentCall.accumulatedChunks.Clear();
+            FneUtils.Memset(currentCall.netLDU1, 0x00, currentCall.netLDU1.Length);
+            FneUtils.Memset(currentCall.netLDU2, 0x00, currentCall.netLDU1.Length);
 
-            if (!callInProgress)
-            {
-                SendP25TDU(false);
-            }
+            currentCall.p25SeqNo = 0;
+            currentCall.p25N = 0;
 
-            txStreamId = 0;
+            SendP25TDU(false, srcId, dstId);
 
-            dropTimeMs = WhackerLink2Dvm.config.DropTimeMs;
+            currentCall.txStreamId = 0;
         }
 
         /// <summary>
@@ -373,6 +410,16 @@ namespace WhackerLink2Dvm
         /// <param name="sender"></param>
         /// <param name="e"></param>
         protected override void PeerConnected(object sender, PeerConnectedEvent e)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void KeyResponse(object sender, KeyResponseEvent e)
         {
             return;
         }

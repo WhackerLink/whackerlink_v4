@@ -3,6 +3,7 @@
  */
 
 using fnecore;
+using WhackerLinkLib.Models;
 
 #nullable disable
 
@@ -12,8 +13,9 @@ namespace WhackerLink2Dvm.Models
     {
         public int DropTimeMs = 180;
         public int SourceId;
-        public int DestinationId;
         public int Slot = 1;
+
+        public List<uint> AllowedGroups { get; set; }
 
         public FneConfiguration Fne { get; set; }
         public WhackerLinkConfiguration WhackerLink { get; set; }
@@ -34,6 +36,7 @@ namespace WhackerLink2Dvm.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public Site Site { get; set; }
         }
 
         public static PeerDetails ConvertToDetails(FneConfiguration peer)
@@ -61,6 +64,8 @@ namespace WhackerLink2Dvm.Models
             // RCON
             details.Password = "ABCD123";
             details.Port = 9990;
+
+            details.ConventionalPeer = true;
 
             details.Software = $"WhackerLink2Dvm";
 

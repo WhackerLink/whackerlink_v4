@@ -19,25 +19,30 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WhackerLinkLib.Models;
+using Microsoft.AspNetCore.Mvc;
+using WhackerLinkLib.Interfaces;
 
-#nullable disable
-
-namespace WhackerLinkServer.Models
+namespace WhackerLinkServer.RestApi.Modules
 {
-    /// <summary>
-    /// Defines the RID ACL
-    /// </summary>
-    public class RidAcl
+    [ApiController]
+    [Route("api/{masterName}/rid")]
+    public class RidAclController : ControllerBase
     {
-        public List<RidAclEntry> entries;
+        readonly IMasterServiceRegistry _registry;
+        public RidAclController(IMasterServiceRegistry registry)
+            => _registry = registry;
 
-        public RidAcl() { /* stub */ }
+        [HttpGet("query")]
+        public IActionResult Query([FromRoute] string masterName)
+        {
+            if (!_registry.TryGet(masterName, out var master))
+                return NotFound(new { error = $"Master '{masterName}' not found" });
+
+            return Ok(new
+            {
+                Enabled = master.GetRidAclEnabled(),
+                RidAcl = master.GetRidAcl()
+            });
+        }
     }
 }
-

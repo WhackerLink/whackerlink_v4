@@ -6,14 +6,12 @@ namespace WhackerLink2Dvm
     {
         static void Main(string[] args)
         {
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: WhackerLink2Dvm <configPath>");
-                return;
-            }
+            string configPath = "config.yml";
 
-            var configPath = args[0];
-            var app = new WhackerLink2Dvm(configPath);
+            if (args.Length != 0)
+                configPath = args[0];
+            
+            WhackerLink2Dvm app = new WhackerLink2Dvm(configPath);
 
             Console.ReadLine();
         }
