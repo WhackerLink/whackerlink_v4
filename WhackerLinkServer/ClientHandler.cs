@@ -956,6 +956,12 @@ namespace WhackerLinkServer
             if (!masterConfig.NoSelfRepeat)
                 client = string.Empty;
 
+            if (audioPacket.VoiceChannel.SrcId == null || audioPacket.VoiceChannel.DstId == null)
+            {
+                Console.WriteLine("Ignoring call; source or destination null; srcId {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
+                return;
+            }
+
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
             string dstId = audioPacket.VoiceChannel.DstId;
 
