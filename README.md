@@ -1,4 +1,4 @@
-.# WhackerLink V4 Installation and Setup Guide
+# WhackerLink V4 Installation and Setup Guide
 
 [![License](https://img.shields.io/badge/License-AGPLv3-blue?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
 
