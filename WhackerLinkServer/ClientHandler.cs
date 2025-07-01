@@ -962,7 +962,7 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict || !ConventionalPeer)
+            if (!ConventionalPeer && (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict))
             {
                 logger.Warning("Ignoring call; source not affiliated to destination srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 return;
