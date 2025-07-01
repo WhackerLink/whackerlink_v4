@@ -85,7 +85,7 @@ namespace WhackerLinkServer
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
 
-            if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
+            if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })) || File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "res1033.dll" })))
             {
                 logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder");
                 ExternalVocoderEnabled = true;

@@ -500,7 +500,7 @@ namespace WhackerLink2Dvm
 
 #if !NOVODODE && WINDOWS
             if (currentCall.ExternalVocoderEnabled)
-                currentCall.ExtFullRateVocoder.encode(samples, out imbe);
+                currentCall.ExtFullRateVocoder.Encode(samples, out imbe);
             else
                 currentCall.p25Encoder.encode(samples, imbe);
 #endif
@@ -678,7 +678,7 @@ namespace WhackerLink2Dvm
 
 #if !NOVODODE && WINDOWS
                     if (currentCall.ExternalVocoderEnabled)
-                        currentCall.ExtFullRateVocoder.decode(imbe, out samples);
+                        currentCall.ExtFullRateVocoder.Decode(imbe, out samples);
                     else
                         errs = currentCall.p25Decoder.decode(imbe, samples);
 #endif
