@@ -131,7 +131,7 @@ namespace WhackerLink2Dvm
 
             WhackerLink2Dvm.logger.Information($"({SystemName}) Connecting to WLINK Master");
 
-            webSocketHandler = new Peer();
+            webSocketHandler = new Peer(true);
 
             webSocketHandler.OnAffiliationUpdate += WhackerLinkAffiliationUpdate;
             webSocketHandler.OnUnitDeRegistrationResponse += WhackerLinkUniteDeRegistration;
@@ -194,17 +194,17 @@ namespace WhackerLink2Dvm
             {
                 WhackerLink2Dvm.logger.Information($"({SystemName}) Connection to WLINK Master complete");
 
-                foreach (uint group in WhackerLink2Dvm.config.AllowedGroups)
-                {
-                    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
-                    {
-                        SrcId = "1",
-                        DstId = group.ToString(),
-                        Site = WhackerLink2Dvm.config.WhackerLink.Site
-                    };
+                //foreach (uint group in WhackerLink2Dvm.config.AllowedGroups)
+                //{
+                //    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                //    {
+                //        SrcId = "1",
+                //        DstId = group.ToString(),
+                //        Site = WhackerLink2Dvm.config.WhackerLink.Site
+                //    };
 
-                    webSocketHandler.SendMessage(affReq.GetData());
-                }
+                //    webSocketHandler.SendMessage(affReq.GetData());
+                //}
             };
 
             webSocketHandler.OnClose += () =>

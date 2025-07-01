@@ -834,14 +834,14 @@ namespace WhackerLink2Dvm
                         DstId = e.DstId.ToString()
                     };
 
-                    GRP_AFF_REQ affReq = new GRP_AFF_REQ()
-                    {
-                        SrcId = e.SrcId.ToString(),
-                        DstId = e.DstId.ToString(),
-                        Site = WhackerLink2Dvm.config.WhackerLink.Site
-                    };
+                    //GRP_AFF_REQ affReq = new GRP_AFF_REQ()
+                    //{
+                    //    SrcId = e.SrcId.ToString(),
+                    //    DstId = e.DstId.ToString(),
+                    //    Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    //};
 
-                    webSocketHandler.SendMessage(affReq.GetData());
+                    //webSocketHandler.SendMessage(affReq.GetData());
 
                     webSocketHandler.SendMessage(new { type = PacketType.GRP_VCH_REQ, data = new GRP_VCH_REQ { SrcId = e.SrcId.ToString(), DstId = e.DstId.ToString(), Site = WhackerLink2Dvm.config.WhackerLink.Site } });
                     currentCall.callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;

@@ -655,14 +655,6 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (request.DstId == null || request.SrcId == null)
-            {
-                logger.Warning($"Deny VCH request due to null src or dst ID: dst: {request.DstId} src: {request.SrcId}");
-                response.Status = (int)ResponseType.DENY;
-                master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RSP, data = response }));
-                return;
-            }
-
             var availableChannel = GetAvailableVoiceChannel(site);
 
             if (availableChannel != null && isDestinationPermitted(request.SrcId, request.DstId))
@@ -945,7 +937,6 @@ namespace WhackerLinkServer
         private void BroadcastAudio(AudioPacket audioPacket)
         {
             bool affRestrict = masterConfig.AffilationRestricted;
-            bool srcAffRestrict = masterConfig.AffiliatedSourceRestricted;
             bool isFullAmbe = audioPacket.AudioMode == AudioMode.FULL_RATE_AMBE && audioPacket.Data.Length == 11;
             bool isHalfAmbe = audioPacket.AudioMode == AudioMode.HALF_RATE_AMBE && audioPacket.Data.Length == 7;
 
@@ -955,12 +946,6 @@ namespace WhackerLinkServer
 
             if (!masterConfig.NoSelfRepeat)
                 client = string.Empty;
-
-            if (audioPacket.VoiceChannel.SrcId == null || audioPacket.VoiceChannel.DstId == null)
-            {
-                Console.WriteLine("Ignoring call; source or destination null; srcId {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
-                return;
-            }
 
             VoiceChannel channel = voiceChannelManager.FindVoiceChannelByDstId(audioPacket.VoiceChannel.DstId);
             string dstId = audioPacket.VoiceChannel.DstId;
@@ -977,7 +962,7 @@ namespace WhackerLinkServer
                 return;
             }
 
-            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict && srcAffRestrict)
+            if (!affiliationsManager.isSrcIdAffiliated(audioPacket.VoiceChannel.SrcId, dstId) && affRestrict)
             {
                 logger.Warning("Ignoring call; source not affiliated to destination srcId: {SrcId}, dstId: {DstId}", audioPacket.VoiceChannel.SrcId, audioPacket.VoiceChannel.DstId);
                 return;
@@ -1124,10 +1109,7 @@ namespace WhackerLinkServer
                         }
                     }
 
-                    bool isSilent = false;
-
-                    if (!ExternalVocoderEnabled)
-                        isSilent = IsSilence(samples);
+                    bool isSilent = IsSilence(samples);
 
                     if (tone == 0 && !isSilent)
                     {
@@ -1283,3 +1265,4 @@ namespace WhackerLinkServer
 #endif
     }
 }
+
