@@ -1,7 +1,9 @@
 dropTimeMs: 180
 sourceId: 15005
-destinationId: 2001
 slot: 1
+
+allowedGroups:
+  - 2001
 
 fne:
   name: WL Patch
@@ -16,3 +18,14 @@ whackerLink:
   name: "WL Patch"
   address: 127.0.0.1
   port: 3000
+  site:
+    name: "Central Site"
+    controlChannel: "772.74375"
+    voiceChannels: []
+    location:
+      x: 757.89
+      y: 1274.17
+      z: 360.3
+    systemID: 1
+    siteID: 1
+    range: 1.5
