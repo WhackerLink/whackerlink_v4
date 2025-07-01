@@ -873,14 +873,14 @@ namespace WhackerLink2Dvm
                         return;
                     }
 
-                    GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
-                    {
-                        SrcId = e.SrcId.ToString(),
-                        DstId = e.DstId.ToString(),
-                        Site = WhackerLink2Dvm.config.WhackerLink.Site
-                    };
+                    //GRP_AFF_RMV affRmv = new GRP_AFF_RMV()
+                    //{
+                    //    SrcId = e.SrcId.ToString(),
+                    //    DstId = e.DstId.ToString(),
+                    //    Site = WhackerLink2Dvm.config.WhackerLink.Site
+                    //};
 
-                    webSocketHandler.SendMessage(affRmv.GetData());
+                    //webSocketHandler.SendMessage(affRmv.GetData());
 
                     currentCall.ignoreCall = false;
                     currentCall.callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
