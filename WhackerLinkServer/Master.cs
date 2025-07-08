@@ -54,10 +54,9 @@ namespace WhackerLinkServer
         private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
 
 #if !NOVOCODE
-        private VocoderManager vocoderManager;
 #if WINDOWS
-        private Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances =
-            new Dictionary<string, (AmbeVocoderManager, AmbeVocoderManager)>();
+        private Dictionary<string, (VocoderManager FullRate, VocoderManager HalfRate)> ambeVocoderInstances =
+            new Dictionary<string, (VocoderManager, VocoderManager)>();
 #endif
 #endif
 
@@ -232,7 +231,6 @@ namespace WhackerLinkServer
                     authKeyManager = new AuthKeyFileManager(string.Empty, config.Name, false, logger, 0);
 
 #if !NOVOCODE
-                this.vocoderManager = new VocoderManager(logger);
 #endif
 
                 var masterInstance = this;
@@ -242,7 +240,6 @@ namespace WhackerLinkServer
                     inactivityTimeout,
                     inactivityTimers,
 #if !NOVOCODE
-                        vocoderManager,
 #if WINDOWS
                         ambeVocoderInstances,
 #endif

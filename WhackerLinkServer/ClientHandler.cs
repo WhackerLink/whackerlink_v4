@@ -65,7 +65,6 @@ namespace WhackerLinkServer
         private Reporter reporter;
         private IMasterService master;
         private AuthKeyFileManager authKeyManager;
-        private readonly VocoderManager vocoderManager;
         private ILogger logger;
 
         private readonly TimeSpan inactivityTimeout;
@@ -78,7 +77,7 @@ namespace WhackerLinkServer
         public bool ConventionalPeer { get; private set; }
 
 #if !NOVOCODE && WINDOWS
-        private readonly Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances;
+        private readonly Dictionary<string, (VocoderManager FullRate, VocoderManager HalfRate)> ambeVocoderInstances;
 #endif
 
         /// <summary>
@@ -97,9 +96,8 @@ namespace WhackerLinkServer
             TimeSpan inactivityTimeout,
             Dictionary<string, Timer> inactivityTimers,
 #if !NOVOCODE
-            VocoderManager vocoderManager,
 #if WINDOWS
-            Dictionary<string, (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate)> ambeVocoderInstances,
+            Dictionary<string, (VocoderManager FullRate, VocoderManager HalfRate)> ambeVocoderInstances,
 #endif
 #endif
             bool ExternalVocoderEnabled,
@@ -121,7 +119,6 @@ namespace WhackerLinkServer
             this.inactivityTimers = inactivityTimers;
 
 #if !NOVOCODE
-            this.vocoderManager = vocoderManager;
 #if WINDOWS
             this.ambeVocoderInstances = ambeVocoderInstances;
 #endif
@@ -714,19 +711,12 @@ namespace WhackerLinkServer
                 master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
 #if !NOVOCODE
-                if (ExternalVocoderEnabled)
-                {
 #if WINDOWS
-                    if (ambeVocoderInstances.ContainsKey(request.DstId))
-                    {
-                        ambeVocoderInstances.Remove(request.DstId);
-                    }
-#endif
-                }
-                else
+                if (ambeVocoderInstances.ContainsKey(request.DstId))
                 {
-                    vocoderManager.RemoveVocoder(request.DstId);
+                    ambeVocoderInstances.Remove(request.DstId);
                 }
+#endif
 #endif
             }
             else
@@ -737,18 +727,12 @@ namespace WhackerLinkServer
                     master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
 #if !NOVOCODE
-                    if (ExternalVocoderEnabled)
-                    {
 #if WINDOWS
-                        if (ambeVocoderInstances.ContainsKey(request.DstId))
-                        {
-                            ambeVocoderInstances.Remove(request.DstId);
-                        }
-#endif
-                    } else
+                    if (ambeVocoderInstances.ContainsKey(request.DstId))
                     {
-                        vocoderManager.RemoveVocoder(request.DstId);
+                        ambeVocoderInstances.Remove(request.DstId);
                     }
+#endif
 #endif
                 }
 
@@ -1014,29 +998,20 @@ namespace WhackerLinkServer
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
 #if !NOVOCODE
-                // Ensure a vocoder instance exists for the channel
-                MBEDecoder decoder = null;
-                MBEEncoder encoder = null;
 
 #if WINDOWS
-                AmbeVocoderManager fullRateVocoder = null;
-                AmbeVocoderManager halfRateVocoder = null;
+                VocoderManager fullRateVocoder = null;
+                VocoderManager halfRateVocoder = null;
 #endif
-
-                if (!ExternalVocoderEnabled)
-                    (decoder, encoder) = vocoderManager.GetOrCreateVocoder(dstId, masterConfig.VocoderMode);
-                else
+#if WINDOWS
+                if (!ambeVocoderInstances.ContainsKey(dstId))
                 {
-#if WINDOWS
-                    if (!ambeVocoderInstances.ContainsKey(dstId))
-                    {
-                        ambeVocoderInstances[dstId] = CreateExternalVocoderInstance();
-                        logger.Information("Created new external vocoder instance for dstId {dstId}", dstId);
-                    }
-
-                    (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
-#endif
+                    ambeVocoderInstances[dstId] = CreateExternalVocoderInstance();
+                    logger.Information("Created new external vocoder instance for dstId {dstId}", dstId);
                 }
+
+                (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
+#endif
 #endif
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
@@ -1120,21 +1095,16 @@ namespace WhackerLinkServer
 
                         try
                         {
-                            if (!ExternalVocoderEnabled)
-                                encoder.encode(samples, imbe);
-                            else
-                            {
 #if WINDOWS
-                                if (masterConfig.VocoderMode == VocoderModes.IMBE)
-                                {
-                                    fullRateVocoder.Encode(samples, out imbe);
-                                }
-                                else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
-                                {
-                                    halfRateVocoder.Encode(samples, out imbe);
-                                }
-#endif
+                            if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                            {
+                                fullRateVocoder.Encode(samples, out imbe);
                             }
+                            else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                            {
+                                halfRateVocoder.Encode(samples, out imbe);
+                            }
+#endif
 
                         } catch(Exception ex)
                         {
@@ -1155,23 +1125,16 @@ namespace WhackerLinkServer
 
                     if (!isSilent)
                     {
-                        if (!ExternalVocoderEnabled)
-                        {
-                            int errors = decoder.decode(imbe, decodedSamples);
-                        }
-                        else
-                        {
 #if WINDOWS
-                            if (masterConfig.VocoderMode == VocoderModes.IMBE)
-                            {
-                                int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
-                            }
-                            else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
-                            {
-                                int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
-                            }
-#endif
+                        if (masterConfig.VocoderMode == VocoderModes.IMBE)
+                        {
+                            int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
                         }
+                        else if (masterConfig.VocoderMode == VocoderModes.DMRAMBE)
+                        {
+                            int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
+                        }
+#endif
 
                     }
                     else
@@ -1258,9 +1221,9 @@ namespace WhackerLinkServer
         }
 
 #if !NOVOCODE && WINDOWS
-        private (AmbeVocoderManager FullRate, AmbeVocoderManager HalfRate) CreateExternalVocoderInstance()
+        private (VocoderManager FullRate, VocoderManager HalfRate) CreateExternalVocoderInstance()
         {
-            return (new AmbeVocoderManager(), new AmbeVocoderManager(false));
+            return (new VocoderManager(), new VocoderManager(false));
         }
 #endif
     }
