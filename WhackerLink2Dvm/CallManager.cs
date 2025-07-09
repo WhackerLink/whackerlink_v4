@@ -47,7 +47,7 @@ namespace WhackerLink2Dvm
             StartTime = DateTime.UtcNow;
             VoiceChannel = null;
 
-#if !NOVODODE && WINDOWS
+#if !NOVODODE
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
