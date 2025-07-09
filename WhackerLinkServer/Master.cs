@@ -54,13 +54,9 @@ namespace WhackerLinkServer
         private Dictionary<string, Timer> inactivityTimers = new Dictionary<string, Timer>();
 
 #if !NOVOCODE
-#if WINDOWS
         private Dictionary<string, (VocoderManager FullRate, VocoderManager HalfRate)> ambeVocoderInstances =
             new Dictionary<string, (VocoderManager, VocoderManager)>();
 #endif
-#endif
-
-        bool ExternalVocoderEnabled = false;
 
         /// <summary>
         /// Creates an instance of the Master class
@@ -84,23 +80,21 @@ namespace WhackerLinkServer
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
 
-            if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })) || File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "res1033.dll" })))
+            if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
             {
-                logger.Information($"Using EXTERNAL {config.VocoderMode} Vocoder");
-                ExternalVocoderEnabled = true;
+                if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
+                    logger.Information($"Using DVSI USB Vocoder in {config.VocoderMode}");
+                else if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "res1033.dll" })))
+                    logger.Information($"Using DSP INI Vocoder in DMR AMBE");
+                else
+                    logger.Information($"Using DVM Vocoder in {config.VocoderMode}");
+
+                if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "res1033.dll" })) && config.VocoderMode == VocoderModes.IMBE)
+                    logger.Warning("Forcing DMRAMBE vocoder mode due to enabled vocoder not supporting IMBE/Full rate");
             }
             else
             {
-#if WINDOWS
-                if (config.VocoderMode == VocoderModes.DMRAMBE || config.VocoderMode == VocoderModes.IMBE)
-                {
-                    logger.Information($"{config.VocoderMode} Vocoder mode enabled");
-                }
-                else
-                {
-                    logger.Information("Vocoding disabled");
-                }
-#endif
+                logger.Information("Vocoding disabled");
             }
 #endif
         }
@@ -240,11 +234,8 @@ namespace WhackerLinkServer
                     inactivityTimeout,
                     inactivityTimers,
 #if !NOVOCODE
-#if WINDOWS
                         ambeVocoderInstances,
 #endif
-#endif
-                        ExternalVocoderEnabled,
                         masterInstance,
                         authKeyManager,
                     logger));

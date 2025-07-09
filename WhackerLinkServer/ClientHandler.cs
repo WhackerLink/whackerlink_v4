@@ -96,11 +96,8 @@ namespace WhackerLinkServer
             TimeSpan inactivityTimeout,
             Dictionary<string, Timer> inactivityTimers,
 #if !NOVOCODE
-#if WINDOWS
             Dictionary<string, (VocoderManager FullRate, VocoderManager HalfRate)> ambeVocoderInstances,
 #endif
-#endif
-            bool ExternalVocoderEnabled,
             IMasterService master,
             AuthKeyFileManager authManager,
             ILogger logger)
@@ -119,11 +116,8 @@ namespace WhackerLinkServer
             this.inactivityTimers = inactivityTimers;
 
 #if !NOVOCODE
-#if WINDOWS
             this.ambeVocoderInstances = ambeVocoderInstances;
 #endif
-#endif
-            this.ExternalVocoderEnabled = ExternalVocoderEnabled;
         }
 
         /// <summary>
@@ -711,12 +705,10 @@ namespace WhackerLinkServer
                 master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = response }));
                 logger.Information("Voice channel {Channel} released for {SrcId} to {DstId}", request.Channel, request.SrcId, request.DstId);
 #if !NOVOCODE
-#if WINDOWS
                 if (ambeVocoderInstances.ContainsKey(request.DstId))
                 {
                     ambeVocoderInstances.Remove(request.DstId);
                 }
-#endif
 #endif
             }
             else
@@ -727,12 +719,10 @@ namespace WhackerLinkServer
                     master.BroadcastPacket(JsonConvert.SerializeObject(new { type = (int)PacketType.GRP_VCH_RLS, data = new GRP_VCH_RLS { SrcId = request.SrcId, DstId = request.DstId } }));
                     voiceChannelManager.RemoveVoiceChannelByDstId(request.DstId);
 #if !NOVOCODE
-#if WINDOWS
                     if (ambeVocoderInstances.ContainsKey(request.DstId))
                     {
                         ambeVocoderInstances.Remove(request.DstId);
                     }
-#endif
 #endif
                 }
 
@@ -998,20 +988,15 @@ namespace WhackerLinkServer
             if (masterConfig.VocoderMode != VocoderModes.DISABLED)
             {
 #if !NOVOCODE
-
-#if WINDOWS
                 VocoderManager fullRateVocoder = null;
                 VocoderManager halfRateVocoder = null;
-#endif
-#if WINDOWS
                 if (!ambeVocoderInstances.ContainsKey(dstId))
                 {
-                    ambeVocoderInstances[dstId] = CreateExternalVocoderInstance();
-                    logger.Information("Created new external vocoder instance for dstId {dstId}", dstId);
+                    ambeVocoderInstances[dstId] = CreateVocoderInstance();
+                    logger.Information("Created new vocoder instance for dstId {dstId}", dstId);
                 }
 
                 (fullRateVocoder, halfRateVocoder) = ambeVocoderInstances[dstId];
-#endif
 #endif
                 var chunks = AudioConverter.SplitToChunks(audioPacket.Data);
                 if (chunks.Count == 0)
@@ -1095,7 +1080,6 @@ namespace WhackerLinkServer
 
                         try
                         {
-#if WINDOWS
                             if (masterConfig.VocoderMode == VocoderModes.IMBE)
                             {
                                 fullRateVocoder.Encode(samples, out imbe);
@@ -1104,7 +1088,6 @@ namespace WhackerLinkServer
                             {
                                 halfRateVocoder.Encode(samples, out imbe);
                             }
-#endif
 
                         } catch(Exception ex)
                         {
@@ -1125,7 +1108,6 @@ namespace WhackerLinkServer
 
                     if (!isSilent)
                     {
-#if WINDOWS
                         if (masterConfig.VocoderMode == VocoderModes.IMBE)
                         {
                             int errors = fullRateVocoder.Decode(imbe, out decodedSamples);
@@ -1134,7 +1116,6 @@ namespace WhackerLinkServer
                         {
                             int errors = halfRateVocoder.Decode(imbe, out decodedSamples);
                         }
-#endif
 
                     }
                     else
@@ -1221,7 +1202,7 @@ namespace WhackerLinkServer
         }
 
 #if !NOVOCODE && WINDOWS
-        private (VocoderManager FullRate, VocoderManager HalfRate) CreateExternalVocoderInstance()
+        private (VocoderManager FullRate, VocoderManager HalfRate) CreateVocoderInstance()
         {
             return (new VocoderManager(), new VocoderManager(false));
         }

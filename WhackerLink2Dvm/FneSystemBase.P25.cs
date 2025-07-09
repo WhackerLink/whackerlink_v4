@@ -499,10 +499,8 @@ namespace WhackerLink2Dvm
             byte[] imbe = new byte[11];
 
 #if !NOVODODE && WINDOWS
-            if (currentCall.ExternalVocoderEnabled)
-                currentCall.ExtFullRateVocoder.Encode(samples, out imbe);
-            else
-                currentCall.p25Encoder.encode(samples, imbe);
+            currentCall.ExtFullRateVocoder.Encode(samples, out imbe);
+
 #endif
 
             // WhackerLink2Dvm.logger.Debug($"IMBE {FneUtils.HexDump(imbe)}");
@@ -677,10 +675,7 @@ namespace WhackerLink2Dvm
                     int errs = 0;
 
 #if !NOVODODE && WINDOWS
-                    if (currentCall.ExternalVocoderEnabled)
-                        currentCall.ExtFullRateVocoder.Decode(imbe, out samples);
-                    else
-                        errs = currentCall.p25Decoder.decode(imbe, samples);
+                    currentCall.ExtFullRateVocoder.Decode(imbe, out samples);
 #endif
 
                     if (samples != null)

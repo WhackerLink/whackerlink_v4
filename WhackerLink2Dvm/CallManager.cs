@@ -28,11 +28,6 @@ namespace WhackerLink2Dvm
         public byte p25N = 0;
         public bool ignoreCall = false;
 
-#if !NOVODODE
-        public MBEDecoder p25Decoder;
-        public MBEEncoder p25Encoder;
-#endif
-
         public byte callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
 
 #if WINDOWS
@@ -51,15 +46,6 @@ namespace WhackerLink2Dvm
             Status[2] = new SlotStatus();  // P25
             StartTime = DateTime.UtcNow;
             VoiceChannel = null;
-
-#if !NOVODODE
-            // initialize P25 vocoders
-            p25Decoder = new MBEDecoder(MBE_MODE.IMBE_88BIT);
-            //p25Decoder.GainAdjust = Program.Configuration.VocoderDecoderAudioGain;
-            //p25Decoder.AutoGain = Program.Configuration.VocoderDecoderAutoGain;
-            p25Encoder = new MBEEncoder(MBE_MODE.IMBE_88BIT);
-            //p25Encoder.GainAdjust = Program.Configuration.VocoderEncoderAudioGain;
-#endif
 
 #if !NOVODODE && WINDOWS
             string codeBase = Assembly.GetExecutingAssembly().CodeBase;
