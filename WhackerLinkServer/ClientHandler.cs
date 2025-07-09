@@ -71,7 +71,6 @@ namespace WhackerLinkServer
         private Dictionary<string, Timer> inactivityTimers;
 
         private ToneDetector toneDetecor = new ToneDetector();
-        private bool ExternalVocoderEnabled = false;
         private readonly WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
 
         public bool ConventionalPeer { get; private set; }

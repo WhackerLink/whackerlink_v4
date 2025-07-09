@@ -7,6 +7,7 @@ using System.Reflection;
 using fnecore.P25;
 using WhackerLinkLib.Models;
 using WhackerLinkLib.Vocoder;
+using WhackerLinkServer.Models;
 
 namespace WhackerLink2Dvm
 {
@@ -31,9 +32,8 @@ namespace WhackerLink2Dvm
         public byte callAlgoId = P25Defines.P25_ALGO_UNENCRYPT;
 
 #if WINDOWS
-        public bool ExternalVocoderEnabled = false;
-        public AmbeVocoder ExtFullRateVocoder = null;
-        public AmbeVocoder ExtHalfRateVocoder = null;
+        public VocoderManager ExtFullRateVocoder = null;
+        public VocoderManager ExtHalfRateVocoder = null;
 #endif
 
         public List<byte[]> accumulatedChunks = new List<byte[]>();
@@ -52,11 +52,33 @@ namespace WhackerLink2Dvm
             UriBuilder uri = new UriBuilder(codeBase);
             string path = Uri.UnescapeDataString(uri.Path);
 
+            bool hasVocoder = false;
+
             if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "AMBE.DLL" })))
             {
-                ExternalVocoderEnabled = true;
-                ExtFullRateVocoder = new AmbeVocoder();
-                ExtHalfRateVocoder = new AmbeVocoder(false);
+                WhackerLink2Dvm.logger.Information($"Using DVSI USB Vocoder");
+                hasVocoder = true;
+            }
+            else if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "res1033.dll" })))
+            {
+                WhackerLink2Dvm.logger.Information($"Using DSP INI Vocoder in DMR AMBE");
+                WhackerLink2Dvm.logger.Warning("P25 will NOT work due to enabled vocoder not supporting IMBE/Full rate");
+                hasVocoder = true;
+            }
+            else if (File.Exists(Path.Combine(new string[] { Path.GetDirectoryName(path), "libvocoder.dll" })))
+            {
+                WhackerLink2Dvm.logger.Information($"Using DVM Vocoder");
+                hasVocoder = true;
+            }
+
+            if (hasVocoder)
+            {
+                ExtFullRateVocoder = new VocoderManager();
+                ExtHalfRateVocoder = new VocoderManager(false);
+            }
+            else
+            {
+                throw new DllNotFoundException("No vocoder DLL is present!");
             }
 #endif
         }
