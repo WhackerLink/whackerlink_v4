@@ -397,7 +397,7 @@ namespace WhackerLinkServer
             if (!masterConfig.DisableLocBcastLogs)
                 logger.Information(request.ToString());
 
-            reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long);
+            reporter.Send(PacketType.LOC_BCAST, request.SrcId, null, request.Site, null, ResponseType.UNKOWN, request.Lat, request.Long, false, true); // we are skipping discord for now
 
             if (!masterConfig.DisableLocationBroadcastsRepeats)
                 master.BroadcastPacket(request.GetStrData());

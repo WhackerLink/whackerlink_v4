@@ -256,6 +256,7 @@ namespace WhackerLinkServer
                 server.Start();
 
                 logger.Information("Master {Name} Listening on port {Port}; address: {Address}", config.Name, config.Port, config.Address);
+                reporter.Send(PacketType.UNKOWN, Name, "N/A", null, $"Master Started on port {config.Port}; address: {config.Address}", ResponseType.UNKOWN, null, null, true, false);
 
                 if (config.Sites.Count > 0)
                 {
@@ -389,6 +390,7 @@ namespace WhackerLinkServer
         {
             try
             {
+                reporter.Send(PacketType.UNKOWN, Name, "N/A", null, "Master Stopping", ResponseType.UNKOWN, null, null, true, false);
                 logger.Information("Stopping Master {Name}", config.Name);
 
                 server?.Stop();

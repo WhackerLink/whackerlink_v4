@@ -159,9 +159,12 @@ namespace WhackerLinkServer
             string extra,
             ResponseType responseType = ResponseType.UNKOWN,
             string lat = null,
-            string longi = null)
+            string longi = null,
+            bool discordOnly = false,
+            bool noDiscord = false
+            )
         {
-            if (!enabled && !discordEnabled)
+            if (!enabled)
                 return;
 
             var utcNow = DateTime.UtcNow;
@@ -170,31 +173,37 @@ namespace WhackerLinkServer
 
             string timestamp = cdtTime.ToString("yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture);
 
-            var reportData = new
+            if (!discordOnly)
             {
-                Type = type,
-                SrcId = srcId,
-                DstId = dstId,
-                Site = site,
-                ResponseType = responseType,
-                Extra = extra,
-                Lat = lat,
-                Long = longi,
-                Timestamp = timestamp
-            };
+                var reportData = new
+                {
+                    Type = type,
+                    SrcId = srcId,
+                    DstId = dstId,
+                    Site = site,
+                    ResponseType = responseType,
+                    Extra = extra,
+                    Lat = lat,
+                    Long = longi,
+                    Timestamp = timestamp
+                };
 
-            Task.Run(() => SendHttpReportAsync(reportData));
+                Task.Run(() => SendHttpReportAsync(reportData));
+            }
 
-            string discordText =
-                $"**Type:** {type}\n" +
-                $"**Src:** {srcId}\n" +
-                $"**Dst:** {dstId}\n" +
-                $"**Site:** {site?.Name}\n" +
-                $"**Response:** {responseType}\n" +
-                $"**Extra:** {extra}\n" +
-                $"**Time:** {timestamp}";
+            if (!noDiscord && discordEnabled)
+            {
+                string discordText =
+                    $"**Type:** {type}\n" +
+                    $"**Src:** {srcId}\n" +
+                    $"**Dst:** {dstId}\n" +
+                    $"**Site:** {site?.Name}\n" +
+                    $"**Response:** {responseType}\n" +
+                    $"**Extra:** {extra}\n" +
+                    $"**Time:** {timestamp}";
 
-            Task.Run(() => SendDiscordAsync("WhackerLink Event", discordText));
+                Task.Run(() => SendDiscordAsync("WhackerLink Event", discordText));
+            }
         }
 
         /// <summary>
@@ -202,7 +211,7 @@ namespace WhackerLinkServer
         /// </summary>
         public void Send(PacketType type, SITE_BCAST siteBcast)
         {
-            if (!enabled && !discordEnabled)
+            if (!enabled)
                 return;
 
             string discordText =
@@ -216,7 +225,8 @@ namespace WhackerLinkServer
                 Timestamp = DateTime.UtcNow
             }));
 
-            Task.Run(() => SendDiscordAsync("Site Broadcast", discordText));
+            // not for now
+            //Task.Run(() => SendDiscordAsync("Site Broadcast", discordText));
         }
 
         /// <summary>
@@ -224,7 +234,7 @@ namespace WhackerLinkServer
         /// </summary>
         public void Send(PacketType type, STS_BCAST stsBcast)
         {
-            if (!enabled && !discordEnabled)
+            if (!enabled)
                 return;
 
             string discordText =
@@ -240,7 +250,8 @@ namespace WhackerLinkServer
                 Timestamp = DateTime.UtcNow
             }));
 
-            Task.Run(() => SendDiscordAsync("Status Broadcast", discordText));
+            // not for now
+            //Task.Run(() => SendDiscordAsync("Status Broadcast", discordText));
         }
     }
 }
