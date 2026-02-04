@@ -74,6 +74,10 @@ masters:
         address: localhost
         # Port to send to
         port: 3005
+        # Enable Discord Webhook reporting support
+        discordEnable: true
+        # Discord Webhook URL
+        discordUrl: "webhook url here"
 
     # List of sites. Note: If using with FiveM this should match your sites.yml
     sites:

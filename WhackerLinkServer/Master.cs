@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2024-2026 Caleb H. (K4PHP) caleb.k4php@gmail.com
  * Copyright (C) 2025 Firav (firavdev@gmail.com)
  *
  * This file is part of the WhackerLinkServer project.
@@ -191,7 +191,7 @@ namespace WhackerLinkServer
                     logger.Information("ACL Auto reload disabled");
                 }
 
-                reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled);
+                reporter = new Reporter(config.Reporter.Address, config.Reporter.Port, logger, config.Reporter.Enabled, config.Reporter.DiscordEnable, config.Reporter.DiscordUrl);
     
                 foreach (var site in config.Sites)
                 {

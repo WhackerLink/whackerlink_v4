@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2024-2026 Caleb H. (K4PHP) caleb.k4php@gmail.com
  *
  * This file is part of the WhackerLinkServer project.
  *
@@ -105,6 +105,8 @@ namespace WhackerLinkServer.Models
             public bool Enabled { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public bool DiscordEnable { get; set; } = false;
+            public string DiscordUrl { get; set; }
         }
 
         /// <summary>

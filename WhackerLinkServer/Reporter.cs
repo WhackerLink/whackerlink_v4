@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2024-2026 Caleb H. (K4PHP) caleb.k4php@gmail.com
  *
  * This file is part of the WhackerLinkServer project.
  *
@@ -29,89 +29,144 @@ using WhackerLinkLib.Models.IOSP;
 namespace WhackerLinkServer
 {
     /// <summary>
-    /// Class to send HTTP POST reports 
+    /// Class to send HTTP POST reports and optional Discord webhook notifications
     /// </summary>
     public class Reporter
     {
-        private string address;
-        private int port;
-        private ILogger logger;
-        private bool enabled;
+        private readonly string address;
+        private readonly int port;
+        private readonly ILogger logger;
+        private readonly bool enabled;
+        private readonly bool discordEnabled;
+
         private readonly HttpClient _httpClient;
+        private readonly HttpClient _discordClient;
+        private readonly string _discordWebhookUrl;
 
         /// <summary>
-        /// Creates an instance of Reporter
+        /// Creates an instance of <see cref="Reporter"/>
         /// </summary>
         /// <param name="address"></param>
         /// <param name="port"></param>
         /// <param name="logger"></param>
-        public Reporter(string address, int port, ILogger logger, bool enabled = false)
+        /// <param name="enabled"></param>
+        /// <param name="discordEnabled"></param>
+        /// <param name="discordWebhookUrl"></param>
+        public Reporter(
+            string address,
+            int port,
+            ILogger logger,
+            bool enabled = false,
+            bool discordEnabled = false,
+            string discordWebhookUrl = null)
         {
             this.address = address;
             this.port = port;
             this.enabled = enabled;
+            this.discordEnabled = discordEnabled;
             this.logger = logger;
+            _discordWebhookUrl = discordWebhookUrl;
 
-            if (!enabled)
-                return;
-
-            _httpClient = new HttpClient
+            if (enabled)
             {
-                BaseAddress = new Uri($"http://{address}:{port}")
-            };
+                _httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri($"http://{address}:{port}")
+                };
 
-            logger.Information("Started Reporter at http://{Address}:{Port}", address, port);
+                logger.Information("Started Reporter at http://{Address}:{Port}", address, port);
+            }
+
+            if (discordEnabled && !string.IsNullOrWhiteSpace(discordWebhookUrl))
+            {
+                _discordClient = new HttpClient();
+                logger.Information("Discord webhook reporting enabled");
+            }
         }
 
         /// <summary>
-        /// Create and send a report async
+        /// Send HTTP report
         /// </summary>
-        /// <param name="reportData"></param>
-        /// <returns></returns>
-        public async Task SendReportAsync(object reportData)
+        private async Task SendHttpReportAsync(object reportData)
         {
             if (!enabled)
                 return;
 
             var json = JsonConvert.SerializeObject(reportData);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
+
             try
             {
                 var response = await _httpClient.PostAsync("/", content);
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-#if DEBUG
-                    logger.Information("[REPORTER] Report sent");
-#endif
+                    logger.Error("[REPORTER] HTTP send failed: {Status}", response.StatusCode);
                 }
-                else
-                {
-                    logger.Error($"[REPORTER] Failed to send: {response.StatusCode}");
-                }
-                }
+            }
             catch (Exception ex)
             {
-                logger.Error($"[REPORTER] Error sending report: {ex.Message}");
+                logger.Error("[REPORTER] HTTP error: {Message}", ex.Message);
             }
         }
 
         /// <summary>
-        /// Helper function to send a report
+        /// Send Discord webhook embed
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="srcId"></param>
-        /// <param name="dstId"></param>
-        /// <param name="extra"></param>
-        public void Send(PacketType type, string srcId, string dstId, Site site, string extra, ResponseType responseType = ResponseType.UNKOWN, string lat = null, string longi = null)
+        private async Task SendDiscordAsync(string title, string description)
         {
-            if (!enabled)
+            if (!discordEnabled || string.IsNullOrWhiteSpace(_discordWebhookUrl))
+                return;
+
+            var payload = new
+            {
+                embeds = new[]
+                {
+                    new
+                    {
+                        title,
+                        description,
+                        color = 3447003, // blue
+                        timestamp = DateTime.UtcNow.ToString("o")
+                    }
+                }
+            };
+
+            var json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _discordClient.PostAsync(_discordWebhookUrl, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.Error("[REPORTER] Discord webhook failed: {Status}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error("[REPORTER] Discord error: {Message}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Standard packet report
+        /// </summary>
+        public void Send(
+            PacketType type,
+            string srcId,
+            string dstId,
+            Site site,
+            string extra,
+            ResponseType responseType = ResponseType.UNKOWN,
+            string lat = null,
+            string longi = null)
+        {
+            if (!enabled && !discordEnabled)
                 return;
 
             var utcNow = DateTime.UtcNow;
-
-            TimeZoneInfo cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-            DateTime cdtTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, cdtZone);
+            var cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var cdtTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, cdtZone);
 
             string timestamp = cdtTime.ToString("yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture);
 
@@ -128,62 +183,64 @@ namespace WhackerLinkServer
                 Timestamp = timestamp
             };
 
-            Task.Run(() => SendReportAsync(reportData));
+            Task.Run(() => SendHttpReportAsync(reportData));
+
+            string discordText =
+                $"**Type:** {type}\n" +
+                $"**Src:** {srcId}\n" +
+                $"**Dst:** {dstId}\n" +
+                $"**Site:** {site?.Name}\n" +
+                $"**Response:** {responseType}\n" +
+                $"**Extra:** {extra}\n" +
+                $"**Time:** {timestamp}";
+
+            Task.Run(() => SendDiscordAsync("WhackerLink Event", discordText));
         }
 
         /// <summary>
-        /// Helper to send site bcast report
+        /// Site broadcast report
         /// </summary>
-        /// <param name="type"></param>
-        ///
         public void Send(PacketType type, SITE_BCAST siteBcast)
         {
-            if (!enabled)
+            if (!enabled && !discordEnabled)
                 return;
 
-            var utcNow = DateTime.UtcNow;
+            string discordText =
+                $"**Type:** {type}\n" +
+                $"**Sites:** {string.Join(", ", siteBcast.Sites)}";
 
-            TimeZoneInfo cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-            DateTime cdtTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, cdtZone);
-
-            string timestamp = cdtTime.ToString("yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture);
-
-            var reportData = new
+            Task.Run(() => SendHttpReportAsync(new
             {
                 Type = type,
                 Sites = siteBcast.Sites,
-                Timestamp = timestamp
-            };
+                Timestamp = DateTime.UtcNow
+            }));
 
-            Task.Run(() => SendReportAsync(reportData));
+            Task.Run(() => SendDiscordAsync("Site Broadcast", discordText));
         }
 
         /// <summary>
-        /// Helper to send sts bcast report
+        /// Status broadcast report
         /// </summary>
-        /// <param name="type"></param>
-        ///
         public void Send(PacketType type, STS_BCAST stsBcast)
         {
-            if (!enabled)
+            if (!enabled && !discordEnabled)
                 return;
 
-            var utcNow = DateTime.UtcNow;
+            string discordText =
+                $"**Type:** {type}\n" +
+                $"**Site:** {stsBcast.Site}\n" +
+                $"**Status:** {stsBcast.Status}";
 
-            TimeZoneInfo cdtZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-            DateTime cdtTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, cdtZone);
-
-            string timestamp = cdtTime.ToString("yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture);
-
-            var reportData = new
+            Task.Run(() => SendHttpReportAsync(new
             {
                 Type = type,
                 Site = stsBcast.Site,
                 Status = stsBcast.Status,
-                Timestamp = timestamp
-            };
+                Timestamp = DateTime.UtcNow
+            }));
 
-            Task.Run(() => SendReportAsync(reportData));
+            Task.Run(() => SendDiscordAsync("Status Broadcast", discordText));
         }
     }
 }

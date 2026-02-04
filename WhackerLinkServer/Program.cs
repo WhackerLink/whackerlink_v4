@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2024-2026 Caleb H. (K4PHP) caleb.k4php@gmail.com
  * Copyright (C) 2025 Firav (firavdev@gmail.com)
  *
  * This file is part of the WhackerLinkServer project.
@@ -73,7 +73,7 @@ namespace WhackerLinkServer
 
                 logger.Information("WhackerLink Server - Main networking router and handler for WhackerLink");
                 logger.Information($"Server Version {System.Reflection.ThisAssembly.Git.Commit} Dirty: {System.Reflection.ThisAssembly.Git.IsDirtyString} {debug}");
-                logger.Information("Copyright (C) 2024-2025 Caleb H., K4PHP (_php_)");
+                logger.Information("Copyright (C) 2024-2026 Caleb H., K4PHP (_php_)");
 
                 logger.Information("Initializing Master instances");
 
