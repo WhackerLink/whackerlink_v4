@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Caleb H. (K4PHP) caleb.k4php@gmail.com
+ * Copyright (C) 2024-2026 Caleb H. (K4PHP) caleb.k4php@gmail.com
  *
  * This file is part of the WhackerLinkServer project.
  *
@@ -46,6 +46,7 @@ using System.Diagnostics;
 using NWaves.Filters.Base;
 using WhackerLinkLib.Vocoder;
 using System.Reflection;
+using WhackerLinkLib.Models.Conventional;
 
 namespace WhackerLinkServer
 {
@@ -149,6 +150,7 @@ namespace WhackerLinkServer
 
                 switch (type)
                 {
+                    // Trunking
                     case (int)PacketType.U_REG_REQ:
                         HandleUnitRegistrationRequest(data["data"].ToObject<U_REG_REQ>());
                         break;
@@ -194,6 +196,13 @@ namespace WhackerLinkServer
                         break;
                     case (int)PacketType.AUDIO_DATA:
                         Task.Run(() => BroadcastAudio(data["data"].ToObject<AudioPacket>()));
+                        break;
+                    // Conventional
+                    case (int)PacketType.CONV_VOICE:
+                        HandleConventionalVoice(data["data"].ToObject<CONV_VOICE>());
+                        break;
+                    case (int)PacketType.CONV_VOICE_TERM:
+                        HandleConventionalVoiceTerminator(data["data"].ToObject<CONV_VOICE_TERM>());
                         break;
                     default:
                         logger.Warning("Unhandled Wlink Packet, Opcode: {Type}", type);
@@ -928,6 +937,40 @@ namespace WhackerLinkServer
             voiceChannelManager.RemoveVoiceChannelByDstId(talkgroupId);
             logger.Information($"Inactivity timeout elapsed, releasing voice channel for talkgroup {talkgroupId}");
             reporter.Send(PacketType.GRP_VCH_RLS, srcId, talkgroupId, site, null);
+        }
+
+        /// <summary>
+        /// Handle Conventional Voice
+        /// </summary>
+        /// <param name="response"></param>
+        private void HandleConventionalVoice(CONV_VOICE response)
+        {
+            if (response.Mode == ConvVoiceMode.ANALOG)
+            {
+                logger.Warning("CONV_VOICE, Raw analog packets not support; Signaling required.");
+                return;
+            }
+
+            // TODO: We may want to also MDC decode and maybe re-encode, we shall see.
+
+            // for now we will only log and repeat
+            logger.Information(response.ToString());
+            master.BroadcastPacket(response.GetStrData());
+        }
+
+        /// <summary>
+        /// Handle Conventional Voice Terminator
+        /// </summary>
+        /// <param name="response"></param>
+        private void HandleConventionalVoiceTerminator(CONV_VOICE_TERM response)
+        {
+            // ignore anything not P25 as MDC is used for analog.
+            if (response.Mode != ConvVoiceMode.P25_FULL)
+                return;
+
+            // for now we will only log and repeat
+            logger.Information(response.ToString());
+            master.BroadcastPacket(response.GetStrData());
         }
 
         /// <summary>

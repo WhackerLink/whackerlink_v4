@@ -219,7 +219,7 @@ namespace WhackerLink2Dvm
 
             try
             {
-                webSocketHandler.Connect(WhackerLink2Dvm.config.WhackerLink.Address, WhackerLink2Dvm.config.WhackerLink.Port);
+                webSocketHandler.Connect("5.56.24.7", 3000, WhackerLink2Dvm.config.WhackerLink.AuthKey);
             }
             catch (Exception ex)
             {

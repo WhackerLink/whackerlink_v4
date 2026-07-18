@@ -36,6 +36,7 @@ namespace WhackerLink2Dvm.Models
             public string Name { get; set; }
             public string Address { get; set; }
             public int Port { get; set; }
+            public string AuthKey { get; set; }
             public Site Site { get; set; }
         }
 
