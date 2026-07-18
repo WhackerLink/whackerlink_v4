@@ -15,7 +15,6 @@ WhackerLinkServer requires net6.0
 It is easiest to compile with Visual Studio 2022 but it is possible from the command line.
 
 The server specifically is designed to run on linux and windows.
-The solution will NOT build on linux unless the configuration of "NoVocoder" is used.
 
 
 ## Big TODO's
