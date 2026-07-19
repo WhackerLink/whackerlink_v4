@@ -68,6 +68,7 @@ namespace WhackerLinkServer
         private AuthKeyFileManager authKeyManager;
         private readonly VocoderManager vocoderManager;
         private ILogger logger;
+        private Dictionary<string, Mdc1200.Decoder> mdcDecoders = new Dictionary<string, Mdc1200.Decoder>();
 
         private readonly TimeSpan inactivityTimeout;
         private Dictionary<string, Timer> inactivityTimers;
@@ -953,9 +954,19 @@ namespace WhackerLinkServer
 
             // TODO: We may want to also MDC decode and maybe re-encode, we shall see.
 
+            string key = $"{response.Frequency}:{response.SrcId}";
+            if (!mdcDecoders.ContainsKey(key))
+                mdcDecoders[key] = new Mdc1200.Decoder();
+
+            Mdc1200.Decoder decoder = mdcDecoders[key];
+            Mdc1200.Packet mdcpacket = decoder.ProcessSamples(response.Data);
+
             // for now we will only log and repeat
             logger.Information(response.ToString());
-            master.BroadcastPacket(response.GetStrData());
+
+            if (mdcpacket != null)
+                logger.Information($"MDC Call: Unit ID: {mdcpacket.UnitId}");
+            master.BroadcastPacket(response.GetStrData(), ID);
         }
 
         /// <summary>
@@ -969,6 +980,7 @@ namespace WhackerLinkServer
 
             // for now we will only log and repeat
             logger.Information(response.ToString());
+            mdcDecoders.Remove($"{response.Frequency}:{response.SrcId}");
             master.BroadcastPacket(response.GetStrData());
         }
 
