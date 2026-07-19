@@ -964,8 +964,7 @@ namespace WhackerLinkServer
         /// <param name="response"></param>
         private void HandleConventionalVoiceTerminator(CONV_VOICE_TERM response)
         {
-            // ignore anything not P25 as MDC is used for analog.
-            if (response.Mode != ConvVoiceMode.P25_FULL)
+            if (response.Mode == ConvVoiceMode.ANALOG)
                 return;
 
             // for now we will only log and repeat
